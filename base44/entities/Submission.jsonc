@@ -1,0 +1,42 @@
+{
+  "name": "Submission",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "assignmentId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "fileUrl": {
+      "type": "string"
+    },
+    "submittedAt": {
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "feedback": {
+      "type": "string"
+    },
+    "isGraded": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "assignmentId",
+    "studentId"
+  ]
+}

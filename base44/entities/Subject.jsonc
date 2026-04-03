@@ -1,0 +1,35 @@
+{
+  "name": "Subject",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "categoryId": {
+      "type": "string"
+    },
+    "educationLevel": {
+      "type": "string"
+    },
+    "academicTrack": {
+      "type": "string"
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "name"
+  ]
+}

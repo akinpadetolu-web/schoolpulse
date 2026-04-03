@@ -1,0 +1,102 @@
+{
+  "name": "SchoolUser",
+  "type": "object",
+  "properties": {
+    "fullName": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "username": {
+      "type": "string"
+    },
+    "passwordHash": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "superAdmin",
+        "admin",
+        "teacher",
+        "student",
+        "parent"
+      ]
+    },
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "baseLevel": {
+      "type": "string"
+    },
+    "subsetName": {
+      "type": "string"
+    },
+    "educationLevel": {
+      "type": "string"
+    },
+    "academicTrack": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "parentLinkCode": {
+      "type": "string"
+    },
+    "linkedStudentIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assignedSubjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assignedClasses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "teachingAssignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "classId": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mustChangePassword": {
+      "type": "boolean",
+      "default": true
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "fullName",
+    "role"
+  ]
+}

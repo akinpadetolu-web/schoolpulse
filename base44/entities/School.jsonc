@@ -1,0 +1,38 @@
+{
+  "name": "School",
+  "type": "object",
+  "properties": {
+    "schoolName": {
+      "type": "string",
+      "description": "Name of the school"
+    },
+    "schoolCode": {
+      "type": "string",
+      "description": "Unique school code"
+    },
+    "address": {
+      "type": "string",
+      "description": "School address"
+    },
+    "contactEmail": {
+      "type": "string",
+      "description": "Contact email"
+    },
+    "contactPhone": {
+      "type": "string",
+      "description": "Contact phone"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolName",
+    "schoolCode"
+  ]
+}

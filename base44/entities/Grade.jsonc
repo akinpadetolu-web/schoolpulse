@@ -1,0 +1,54 @@
+{
+  "name": "Grade",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "assessmentType": {
+      "type": "string",
+      "enum": [
+        "exam",
+        "test",
+        "quiz",
+        "assignment",
+        "classwork"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "maxScore": {
+      "type": "number"
+    },
+    "term": {
+      "type": "string"
+    },
+    "comment": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "subjectId"
+  ]
+}

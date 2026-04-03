@@ -1,0 +1,50 @@
+{
+  "name": "LessonMaterial",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "fileUrl": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "title"
+  ]
+}

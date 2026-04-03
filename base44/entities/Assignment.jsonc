@@ -1,0 +1,53 @@
+{
+  "name": "Assignment",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "maxScore": {
+      "type": "number",
+      "default": 100
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "title"
+  ]
+}

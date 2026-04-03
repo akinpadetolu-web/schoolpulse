@@ -1,0 +1,52 @@
+{
+  "name": "TimetableEntry",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "dayOfWeek": {
+      "type": "string",
+      "enum": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday"
+      ]
+    },
+    "startTime": {
+      "type": "string"
+    },
+    "endTime": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "dayOfWeek"
+  ]
+}

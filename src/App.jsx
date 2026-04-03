@@ -1,16 +1,70 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from '@/lib/query-client';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+
+// Pages
+import SchoolPortal from './pages/SchoolPortal';
+import BackendLoginPage from './pages/BackendLogin';
+
+// Backend Layout + Pages
+import BackendLayout from './components/backend/BackendLayout';
+import Overview from './pages/backend/Overview';
+import Schools from './pages/backend/Schools';
+import SchoolDetail from './pages/backend/SchoolDetail';
+import SchoolAdmins from './pages/backend/SchoolAdmins';
+import BackendTeachers from './pages/backend/Teachers';
+import BackendStudents from './pages/backend/Students';
+import BackendClasses from './pages/backend/Classes';
+import AuditLogs from './pages/backend/AuditLogs';
+import SupportTools from './pages/backend/SupportTools';
+import BackendSettings from './pages/backend/BackendSettings';
+
+// School Admin Layout + Pages
+import SchoolLayout from './components/school/SchoolLayout';
+import AdminDashboard from './pages/school-admin/AdminDashboard';
+import AdminTeachers from './pages/school-admin/AdminTeachers';
+import AdminStudents from './pages/school-admin/AdminStudents';
+import AdminClasses from './pages/school-admin/AdminClasses';
+import AdminSubjects from './pages/school-admin/AdminSubjects';
+import AdminTimetable from './pages/school-admin/AdminTimetable';
+import AdminAssignments from './pages/school-admin/AdminAssignments';
+import AdminAnnouncements from './pages/school-admin/AdminAnnouncements';
+import AdminSettings from './pages/school-admin/AdminSettings';
+
+// Teacher Layout + Pages
+import TeacherLayout from './components/teacher/TeacherLayout';
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherTimetable from './pages/teacher/TeacherTimetable';
+import TeacherAssignments from './pages/teacher/TeacherAssignments';
+import TeacherGrades from './pages/teacher/TeacherGrades';
+import TeacherMaterials from './pages/teacher/TeacherMaterials';
+import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
+
+// Student Layout + Pages
+import StudentLayout from './components/student/StudentLayout';
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentTimetable from './pages/student/StudentTimetable';
+import StudentAssignments from './pages/student/StudentAssignments';
+import StudentGrades from './pages/student/StudentGrades';
+import StudentMaterials from './pages/student/StudentMaterials';
+import StudentAnnouncements from './pages/student/StudentAnnouncements';
+
+// Parent Layout + Pages
+import ParentLayout from './components/parent/ParentLayout';
+import ParentDashboard from './pages/parent/ParentDashboard';
+import ParentTimetable from './pages/parent/ParentTimetable';
+import ParentAssignments from './pages/parent/ParentAssignments';
+import ParentGrades from './pages/parent/ParentGrades';
+import ParentAnnouncements from './pages/parent/ParentAnnouncements';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -19,29 +73,83 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
   }
 
-  // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      {/* Public */}
+      <Route path="/" element={<SchoolPortal />} />
+      <Route path="/sp-backend" element={<BackendLoginPage />} />
+
+      {/* Backend Super Admin */}
+      <Route path="/backend" element={<BackendLayout />}>
+        <Route index element={<Overview />} />
+        <Route path="schools" element={<Schools />} />
+        <Route path="schools/:schoolId" element={<SchoolDetail />} />
+        <Route path="school-admins" element={<SchoolAdmins />} />
+        <Route path="teachers" element={<BackendTeachers />} />
+        <Route path="students" element={<BackendStudents />} />
+        <Route path="classes" element={<BackendClasses />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="support" element={<SupportTools />} />
+        <Route path="settings" element={<BackendSettings />} />
+      </Route>
+
+      {/* School Admin */}
+      <Route path="/school-admin" element={<SchoolLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="teachers" element={<AdminTeachers />} />
+        <Route path="students" element={<AdminStudents />} />
+        <Route path="classes" element={<AdminClasses />} />
+        <Route path="subjects" element={<AdminSubjects />} />
+        <Route path="timetable" element={<AdminTimetable />} />
+        <Route path="assignments" element={<AdminAssignments />} />
+        <Route path="announcements" element={<AdminAnnouncements />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
+
+      {/* Teacher */}
+      <Route path="/teacher" element={<TeacherLayout />}>
+        <Route index element={<TeacherDashboard />} />
+        <Route path="timetable" element={<TeacherTimetable />} />
+        <Route path="assignments" element={<TeacherAssignments />} />
+        <Route path="grades" element={<TeacherGrades />} />
+        <Route path="materials" element={<TeacherMaterials />} />
+        <Route path="announcements" element={<TeacherAnnouncements />} />
+      </Route>
+
+      {/* Student */}
+      <Route path="/student" element={<StudentLayout />}>
+        <Route index element={<StudentDashboard />} />
+        <Route path="timetable" element={<StudentTimetable />} />
+        <Route path="assignments" element={<StudentAssignments />} />
+        <Route path="grades" element={<StudentGrades />} />
+        <Route path="materials" element={<StudentMaterials />} />
+        <Route path="announcements" element={<StudentAnnouncements />} />
+      </Route>
+
+      {/* Parent */}
+      <Route path="/parent" element={<ParentLayout />}>
+        <Route index element={<ParentDashboard />} />
+        <Route path="timetable" element={<ParentTimetable />} />
+        <Route path="assignments" element={<ParentAssignments />} />
+        <Route path="grades" element={<ParentGrades />} />
+        <Route path="announcements" element={<ParentAnnouncements />} />
+      </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -49,9 +157,10 @@ function App() {
           <AuthenticatedApp />
         </Router>
         <Toaster />
+        <SonnerToaster position="top-right" richColors />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;

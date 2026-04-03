@@ -1,0 +1,46 @@
+{
+  "name": "Announcement",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "targetRole": {
+      "type": "string",
+      "enum": [
+        "all",
+        "admin",
+        "teacher",
+        "student",
+        "parent"
+      ]
+    },
+    "targetClassId": {
+      "type": "string"
+    },
+    "authorId": {
+      "type": "string"
+    },
+    "authorName": {
+      "type": "string"
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "schoolId",
+    "title",
+    "message"
+  ]
+}
