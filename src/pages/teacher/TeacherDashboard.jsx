@@ -26,11 +26,13 @@ export default function TeacherDashboard() {
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
+  const assignments = user?.teachingAssignments || [];
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Welcome, {user?.fullName}</h1>
       <p className="text-muted-foreground mb-6">{user?.schoolName}</p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: "Timetable Entries", value: stats.timetable, icon: Calendar, color: "text-blue-600 bg-blue-100" },
           { label: "Assignments", value: stats.assignments, icon: FileText, color: "text-emerald-600 bg-emerald-100" },
@@ -44,6 +46,20 @@ export default function TeacherDashboard() {
           </Card>
         ))}
       </div>
+      {assignments.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">My Teaching Assignments</h2>
+          <div className="flex flex-wrap gap-2">
+            {assignments.map((a, i) => (
+              <div key={i} className="flex items-center gap-2 bg-secondary/60 rounded-lg px-3 py-2 text-sm">
+                <span className="font-medium">{a.subjectName}</span>
+                <span className="text-muted-foreground">→</span>
+                <span>{a.className}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,11 +17,25 @@
     "categoryId": {
       "type": "string"
     },
+    "categoryName": {
+      "type": "string"
+    },
+    "applicableClasses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of class IDs this subject applies to"
+    },
     "educationLevel": {
       "type": "string"
     },
     "academicTrack": {
       "type": "string"
+    },
+    "isCompulsory": {
+      "type": "boolean",
+      "default": false
     },
     "isArchived": {
       "type": "boolean",

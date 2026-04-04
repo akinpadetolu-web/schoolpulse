@@ -32,8 +32,12 @@ export default function TeacherAssignments() {
         base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
       ]);
       setAssignments(a || []);
-      setClasses(c || []);
-      setSubjects(s || []);
+      // Filter to only classes/subjects the teacher is assigned to
+      const teachingAssignments = user?.teachingAssignments || [];
+      const assignedClassIds = [...new Set(teachingAssignments.map(ta => ta.classId))];
+      const assignedSubjectIds = [...new Set(teachingAssignments.map(ta => ta.subjectId))];
+      setClasses(assignedClassIds.length > 0 ? (c || []).filter(cl => assignedClassIds.includes(cl.id)) : (c || []));
+      setSubjects(assignedSubjectIds.length > 0 ? (s || []).filter(sub => assignedSubjectIds.includes(sub.id)) : (s || []));
     } catch { /* ignore */ }
     setLoading(false);
   }
@@ -99,7 +103,7 @@ export default function TeacherAssignments() {
             <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
             <div className="space-y-2"><Label>Class</Label>
-              <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v })}>
+              <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v, subjectId: "" })}>
                 <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                 <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
               </Select>
@@ -107,7 +111,9 @@ export default function TeacherAssignments() {
             <div className="space-y-2"><Label>Subject</Label>
               <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
                 <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {subjects.filter(s => !form.classId || (s.applicableClasses || []).includes(form.classId) || (user?.teachingAssignments || []).some(ta => ta.subjectId === s.id && ta.classId === form.classId)).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
