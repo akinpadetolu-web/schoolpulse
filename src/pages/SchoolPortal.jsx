@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function SchoolPortal() {
 
   // Parent signup state
   const [signupSchool, setSignupSchool] = useState("");
-  const [signupLinkCode, setSignupLinkCode] = useState("");
+  const [signupLinkCodes, setSignupLinkCodes] = useState([""]);
   const [signupFullName, setSignupFullName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -89,20 +89,27 @@ export default function SchoolPortal() {
     e.preventDefault();
     setSignupError("");
     if (!signupSchool) return setSignupError("Please select a school");
-    if (!signupLinkCode.trim()) return setSignupError("Please enter the student link code");
+    const trimmedCodes = signupLinkCodes.map(c => c.trim()).filter(Boolean);
+    if (trimmedCodes.length === 0) return setSignupError("Please enter at least one student link code");
     if (!signupFullName.trim()) return setSignupError("Please enter your full name");
     if (!signupEmail.trim()) return setSignupError("Please enter your email address");
     if (signupPassword.length < 6) return setSignupError("Password must be at least 6 characters");
     if (signupPassword !== signupConfirm) return setSignupError("Passwords do not match");
 
     setSignupLoading(true);
-    // Find students in this school with the matching parentLinkCode
+    // Find students matching all provided codes
     const students = await base44.entities.SchoolUser.filter({ schoolId: signupSchool, role: 'student', isArchived: false });
-    const linked = (students || []).filter(s => s.parentLinkCode === signupLinkCode.trim());
+    const linked = (students || []).filter(s => trimmedCodes.includes(s.parentLinkCode));
 
     if (linked.length === 0) {
       setSignupLoading(false);
-      return setSignupError("No student found with that link code. Please check the code or contact the school.");
+      return setSignupError("No students found with those link codes. Please check and try again.");
+    }
+    if (linked.length !== trimmedCodes.length) {
+      const foundCodes = linked.map(s => s.parentLinkCode);
+      const notFound = trimmedCodes.filter(c => !foundCodes.includes(c));
+      setSignupLoading(false);
+      return setSignupError(`Code(s) not found: ${notFound.join(", ")}. Please verify them with the school.`);
     }
 
     // Check email not already taken by a parent in this school
@@ -231,13 +238,31 @@ export default function SchoolPortal() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Student Link Code</Label>
-                      <Input
-                        value={signupLinkCode}
-                        onChange={e => setSignupLinkCode(e.target.value)}
-                        placeholder="e.g. ABC12345 (from school)"
-                      />
-                      <p className="text-xs text-muted-foreground">This code links your account to your child. Contact the school if you don't have it.</p>
+                      <Label>Student Link Code(s) <span className="text-muted-foreground font-normal">(up to 4 children)</span></Label>
+                      {signupLinkCodes.map((code, i) => (
+                        <div key={i} className="flex gap-2">
+                          <Input
+                            value={code}
+                            onChange={e => {
+                              const updated = [...signupLinkCodes];
+                              updated[i] = e.target.value;
+                              setSignupLinkCodes(updated);
+                            }}
+                            placeholder={`Child ${i + 1} link code`}
+                          />
+                          {signupLinkCodes.length > 1 && (
+                            <Button type="button" variant="ghost" size="icon" onClick={() => setSignupLinkCodes(signupLinkCodes.filter((_, j) => j !== i))}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {signupLinkCodes.length < 4 && (
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setSignupLinkCodes([...signupLinkCodes, ""])}>
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Add Another Child
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">Each code links your account to a child. Contact the school if you don't have it.</p>
                     </div>
 
                     <div className="space-y-2">

@@ -47,19 +47,26 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
         isArchived: false,
       };
 
-      if (role === "student" && selectedClass) {
-        userData.classId = selectedClass.id;
-        userData.className = selectedClass.className;
-        userData.baseLevel = selectedClass.baseLevel || "";
-        userData.subsetName = selectedClass.subsetName || "";
-        userData.educationLevel = selectedClass.educationLevel || "";
-        userData.academicTrack = selectedClass.academicTrack || "";
+      let parentLinkCode = "";
+      if (role === "student") {
+        // Generate a unique 8-char alphanumeric link code
+        parentLinkCode = Math.random().toString(36).substring(2, 6).toUpperCase() +
+                         Math.random().toString(36).substring(2, 6).toUpperCase();
+        userData.parentLinkCode = parentLinkCode;
+        if (selectedClass) {
+          userData.classId = selectedClass.id;
+          userData.className = selectedClass.className;
+          userData.baseLevel = selectedClass.baseLevel || "";
+          userData.subsetName = selectedClass.subsetName || "";
+          userData.educationLevel = selectedClass.educationLevel || "";
+          userData.academicTrack = selectedClass.academicTrack || "";
+        }
       }
 
       await base44.entities.SchoolUser.create(userData);
       await logAudit({ schoolId: school.id, schoolName: school.schoolName, action: `${role}_created`, entityType: "SchoolUser", performedBy: "superAdmin", performedByName: "Super Admin", details: `${roleLabel} "${form.fullName}" created` });
 
-      setCredentials({ username, password: tempPassword });
+      setCredentials({ username, password: tempPassword, parentLinkCode });
       setStep("done");
     } catch (err) {
       console.error(err);
@@ -69,7 +76,8 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
 
   function handleCopy() {
     if (!credentials) return;
-    navigator.clipboard.writeText(`Username: ${credentials.username}\nPassword: ${credentials.password}`);
+    const linkLine = credentials.parentLinkCode ? `\nParent Link Code: ${credentials.parentLinkCode}` : "";
+    navigator.clipboard.writeText(`Username: ${credentials.username}\nPassword: ${credentials.password}${linkLine}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -126,6 +134,13 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
               <div className="space-y-2 text-sm">
                 <div><span className="text-muted-foreground">Username:</span> <strong>{credentials.username}</strong></div>
                 <div><span className="text-muted-foreground">Password:</span> <strong>{credentials.password}</strong></div>
+                {credentials.parentLinkCode && (
+                  <div className="mt-2 pt-2 border-t border-emerald-200">
+                    <span className="text-muted-foreground">Parent Link Code:</span>{" "}
+                    <strong className="text-lg tracking-widest">{credentials.parentLinkCode}</strong>
+                    <p className="text-xs text-muted-foreground mt-0.5">Share this code with the student's parent to link their account.</p>
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-xs text-muted-foreground">Save these credentials — the password won't be shown again.</p>
