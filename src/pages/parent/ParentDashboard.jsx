@@ -68,24 +68,32 @@ export default function ParentDashboard() {
     setLoading(true);
     const ids = linkedIds || user?.linkedStudentIds || [];
     if (ids.length > 0) {
-      const [allStudents, att, allAssignments, allTimetable, allGrades] = await Promise.all([
-        base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
-        base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
-        base44.entities.Assignment.filter({ schoolId: user?.schoolId }),
-        base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId }),
-        base44.entities.Grade.filter({ schoolId: user?.schoolId }),
-      ]);
-      setChildren((allStudents || []).filter(s => ids.includes(s.id)));
-      setAttendance((att || []).filter(a => ids.includes(a.studentId)));
-      setAssignments((allAssignments || []).filter(a => ids.some(id => {
-        const child = (allStudents || []).find(s => s.id === id);
-        return a.classId === child?.classId;
-      })));
-      setTimetable((allTimetable || []).filter(t => ids.some(id => {
-        const child = (allStudents || []).find(s => s.id === id);
-        return t.classId === child?.classId;
-      })));
-      setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
+      try {
+        // Fetch students first
+        const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
+        const linkedStudents = (allStudents || []).filter(s => ids.includes(s.id));
+        setChildren(linkedStudents);
+
+        // Then fetch related data in batches to avoid rate limit
+        const [att, allGrades] = await Promise.all([
+          base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
+          base44.entities.Grade.filter({ schoolId: user?.schoolId }),
+        ]);
+        
+        setAttendance((att || []).filter(a => ids.includes(a.studentId)));
+        setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
+
+        // Fetch assignments and timetable
+        const [allAssignments, allTimetable] = await Promise.all([
+          base44.entities.Assignment.filter({ schoolId: user?.schoolId }),
+          base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId }),
+        ]);
+
+        setAssignments((allAssignments || []).filter(a => linkedStudents.some(child => a.classId === child?.classId)));
+        setTimetable((allTimetable || []).filter(t => linkedStudents.some(child => t.classId === child?.classId)));
+      } catch (error) {
+        console.error('Failed to load parent dashboard data:', error);
+      }
     }
     setLoading(false);
   }
