@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award } from 'lucide-react';
+import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
@@ -164,6 +165,9 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Calendar */}
+      <DashboardCalendar />
 
       {/* Charts + Pending list */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

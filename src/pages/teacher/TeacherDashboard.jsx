@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
+import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 export default function TeacherDashboard() {
   const user = getCurrentUser();
@@ -49,7 +50,7 @@ export default function TeacherDashboard() {
       {assignments.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">My Teaching Assignments</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-6">
             {assignments.map((a, i) => (
               <div key={i} className="flex items-center gap-2 bg-secondary/60 rounded-lg px-3 py-2 text-sm">
                 <span className="font-medium">{a.subjectName}</span>
@@ -60,6 +61,7 @@ export default function TeacherDashboard() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
+      <DashboardCalendar />
+      </div>
+      );
+      }
