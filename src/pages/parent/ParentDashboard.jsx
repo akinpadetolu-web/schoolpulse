@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getCurrentUser } from '@/lib/auth';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCircle, BookOpen, Calendar, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { setCurrentUser } from '@/lib/auth';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -46,7 +45,7 @@ function AttendanceBar({ present, absent, late, excused }) {
 }
 
 export default function ParentDashboard() {
-  const user = getCurrentUser();
+  const { user } = useAuth();
   const [children, setChildren] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -217,9 +216,8 @@ export default function ParentDashboard() {
       const newLinked = [...currentLinked, student.id];
       await base44.auth.updateMe({ linkedStudentIds: newLinked });
 
-      // Update current user in session
-      const updatedUser = await base44.auth.me();
-      setCurrentUser(updatedUser);
+      // Updated user will trigger useEffect via user.linkedStudentIds change
+      await base44.auth.me();
       toast.success(`${student.fullName} linked successfully!`);
       setLinkCode('');
       setShowAddChild(false);
