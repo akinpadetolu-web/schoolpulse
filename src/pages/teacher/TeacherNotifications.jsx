@@ -33,24 +33,30 @@ export default function TeacherNotifications() {
   async function loadData() {
     setLoading(true);
     try {
-      // Get teacher's assigned classes
-      const allClasses = await base44.entities.SchoolClass.filter({ schoolId: user?.schoolId });
-      const teacherClasses = (allClasses || []).filter(c =>
-        user?.assignedClasses?.includes(c.id)
-      );
-      setClasses(teacherClasses);
-
-      // Auto-select first assigned class
-      if (teacherClasses.length > 0) {
-        setSelectedClass(teacherClasses[0].id);
+      // Get teacher's assigned classes from teaching assignments
+      const classIds = [...new Set((user?.teachingAssignments || []).map(t => t.classId).filter(Boolean))];
+      if (classIds.length > 0) {
+        const allClasses = await base44.entities.SchoolClass.filter({ schoolId: user?.schoolId });
+        const teacherClasses = (allClasses || []).filter(c => classIds.includes(c.id));
+        setClasses(teacherClasses);
+        
+        // Auto-select first assigned class
+        if (teacherClasses.length > 0) {
+          setSelectedClass(teacherClasses[0].id);
+        }
+      } else {
+        setClasses([]);
       }
 
-      // Get teacher's assigned subjects
-      const allSubjects = await base44.entities.Subject.filter({ schoolId: user?.schoolId });
-      const teacherSubjects = (allSubjects || []).filter(s =>
-        user?.assignedSubjects?.includes(s.id)
-      );
-      setSubjects(teacherSubjects);
+      // Get teacher's assigned subjects from teaching assignments
+      const subjectIds = [...new Set((user?.teachingAssignments || []).map(t => t.subjectId).filter(Boolean))];
+      if (subjectIds.length > 0) {
+        const allSubjects = await base44.entities.Subject.filter({ schoolId: user?.schoolId });
+        const teacherSubjects = (allSubjects || []).filter(s => subjectIds.includes(s.id));
+        setSubjects(teacherSubjects);
+      } else {
+        setSubjects([]);
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       toast.error('Failed to load classes and subjects');
