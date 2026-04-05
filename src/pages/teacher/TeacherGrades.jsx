@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Loader2, Pencil, Trash2, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import TermAverages from '@/components/teacher/TermAverages';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -198,125 +200,139 @@ export default function TeacherGrades() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Grade</Button>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total Records</p>
-            <p className="text-2xl font-bold mt-1">{grades.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Filtered</p>
-            <p className="text-2xl font-bold mt-1">{filtered.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm col-span-2 sm:col-span-1">
-          <CardContent className="p-4 flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Avg Score</p>
-              <p className="text-2xl font-bold mt-0.5">{avgScore !== null ? `${avgScore}%` : "—"}</p>
+      <Tabs defaultValue="records">
+        <TabsList className="mb-5">
+          <TabsTrigger value="records">All Records</TabsTrigger>
+          <TabsTrigger value="averages">Term Averages</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="records">
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Total Records</p>
+                <p className="text-2xl font-bold mt-1">{grades.length}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Filtered</p>
+                <p className="text-2xl font-bold mt-1">{filtered.length}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm col-span-2 sm:col-span-1">
+              <CardContent className="p-4 flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Avg Score</p>
+                  <p className="text-2xl font-bold mt-0.5">{avgScore !== null ? `${avgScore}%` : "—"}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search student..." className="pl-8" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Select value={filterClass} onValueChange={setFilterClass}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="Class" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterSubject} onValueChange={setFilterSubject}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="Subject" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subjects</SelectItem>
+                {allSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterTerm} onValueChange={setFilterTerm}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="Term" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Terms</SelectItem>
+                {TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {ASSESSMENT_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search student..." className="pl-8" value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Class" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterSubject} onValueChange={setFilterSubject}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Subject" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Subjects</SelectItem>
-            {allSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterTerm} onValueChange={setFilterTerm}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Term" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Terms</SelectItem>
-            {TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Type" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {ASSESSMENT_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Table */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p>No grades recorded yet. Click "Add Grade" to get started.</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>%</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead>Comment</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(g => {
-                const p = pct(g.score, g.maxScore);
-                const { label, color } = gradeLabel(p);
-                return (
-                  <TableRow key={g.id}>
-                    <TableCell className="font-medium">{g.studentName}</TableCell>
-                    <TableCell>{g.subjectName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{g.term || "—"}</TableCell>
-                    <TableCell>
-                      <Badge className={`${TYPE_COLORS[g.assessmentType] || ""} border-0 capitalize`}>{g.assessmentType}</Badge>
-                    </TableCell>
-                    <TableCell>{g.score}/{g.maxScore}</TableCell>
-                    <TableCell>{p}%</TableCell>
-                    <TableCell><span className={`font-bold ${color}`}>{label}</span></TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">{g.comment || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <button onClick={() => openEdit(g)} className="p-1.5 hover:bg-muted rounded-md">
-                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => handleDelete(g)} className="p-1.5 hover:bg-destructive/10 rounded-md">
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </button>
-                      </div>
-                    </TableCell>
+          {/* Table */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p>No grades recorded yet. Click "Add Grade" to get started.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Term</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>%</TableHead>
+                    <TableHead>Grade</TableHead>
+                    <TableHead>Comment</TableHead>
+                    <TableHead className="w-16"></TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(g => {
+                    const p = pct(g.score, g.maxScore);
+                    const { label, color } = gradeLabel(p);
+                    return (
+                      <TableRow key={g.id}>
+                        <TableCell className="font-medium">{g.studentName}</TableCell>
+                        <TableCell>{g.subjectName}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{g.term || "—"}</TableCell>
+                        <TableCell>
+                          <Badge className={`${TYPE_COLORS[g.assessmentType] || ""} border-0 capitalize`}>{g.assessmentType}</Badge>
+                        </TableCell>
+                        <TableCell>{g.score}/{g.maxScore}</TableCell>
+                        <TableCell>{p}%</TableCell>
+                        <TableCell><span className={`font-bold ${color}`}>{label}</span></TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">{g.comment || "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <button onClick={() => openEdit(g)} className="p-1.5 hover:bg-muted rounded-md">
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                            <button onClick={() => handleDelete(g)} className="p-1.5 hover:bg-destructive/10 rounded-md">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="averages">
+          <TermAverages grades={grades} classes={classes} subjects={allSubjects} />
+        </TabsContent>
+      </Tabs>
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
+
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editingGrade ? "Edit Grade" : "Add Grade"}</DialogTitle>
