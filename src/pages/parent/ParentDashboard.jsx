@@ -145,7 +145,7 @@ export default function ParentDashboard() {
         setLoadingAssignments(false);
         return;
       }
-      const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
+      const linkedStudents = (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
       const classIds = [...new Set(linkedStudents.map(s => s.classId).filter(Boolean))];
       if (classIds.length === 0) {
         setAssignments([]);
@@ -174,7 +174,7 @@ export default function ParentDashboard() {
         setLoadingTimetable(false);
         return;
       }
-      const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
+      const linkedStudents = (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
       const classIds = [...new Set(linkedStudents.map(s => s.classId).filter(Boolean))];
       if (classIds.length === 0) {
         setTimetable([]);
