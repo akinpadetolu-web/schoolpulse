@@ -96,16 +96,16 @@ export default function ParentDashboard() {
   async function loadAttendanceData(ids) {
     setLoadingAttendance(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
       if (ids.length === 0) {
         setAttendance([]);
+        setLoadingAttendance(false);
         return;
       }
-      const allAtt = [];
-      for (const studentId of ids) {
-        const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId, studentId });
-        if (att) allAtt.push(...att);
-      }
+      const promises = ids.map(studentId => 
+        base44.entities.Attendance.filter({ schoolId: user?.schoolId, studentId }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      const allAtt = results.flat().filter(Boolean);
       setAttendance(allAtt);
     } catch (error) {
       console.error('Failed to load attendance:', error);
@@ -118,16 +118,16 @@ export default function ParentDashboard() {
   async function loadGradesData(ids) {
     setLoadingGrades(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1600));
       if (ids.length === 0) {
         setGrades([]);
+        setLoadingGrades(false);
         return;
       }
-      const allGrades = [];
-      for (const studentId of ids) {
-        const grades = await base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId });
-        if (grades) allGrades.push(...grades);
-      }
+      const promises = ids.map(studentId => 
+        base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      const allGrades = results.flat().filter(Boolean);
       setGrades(allGrades);
     } catch (error) {
       console.error('Failed to load grades:', error);
@@ -140,22 +140,23 @@ export default function ParentDashboard() {
   async function loadAssignmentsData(ids) {
     setLoadingAssignments(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2400));
       if (ids.length === 0) {
         setAssignments([]);
+        setLoadingAssignments(false);
         return;
       }
       const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
-      const classIds = linkedStudents.map(s => s.classId).filter(Boolean);
+      const classIds = [...new Set(linkedStudents.map(s => s.classId).filter(Boolean))];
       if (classIds.length === 0) {
         setAssignments([]);
+        setLoadingAssignments(false);
         return;
       }
-      const allAssignments = [];
-      for (const classId of classIds) {
-        const assignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId });
-        if (assignments) allAssignments.push(...assignments);
-      }
+      const promises = classIds.map(classId => 
+        base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      const allAssignments = results.flat().filter(Boolean);
       setAssignments(allAssignments);
     } catch (error) {
       console.error('Failed to load assignments:', error);
@@ -168,22 +169,23 @@ export default function ParentDashboard() {
   async function loadTimetableData(ids) {
     setLoadingTimetable(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 3200));
       if (ids.length === 0) {
         setTimetable([]);
+        setLoadingTimetable(false);
         return;
       }
       const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
-      const classIds = linkedStudents.map(s => s.classId).filter(Boolean);
+      const classIds = [...new Set(linkedStudents.map(s => s.classId).filter(Boolean))];
       if (classIds.length === 0) {
         setTimetable([]);
+        setLoadingTimetable(false);
         return;
       }
-      const allTimetable = [];
-      for (const classId of classIds) {
-        const entries = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId });
-        if (entries) allTimetable.push(...entries);
-      }
+      const promises = classIds.map(classId => 
+        base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      const allTimetable = results.flat().filter(Boolean);
       setTimetable(allTimetable);
     } catch (error) {
       console.error('Failed to load timetable:', error);
@@ -225,10 +227,12 @@ export default function ParentDashboard() {
       setShowAddChild(false);
       
       // Fetch detailed data for the newly linked child
-      loadAttendanceData(newLinked);
-      loadGradesData(newLinked);
-      loadAssignmentsData(newLinked);
-      loadTimetableData(newLinked);
+      await Promise.all([
+        loadAttendanceData(newLinked),
+        loadGradesData(newLinked),
+        loadAssignmentsData(newLinked),
+        loadTimetableData(newLinked)
+      ]);
     } catch (error) {
       console.error('Error linking child:', error);
       toast.error('Failed to link child. Please try again.');
