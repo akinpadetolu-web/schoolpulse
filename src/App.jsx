@@ -59,6 +59,7 @@ import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import TeacherNotifications from './pages/teacher/TeacherNotifications';
+import TeacherProgressDashboard from './pages/teacher/TeacherProgressDashboard';
 import SchoolCalendar from './pages/shared/SchoolCalendar';
 import PerformanceDashboard from './pages/shared/PerformanceDashboard';
 
@@ -159,6 +160,7 @@ const AuthenticatedApp = () => {
         <Route path="submissions" element={<TeacherSubmissions />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
         <Route path="notifications" element={<TeacherNotifications />} />
+        <Route path="progress" element={<TeacherProgressDashboard />} />
         <Route path="calendar" element={<SchoolCalendar />} />
         <Route path="performance" element={<PerformanceDashboard />} />
       </Route>
