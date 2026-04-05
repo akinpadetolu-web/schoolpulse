@@ -53,6 +53,10 @@ export default function ParentDashboard() {
   const [timetable, setTimetable] = useState([]);
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [loadingTimetable, setLoadingTimetable] = useState(false);
   const [showAddChild, setShowAddChild] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linking, setLinking] = useState(false);
@@ -74,28 +78,77 @@ export default function ParentDashboard() {
         const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
         const linkedStudents = (allStudents || []).filter(s => ids.includes(s.id));
         setChildren(linkedStudents);
-
-        // Add longer delays and fetch one at a time
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId });
-        setAttendance((att || []).filter(a => ids.includes(a.studentId)));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const allGrades = await base44.entities.Grade.filter({ schoolId: user?.schoolId });
-        setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const allAssignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId });
-        setAssignments((allAssignments || []).filter(a => linkedStudents.some(child => a.classId === child?.classId)));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const allTimetable = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId });
-        setTimetable((allTimetable || []).filter(t => linkedStudents.some(child => t.classId === child?.classId)));
       } catch (error) {
-        console.error('Failed to load parent dashboard data:', error);
+        console.error('Failed to load students:', error);
       }
     }
     setLoading(false);
+
+    // Fetch detailed data with individual error handling and delays
+    if (ids.length > 0) {
+      loadAttendanceData(ids);
+      loadGradesData(ids);
+      loadAssignmentsData(ids);
+      loadTimetableData(ids);
+    }
+  }
+
+  async function loadAttendanceData(ids) {
+    setLoadingAttendance(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId });
+      setAttendance((att || []).filter(a => ids.includes(a.studentId)));
+    } catch (error) {
+      console.error('Failed to load attendance:', error);
+      setAttendance([]);
+    } finally {
+      setLoadingAttendance(false);
+    }
+  }
+
+  async function loadGradesData(ids) {
+    setLoadingGrades(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1600));
+      const allGrades = await base44.entities.Grade.filter({ schoolId: user?.schoolId });
+      setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
+    } catch (error) {
+      console.error('Failed to load grades:', error);
+      setGrades([]);
+    } finally {
+      setLoadingGrades(false);
+    }
+  }
+
+  async function loadAssignmentsData(ids) {
+    setLoadingAssignments(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2400));
+      const allAssignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId });
+      const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
+      setAssignments((allAssignments || []).filter(a => linkedStudents.some(child => a.classId === child?.classId)));
+    } catch (error) {
+      console.error('Failed to load assignments:', error);
+      setAssignments([]);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  }
+
+  async function loadTimetableData(ids) {
+    setLoadingTimetable(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 3200));
+      const allTimetable = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId });
+      const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
+      setTimetable((allTimetable || []).filter(t => linkedStudents.some(child => t.classId === child?.classId)));
+    } catch (error) {
+      console.error('Failed to load timetable:', error);
+      setTimetable([]);
+    } finally {
+      setLoadingTimetable(false);
+    }
   }
 
   async function handleAddChild(e) {
@@ -118,12 +171,22 @@ export default function ParentDashboard() {
       }
       const newLinked = [...currentLinked, student.id];
       await base44.auth.updateMe({ linkedStudentIds: newLinked });
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to avoid rate limit
+      
+      // Optimistically add the new child to the UI immediately
+      setChildren(prev => [...prev, student]);
+      
+      await new Promise(resolve => setTimeout(resolve, 500)); // Delay before fetching user update
       const updatedUser = await base44.auth.me();
       setCurrentUser(updatedUser);
       toast.success(`${student.fullName} linked successfully!`);
       setLinkCode('');
       setShowAddChild(false);
+      
+      // Fetch detailed data for the newly linked child
+      loadAttendanceData(newLinked);
+      loadGradesData(newLinked);
+      loadAssignmentsData(newLinked);
+      loadTimetableData(newLinked);
     } catch (error) {
       console.error('Error linking child:', error);
       toast.error('Failed to link child. Please try again.');
@@ -206,11 +269,21 @@ export default function ParentDashboard() {
                       </TabsList>
                       
                       <TabsContent value="attendance" className="space-y-3 mt-4">
-                        <AttendanceBar {...att} />
+                        {loadingAttendance ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading attendance...
+                          </div>
+                        ) : (
+                          <AttendanceBar {...att} />
+                        )}
                       </TabsContent>
                       
                       <TabsContent value="assignments" className="space-y-3 mt-4">
-                        {childAssignments.length === 0 ? (
+                        {loadingAssignments ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading assignments...
+                          </div>
+                        ) : childAssignments.length === 0 ? (
                           <p className="text-sm text-muted-foreground">No assignments assigned</p>
                         ) : (
                           <div className="space-y-2">
@@ -229,7 +302,11 @@ export default function ParentDashboard() {
                       </TabsContent>
                       
                       <TabsContent value="timetable" className="space-y-3 mt-4">
-                        {childTimetable.length === 0 ? (
+                        {loadingTimetable ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading timetable...
+                          </div>
+                        ) : childTimetable.length === 0 ? (
                           <p className="text-sm text-muted-foreground">No timetable entries</p>
                         ) : (
                           <div className="space-y-2">
@@ -248,7 +325,11 @@ export default function ParentDashboard() {
                       </TabsContent>
                       
                       <TabsContent value="grades" className="space-y-3 mt-4">
-                        {childGrades.length === 0 ? (
+                        {loadingGrades ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading grades...
+                          </div>
+                        ) : childGrades.length === 0 ? (
                           <p className="text-sm text-muted-foreground">No grades recorded</p>
                         ) : (
                           <div className="space-y-2">
