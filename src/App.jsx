@@ -55,6 +55,7 @@ import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 import SchoolCalendar from './pages/shared/SchoolCalendar';
+import PerformanceDashboard from './pages/shared/PerformanceDashboard';
 
 // Student Layout + Pages
 import StudentLayout from './components/student/StudentLayout';
@@ -132,6 +133,7 @@ const AuthenticatedApp = () => {
         <Route path="student-reports" element={<AdminStudentReports />} />
         <Route path="announcements" element={<AdminAnnouncements />} />
         <Route path="calendar" element={<SchoolCalendar />} />
+        <Route path="performance" element={<PerformanceDashboard />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
@@ -148,6 +150,7 @@ const AuthenticatedApp = () => {
         <Route path="submissions" element={<TeacherSubmissions />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
         <Route path="calendar" element={<SchoolCalendar />} />
+        <Route path="performance" element={<PerformanceDashboard />} />
       </Route>
 
       {/* Student */}

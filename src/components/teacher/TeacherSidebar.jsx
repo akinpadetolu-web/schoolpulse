@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { label: "Lesson Plans", path: "/teacher/lesson-plans", icon: NotebookPen },
   { label: "Announcements", path: "/teacher/announcements", icon: Megaphone },
   { label: "Calendar", path: "/teacher/calendar", icon: CalendarDays },
+  { label: "Performance", path: "/teacher/performance", icon: TrendingUp },
 ];
 
 export default function TeacherSidebar({ isOpen, onClose }) {
