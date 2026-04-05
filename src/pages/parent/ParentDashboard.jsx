@@ -61,8 +61,8 @@ export default function ParentDashboard() {
   useEffect(() => {
     const linkedIds = user?.linkedStudentIds || [];
     if (linkedIds.length === 0) setShowAddChild(true);
-    load();
-  }, []);
+    load(linkedIds);
+  }, [user?.linkedStudentIds]);
 
   async function load(linkedIds) {
     setLoading(true);
@@ -106,14 +106,11 @@ export default function ParentDashboard() {
     }
     const newLinked = [...currentLinked, student.id];
     await base44.auth.updateMe({ linkedStudentIds: newLinked });
-    // Refresh the user context to get the updated linkedStudentIds
     const updatedUser = await base44.auth.me();
     setCurrentUser(updatedUser);
     toast.success(`${student.fullName} linked successfully!`);
     setLinkCode('');
     setShowAddChild(false);
-    // Refresh children list with updated linked IDs
-    await load(updatedUser?.linkedStudentIds || newLinked);
   }
 
   const attendanceByStudent = useMemo(() => {
