@@ -1,0 +1,87 @@
+{
+  "name": "LessonPlan",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lesson date YYYY-MM-DD"
+    },
+    "objectives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Learning objectives / goals"
+    },
+    "activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Planned activities with descriptions and durations"
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required resources / materials"
+    },
+    "homework": {
+      "type": "string",
+      "description": "Homework or follow-up task"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Teacher private notes"
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false,
+      "description": "Visible to students when true"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "title",
+    "date"
+  ]
+}

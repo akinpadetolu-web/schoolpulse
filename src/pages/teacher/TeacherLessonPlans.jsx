@@ -1,0 +1,384 @@
+import React, { useState, useEffect } from 'react';
+import { getCurrentUser } from '@/lib/auth';
+import { base44 } from '@/api/base44Client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+
+const EMPTY_PLAN = {
+  title: "", date: "", classId: "", subjectId: "",
+  objectives: [""], activities: [{ title: "", description: "", durationMinutes: "" }],
+  resources: [""], homework: "", notes: "", isPublished: false,
+};
+
+export default function TeacherLessonPlans() {
+  const user = getCurrentUser();
+  const [plans, setPlans] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+  const [filterClassId, setFilterClassId] = useState("all");
+  const [form, setForm] = useState(EMPTY_PLAN);
+
+  useEffect(() => { loadData(); }, []);
+
+  async function loadData() {
+    const [p, c, s] = await Promise.all([
+      base44.entities.LessonPlan.filter({ schoolId: user?.schoolId, teacherId: user?.id }),
+      base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
+      base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
+    ]);
+    setPlans((p || []).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
+    // Restrict to teacher's assigned classes/subjects
+    const ta = user?.teachingAssignments || [];
+    const assignedClassIds = ta.length ? [...new Set(ta.map(t => t.classId))] : null;
+    const assignedSubjectIds = ta.length ? [...new Set(ta.map(t => t.subjectId))] : null;
+    setClasses(assignedClassIds ? (c || []).filter(cl => assignedClassIds.includes(cl.id)) : (c || []));
+    setSubjects(assignedSubjectIds ? (s || []).filter(sub => assignedSubjectIds.includes(sub.id)) : (s || []));
+    setLoading(false);
+  }
+
+  function openCreate() {
+    setEditingPlan(null);
+    setForm(EMPTY_PLAN);
+    setShowDialog(true);
+  }
+
+  function openEdit(plan) {
+    setEditingPlan(plan);
+    setForm({
+      title: plan.title || "",
+      date: plan.date || "",
+      classId: plan.classId || "",
+      subjectId: plan.subjectId || "",
+      objectives: plan.objectives?.length ? plan.objectives : [""],
+      activities: plan.activities?.length ? plan.activities : [{ title: "", description: "", durationMinutes: "" }],
+      resources: plan.resources?.length ? plan.resources : [""],
+      homework: plan.homework || "",
+      notes: plan.notes || "",
+      isPublished: plan.isPublished || false,
+    });
+    setShowDialog(true);
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (!form.title || !form.date || !form.classId || !form.subjectId) return toast.error("Title, date, class, and subject are required");
+    setSaving(true);
+    const cls = classes.find(c => c.id === form.classId);
+    const subj = subjects.find(s => s.id === form.subjectId);
+    const payload = {
+      schoolId: user.schoolId, teacherId: user.id, teacherName: user.fullName,
+      classId: form.classId, className: cls?.className || "",
+      subjectId: form.subjectId, subjectName: subj?.name || "",
+      title: form.title, date: form.date,
+      objectives: form.objectives.filter(o => o.trim()),
+      activities: form.activities.filter(a => a.title.trim()),
+      resources: form.resources.filter(r => r.trim()),
+      homework: form.homework, notes: form.notes,
+      isPublished: form.isPublished,
+    };
+    if (editingPlan) {
+      await base44.entities.LessonPlan.update(editingPlan.id, payload);
+      toast.success("Plan updated");
+    } else {
+      await base44.entities.LessonPlan.create(payload);
+      toast.success("Lesson plan created");
+    }
+    setShowDialog(false);
+    loadData();
+    setSaving(false);
+  }
+
+  async function handleDelete(plan) {
+    if (!window.confirm("Delete this lesson plan?")) return;
+    await base44.entities.LessonPlan.delete(plan.id);
+    toast.success("Deleted");
+    loadData();
+  }
+
+  async function togglePublish(plan) {
+    await base44.entities.LessonPlan.update(plan.id, { isPublished: !plan.isPublished });
+    toast.success(plan.isPublished ? "Hidden from students" : "Published to students");
+    loadData();
+  }
+
+  // Dynamic list helpers
+  const addObjective = () => setForm(f => ({ ...f, objectives: [...f.objectives, ""] }));
+  const removeObjective = (i) => setForm(f => ({ ...f, objectives: f.objectives.filter((_, j) => j !== i) }));
+  const setObjective = (i, v) => setForm(f => ({ ...f, objectives: f.objectives.map((o, j) => j === i ? v : o) }));
+
+  const addActivity = () => setForm(f => ({ ...f, activities: [...f.activities, { title: "", description: "", durationMinutes: "" }] }));
+  const removeActivity = (i) => setForm(f => ({ ...f, activities: f.activities.filter((_, j) => j !== i) }));
+  const setActivity = (i, field, v) => setForm(f => ({ ...f, activities: f.activities.map((a, j) => j === i ? { ...a, [field]: v } : a) }));
+
+  const addResource = () => setForm(f => ({ ...f, resources: [...f.resources, ""] }));
+  const removeResource = (i) => setForm(f => ({ ...f, resources: f.resources.filter((_, j) => j !== i) }));
+  const setResource = (i, v) => setForm(f => ({ ...f, resources: f.resources.map((r, j) => j === i ? v : r) }));
+
+  const subjectsForClass = form.classId
+    ? subjects.filter(s => (s.applicableClasses || []).includes(form.classId))
+    : subjects;
+
+  const filteredPlans = filterClassId === "all" ? plans : plans.filter(p => p.classId === filterClassId);
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Lesson Plans</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Plan daily objectives, activities and resources for each class</p>
+        </div>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> New Plan</Button>
+      </div>
+
+      {/* Filter */}
+      <div className="mb-4 max-w-xs">
+        <Select value={filterClassId} onValueChange={setFilterClassId}>
+          <SelectTrigger><SelectValue placeholder="All classes" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filteredPlans.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="py-16 text-center">
+            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+            <p className="text-muted-foreground">No lesson plans yet. Create your first one!</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {filteredPlans.map(plan => {
+            const isExpanded = expandedId === plan.id;
+            const totalMins = (plan.activities || []).reduce((s, a) => s + (Number(a.durationMinutes) || 0), 0);
+            return (
+              <Card key={plan.id} className="border-0 shadow-sm">
+                <CardContent className="p-0">
+                  {/* Header row */}
+                  <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold">{plan.title}</p>
+                        <Badge variant={plan.isPublished ? "default" : "secondary"} className="text-xs">
+                          {plan.isPublished ? "Published" : "Draft"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {plan.subjectName} · {plan.className} · {plan.date ? format(new Date(plan.date), 'EEE, MMM d yyyy') : ''}
+                        {totalMins > 0 && <span className="ml-2">· {totalMins} min</span>}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={e => { e.stopPropagation(); togglePublish(plan); }}
+                        title={plan.isPublished ? "Hide from students" : "Publish to students"}>
+                        {plan.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={e => { e.stopPropagation(); openEdit(plan); }}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={e => { e.stopPropagation(); handleDelete(plan); }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <div className="border-t px-4 pb-4 pt-3 space-y-4">
+                      {plan.objectives?.filter(o => o).length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> Objectives</p>
+                          <ul className="space-y-1">
+                            {plan.objectives.filter(o => o).map((o, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                                {o}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.activities?.filter(a => a.title).length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Activities</p>
+                          <div className="space-y-2">
+                            {plan.activities.filter(a => a.title).map((a, i) => (
+                              <div key={i} className="flex gap-3 p-3 bg-secondary/40 rounded-lg">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-sm">{a.title}</span>
+                                    {a.durationMinutes && <span className="text-xs text-muted-foreground">{a.durationMinutes} min</span>}
+                                  </div>
+                                  {a.description && <p className="text-sm text-muted-foreground mt-0.5">{a.description}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {plan.resources?.filter(r => r).length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Resources</p>
+                          <div className="flex flex-wrap gap-2">
+                            {plan.resources.filter(r => r).map((r, i) => (
+                              <span key={i} className="text-xs px-2.5 py-1 bg-secondary rounded-full">{r}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {plan.homework && (
+                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                          <p className="text-xs font-semibold text-amber-700 mb-1">Homework / Follow-up</p>
+                          <p className="text-sm">{plan.homework}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingPlan ? "Edit Lesson Plan" : "New Lesson Plan"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-5">
+            {/* Basic info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2 sm:col-span-2"><Label>Title *</Label><Input placeholder="e.g. Introduction to Photosynthesis" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
+              <div className="space-y-2"><Label>Date *</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required /></div>
+              <div className="space-y-2"><Label>Class *</Label>
+                <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v, subjectId: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 sm:col-span-2"><Label>Subject *</Label>
+                <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                  <SelectContent>
+                    {subjectsForClass.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {subjectsForClass.length === 0 && <SelectItem value="_" disabled>No subjects for this class</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Objectives */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5"><Target className="w-4 h-4" /> Learning Objectives</Label>
+                <Button type="button" size="sm" variant="ghost" onClick={addObjective} className="text-xs h-7"><Plus className="w-3 h-3 mr-1" /> Add</Button>
+              </div>
+              <div className="space-y-2">
+                {form.objectives.map((o, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input placeholder={`Objective ${i + 1}`} value={o} onChange={e => setObjective(i, e.target.value)} />
+                    {form.objectives.length > 1 && (
+                      <Button type="button" size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => removeObjective(i)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Activities */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5"><Activity className="w-4 h-4" /> Activities</Label>
+                <Button type="button" size="sm" variant="ghost" onClick={addActivity} className="text-xs h-7"><Plus className="w-3 h-3 mr-1" /> Add</Button>
+              </div>
+              <div className="space-y-3">
+                {form.activities.map((a, i) => (
+                  <div key={i} className="border rounded-lg p-3 space-y-2 bg-secondary/20">
+                    <div className="flex gap-2">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0 mt-2">{i + 1}</div>
+                      <Input placeholder="Activity name" value={a.title} onChange={e => setActivity(i, 'title', e.target.value)} className="flex-1" />
+                      <Input type="number" placeholder="Min" value={a.durationMinutes} onChange={e => setActivity(i, 'durationMinutes', e.target.value)} className="w-20 flex-shrink-0" />
+                      {form.activities.length > 1 && (
+                        <Button type="button" size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => removeActivity(i)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      )}
+                    </div>
+                    <Textarea placeholder="Description (optional)" value={a.description} onChange={e => setActivity(i, 'description', e.target.value)} rows={2} className="text-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5"><Package className="w-4 h-4" /> Required Resources</Label>
+                <Button type="button" size="sm" variant="ghost" onClick={addResource} className="text-xs h-7"><Plus className="w-3 h-3 mr-1" /> Add</Button>
+              </div>
+              <div className="space-y-2">
+                {form.resources.map((r, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input placeholder={`Resource ${i + 1} (e.g. Textbook p.45, Projector, Worksheet)`} value={r} onChange={e => setResource(i, e.target.value)} />
+                    {form.resources.length > 1 && (
+                      <Button type="button" size="icon" variant="ghost" className="h-9 w-9 flex-shrink-0 text-muted-foreground" onClick={() => removeResource(i)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Homework */}
+            <div className="space-y-2">
+              <Label>Homework / Follow-up</Label>
+              <Textarea placeholder="Any homework or follow-up tasks for students..." value={form.homework} onChange={e => setForm({ ...form, homework: e.target.value })} rows={2} />
+            </div>
+
+            {/* Notes (private) */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Private Notes (not visible to students)</Label>
+              <Textarea placeholder="Your own notes, reminders, observations..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+
+            {/* Publish toggle */}
+            <div className="flex items-center gap-3 p-3 bg-secondary/40 rounded-lg">
+              <input type="checkbox" id="published" checked={form.isPublished} onChange={e => setForm({ ...form, isPublished: e.target.checked })} className="w-4 h-4 accent-primary" />
+              <label htmlFor="published" className="text-sm cursor-pointer">
+                <span className="font-medium">Publish to students</span>
+                <span className="text-muted-foreground ml-1">— students in this class can see this plan</span>
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1" disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {editingPlan ? "Update Plan" : "Save Plan"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

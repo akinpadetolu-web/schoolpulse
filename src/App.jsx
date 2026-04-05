@@ -48,6 +48,7 @@ import TeacherAssignments from './pages/teacher/TeacherAssignments';
 import TeacherGrades from './pages/teacher/TeacherGrades';
 import TeacherMaterials from './pages/teacher/TeacherMaterials';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
+import TeacherLessonPlans from './pages/teacher/TeacherLessonPlans';
 import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 
 // Student Layout + Pages
@@ -57,6 +58,7 @@ import StudentTimetable from './pages/student/StudentTimetable';
 import StudentAssignments from './pages/student/StudentAssignments';
 import StudentGrades from './pages/student/StudentGrades';
 import StudentMaterials from './pages/student/StudentMaterials';
+import StudentLessonPlans from './pages/student/StudentLessonPlans';
 import StudentAnnouncements from './pages/student/StudentAnnouncements';
 
 // Parent Layout + Pages
@@ -132,6 +134,7 @@ const AuthenticatedApp = () => {
         <Route path="grades" element={<TeacherGrades />} />
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="attendance" element={<TeacherAttendance />} />
+        <Route path="lesson-plans" element={<TeacherLessonPlans />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
       </Route>
 
@@ -142,6 +145,7 @@ const AuthenticatedApp = () => {
         <Route path="assignments" element={<StudentAssignments />} />
         <Route path="grades" element={<StudentGrades />} />
         <Route path="materials" element={<StudentMaterials />} />
+        <Route path="lesson-plans" element={<StudentLessonPlans />} />
         <Route path="announcements" element={<StudentAnnouncements />} />
       </Route>
 

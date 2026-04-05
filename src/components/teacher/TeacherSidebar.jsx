@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { label: "Grades", path: "/teacher/grades", icon: ClipboardList },
   { label: "Materials", path: "/teacher/materials", icon: BookOpen },
   { label: "Attendance", path: "/teacher/attendance", icon: UserCheck },
+  { label: "Lesson Plans", path: "/teacher/lesson-plans", icon: NotebookPen },
   { label: "Announcements", path: "/teacher/announcements", icon: Megaphone },
 ];
 
