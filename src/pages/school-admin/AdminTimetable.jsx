@@ -245,7 +245,7 @@ USER PROMPT: "${aiPrompt.trim()}"
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: systemContext,
-      model: "claude_sonnet_4_6",
+      model: "gemini_3_1_pro",
       response_json_schema: {
         type: "object",
         properties: {
