@@ -56,12 +56,17 @@ export default function SchoolCalendar() {
 
   async function load() {
     setLoading(true);
-    const [evs, cls] = await Promise.all([
-      base44.entities.SchoolEvent.filter({ schoolId: user.schoolId }),
-      base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false }),
-    ]);
-    setEvents(evs || []);
-    setClasses(cls || []);
+    try {
+      const evs = await base44.entities.SchoolEvent.filter({ schoolId: user.schoolId });
+      setEvents(evs || []);
+
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const cls = await base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false });
+      setClasses(cls || []);
+    } catch (error) {
+      console.error('Failed to load calendar data:', error);
+    }
     setLoading(false);
   }
 
