@@ -23,6 +23,7 @@ const adminNav = [
   { label: "Grade Weighting", path: "/school-admin/grade-weighting", icon: Award },
   { label: "Report Cards", path: "/school-admin/report-cards", icon: FileText },
   { label: "School Report", path: "/school-admin/school-report", icon: PieChart },
+  { label: "Academic Terms", path: "/school-admin/academic-terms", icon: CalendarDays },
   { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
   { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   { label: "Calendar", path: "/school-admin/calendar", icon: CalendarDays },

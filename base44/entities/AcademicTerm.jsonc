@@ -1,0 +1,39 @@
+{
+  "name": "AcademicTerm",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string",
+      "description": "ID of the school this term belongs to"
+    },
+    "schoolName": {
+      "type": "string",
+      "description": "Name of the school"
+    },
+    "name": {
+      "type": "string",
+      "description": "e.g., Term 1, Semester 2, Trimester 3"
+    },
+    "academicYear": {
+      "type": "string",
+      "description": "e.g., 2025-2026"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date of the academic term (YYYY-MM-DD)"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date",
+      "description": "End date of the academic term (YYYY-MM-DD)"
+    }
+  },
+  "required": [
+    "schoolId",
+    "name",
+    "academicYear",
+    "startDate",
+    "endDate"
+  ]
+}

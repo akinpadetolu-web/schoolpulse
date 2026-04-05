@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { getTerms } from '@/lib/academicTermUtils';
 import {
   Loader2, FileText, Download, Send, RefreshCw,
   CheckCircle2, Clock, Users, BarChart3, BookOpen, ClipboardList
@@ -26,7 +27,9 @@ export default function AdminStudentReports() {
     endDate: new Date().toISOString().split('T')[0],
   });
   const [selectedClassId, setSelectedClassId] = useState('all');
+  const [selectedTermId, setSelectedTermId] = useState('');
   const [classes, setClasses] = useState([]);
+  const [terms, setTerms] = useState([]);
   const [reports, setReports] = useState([]);
   const [commentDialog, setCommentDialog] = useState(null);
   const [savingComment, setSavingComment] = useState(false);
@@ -35,8 +38,12 @@ export default function AdminStudentReports() {
   useEffect(() => { if (!loading) loadReports(); }, [dateRange, selectedClassId]);
 
   async function loadClasses() {
-    const cls = await base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false });
+    const [cls, termData] = await Promise.all([
+      base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
+      getTerms(user?.schoolId),
+    ]);
     setClasses(cls || []);
+    setTerms(termData || []);
     setLoading(false);
   }
 
@@ -400,6 +407,25 @@ ${report.schoolName}
               </SelectContent>
             </Select>
           </div>
+          {terms.length > 0 && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Quick Select Term</Label>
+              <Select value={selectedTermId} onValueChange={(val) => {
+                if (val) {
+                  const term = terms.find(t => t.id === val);
+                  if (term) {
+                    setDateRange({ startDate: term.startDate, endDate: term.endDate });
+                    setSelectedTermId('');
+                  }
+                }
+              }}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="Or pick term..." /></SelectTrigger>
+                <SelectContent>
+                  {terms.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Button onClick={generateReports} disabled={generating} className="sm:ml-auto">
             {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
             {generating ? 'Generating…' : 'Generate Reports'}

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Download, Send, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { getTerms } from '@/lib/academicTermUtils';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ export default function AdminReportCards() {
   const [templates, setTemplates] = useState([]);
   const [grades, setGrades] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -34,7 +36,7 @@ export default function AdminReportCards() {
     selectedClass: '',
     selectedStudents: [],
     templateId: '',
-    period: '',
+    termId: '',
   });
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function AdminReportCards() {
   }, []);
 
   async function loadData() {
-    const [cards, stud, cls, subj, tmpl, grd, att] = await Promise.all([
+    const [cards, stud, cls, subj, tmpl, grd, att, termData] = await Promise.all([
       base44.entities.ReportCard.filter({ schoolId: user?.schoolId }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
@@ -50,6 +52,7 @@ export default function AdminReportCards() {
       base44.entities.ReportCardTemplate.filter({ schoolId: user?.schoolId }),
       base44.entities.Grade.filter({ schoolId: user?.schoolId }),
       base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
+      getTerms(user?.schoolId),
     ]);
     setReportCards(cards || []);
     setStudents(stud || []);
@@ -58,6 +61,7 @@ export default function AdminReportCards() {
     setTemplates(tmpl || []);
     setGrades(grd || []);
     setAttendance(att || []);
+    setTerms(termData || []);
     setLoading(false);
   }
 
@@ -105,18 +109,27 @@ export default function AdminReportCards() {
 
   async function handleGenerate(e) {
     e.preventDefault();
-    if (!form.selectedClass || form.selectedStudents.length === 0 || !form.templateId || !form.period) {
+    if (!form.selectedClass || form.selectedStudents.length === 0 || !form.templateId || !form.termId) {
       return toast.error('All fields are required');
     }
 
     setGenerating(true);
     const template = templates.find(t => t.id === form.templateId);
+    const selectedTerm = terms.find(t => t.id === form.termId);
     const selectedStudentObjects = students.filter(s => form.selectedStudents.includes(s.id));
 
     try {
       for (const student of selectedStudentObjects) {
-        const studentGrades = grades.filter(g => g.studentId === student.id);
-        const studentAttendance = attendance.filter(a => a.studentId === student.id);
+        const termStart = new Date(selectedTerm.startDate);
+        const termEnd = new Date(selectedTerm.endDate);
+        const studentGrades = grades.filter(g => {
+          const gradeDate = new Date(g.created_date);
+          return g.studentId === student.id && gradeDate >= termStart && gradeDate <= termEnd;
+        });
+        const studentAttendance = attendance.filter(a => {
+          const attDate = new Date(a.date);
+          return a.studentId === student.id && attDate >= termStart && attDate <= termEnd;
+        });
 
         const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
         const subjectGrades = [];
@@ -150,7 +163,7 @@ export default function AdminReportCards() {
           className: classes.find(c => c.id === form.selectedClass)?.className || '',
           templateId: form.templateId,
           templateName: template.name,
-          period: form.period,
+          period: selectedTerm.name,
           generatedDate: new Date().toISOString().split('T')[0],
           subjectGrades,
           overallAverage,
@@ -166,7 +179,7 @@ export default function AdminReportCards() {
 
       toast.success(`Report cards generated for ${selectedStudentObjects.length} student(s)`);
       setShowGenerate(false);
-      setForm({ selectedClass: '', selectedStudents: [], templateId: '', period: '' });
+      setForm({ selectedClass: '', selectedStudents: [], templateId: '', termId: '' });
       loadData();
     } catch (err) {
       toast.error('Failed to generate report cards');
@@ -279,12 +292,15 @@ export default function AdminReportCards() {
             </div>
 
             <div>
-              <Label className="text-sm">Period *</Label>
-              <Input
-                value={form.period}
-                onChange={e => setForm({ ...form, period: e.target.value })}
-                placeholder="e.g. Term 1 2026, Midterm 2026"
-              />
+              <Label className="text-sm">Academic Term *</Label>
+              <Select value={form.termId} onValueChange={val => setForm({ ...form, termId: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terms.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.academicYear})</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button type="submit" className="w-full" disabled={generating}>
