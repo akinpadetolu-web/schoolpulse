@@ -4,9 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, X } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import StudentGradeHistory from './StudentGradeHistory';
 
 // JS1-JS3 → General only. SS1-SS3 → Science, Art & Humanity, Commercial
 const JS_LEVELS = ["JS1", "JS2", "JS3"];
@@ -70,82 +72,96 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Student Profile — {student?.fullName}</DialogTitle>
+          <DialogTitle>{student?.fullName}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{student?.email || student?.username}</p>
         </DialogHeader>
 
-        <div className="space-y-5">
-          {/* Class */}
-          <div className="space-y-2">
-            <Label>Class</Label>
-            <Select value={classId} onValueChange={v => { setClassId(v); setAssignedSubjects([]); }}>
-              <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-              <SelectContent>
-                {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+        <Tabs defaultValue="profile">
+          <TabsList className="w-full">
+            <TabsTrigger value="profile" className="flex-1">Profile & Subjects</TabsTrigger>
+            <TabsTrigger value="grades" className="flex-1">Grade History</TabsTrigger>
+          </TabsList>
 
-          {/* Subset / Track */}
-          {classId && subsets.length > 0 && (
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-5 pt-2">
+            {/* Class */}
             <div className="space-y-2">
-              <Label>Class Subset / Track</Label>
-              {subsets.length === 1 ? (
-                <div className="px-3 py-2 rounded-md border bg-muted text-sm text-muted-foreground">{subsets[0]}</div>
-              ) : (
-                <Select value={subsetName} onValueChange={setSubsetName}>
-                  <SelectTrigger><SelectValue placeholder="Select subset" /></SelectTrigger>
-                  <SelectContent>
-                    {subsets.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )}
+              <Label>Class</Label>
+              <Select value={classId} onValueChange={v => { setClassId(v); setAssignedSubjects([]); }}>
+                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent>
+                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {/* Subjects */}
-          {classId && (
-            <div className="space-y-2">
-              <Label>Assigned Subjects</Label>
-              {subjects.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-2">No subjects mapped to this class yet.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {subjects.map(s => {
-                    const active = assignedSubjects.includes(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => toggleSubject(s.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          active
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:border-primary'
-                        }`}
-                      >
-                        {active && <CheckCircle2 className="w-3 h-3" />}
-                        {s.name}
-                        {s.isCompulsory && <Badge className="ml-1 text-[10px] px-1 py-0 bg-amber-100 text-amber-700 border-0">Core</Badge>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {assignedSubjects.length > 0 && (
-                <p className="text-xs text-muted-foreground">{assignedSubjects.length} subject(s) selected</p>
-              )}
+            {/* Subset / Track */}
+            {classId && subsets.length > 0 && (
+              <div className="space-y-2">
+                <Label>Class Subset / Track</Label>
+                {subsets.length === 1 ? (
+                  <div className="px-3 py-2 rounded-md border bg-muted text-sm text-muted-foreground">{subsets[0]}</div>
+                ) : (
+                  <Select value={subsetName} onValueChange={setSubsetName}>
+                    <SelectTrigger><SelectValue placeholder="Select subset" /></SelectTrigger>
+                    <SelectContent>
+                      {subsets.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* Subjects */}
+            {classId && (
+              <div className="space-y-2">
+                <Label>Assigned Subjects</Label>
+                {subjects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No subjects mapped to this class yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {subjects.map(s => {
+                      const active = assignedSubjects.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => toggleSubject(s.id)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                            active
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-background text-foreground border-border hover:border-primary'
+                          }`}
+                        >
+                          {active && <CheckCircle2 className="w-3 h-3" />}
+                          {s.name}
+                          {s.isCompulsory && <Badge className="ml-1 text-[10px] px-1 py-0 bg-amber-100 text-amber-700 border-0">Core</Badge>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {assignedSubjects.length > 0 && (
+                  <p className="text-xs text-muted-foreground">{assignedSubjects.length} subject(s) selected</p>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button className="flex-1" onClick={handleSave} disabled={saving || !classId}>
+                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Save Profile
+              </Button>
             </div>
-          )}
+          </TabsContent>
 
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button className="flex-1" onClick={handleSave} disabled={saving || !classId}>
-              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Save Profile
-            </Button>
-          </div>
-        </div>
+          {/* Grade History Tab */}
+          <TabsContent value="grades" className="pt-2">
+            <StudentGradeHistory studentId={student?.id} schoolId={schoolId} />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
