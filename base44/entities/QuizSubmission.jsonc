@@ -1,0 +1,56 @@
+{
+  "name": "QuizSubmission",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "quizId": {
+      "type": "string"
+    },
+    "quizTitle": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "questionIndex": {
+            "type": "number"
+          },
+          "answer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "score": {
+      "type": "number"
+    },
+    "maxScore": {
+      "type": "number"
+    },
+    "submittedAt": {
+      "type": "string"
+    },
+    "isGraded": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "quizId",
+    "studentId"
+  ]
+}

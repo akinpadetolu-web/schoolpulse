@@ -1,0 +1,106 @@
+{
+  "name": "Quiz",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "multiple_choice",
+              "true_false",
+              "short_answer"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correctAnswer": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "durationMinutes": {
+      "type": "number",
+      "default": 30
+    },
+    "releaseMode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "scheduled",
+        "class_start",
+        "15min_into_class"
+      ],
+      "default": "manual"
+    },
+    "scheduledAt": {
+      "type": "string",
+      "description": "ISO datetime for scheduled release"
+    },
+    "timetableEntryId": {
+      "type": "string",
+      "description": "Linked timetable entry for class_start / 15min_into_class modes"
+    },
+    "timetableDay": {
+      "type": "string"
+    },
+    "timetableStartTime": {
+      "type": "string"
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "title"
+  ]
+}

@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
   { label: "Dashboard", path: "/student", icon: LayoutDashboard },
   { label: "My Timetable", path: "/student/timetable", icon: Calendar },
   { label: "Assignments", path: "/student/assignments", icon: FileText },
+  { label: "Quizzes", path: "/student/quizzes", icon: Radio },
   { label: "My Grades", path: "/student/grades", icon: ClipboardList },
   { label: "Lesson Plans", path: "/student/lesson-plans", icon: NotebookPen },
   { label: "Materials", path: "/student/materials", icon: BookOpen },
