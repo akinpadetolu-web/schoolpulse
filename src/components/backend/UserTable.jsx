@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, RotateCcw, Archive, KeyRound } from 'lucide-react';
 
-export default function UserTable({ users, onResetPassword, onArchive, onRestore }) {
+export default function UserTable({ users, onResetPassword, onArchive, onRestore, onRowClick }) {
   if (!users || users.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No users found.</p>;
   }
@@ -24,7 +24,7 @@ export default function UserTable({ users, onResetPassword, onArchive, onRestore
         </TableHeader>
         <TableBody>
           {users.map(user => (
-            <TableRow key={user.id}>
+            <TableRow key={user.id} className={onRowClick ? "cursor-pointer hover:bg-muted/40" : ""} onClick={() => onRowClick && onRowClick(user)}>
               <TableCell className="font-medium">{user.fullName || "—"}</TableCell>
               <TableCell className="text-muted-foreground">{user.username || "—"}</TableCell>
               <TableCell className="text-muted-foreground">{user.email || "—"}</TableCell>
@@ -33,7 +33,7 @@ export default function UserTable({ users, onResetPassword, onArchive, onRestore
                   {user.isArchived ? "Archived" : "Active"}
                 </Badge>
               </TableCell>
-              <TableCell>
+              <TableCell onClick={e => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button>

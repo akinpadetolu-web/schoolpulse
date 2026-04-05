@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import UserTable from '@/components/backend/UserTable';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
+import StudentProfileDialog from '@/components/school/StudentProfileDialog';
 import { toast } from 'sonner';
 
 export default function AdminStudents() {
@@ -17,6 +18,7 @@ export default function AdminStudents() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -57,9 +59,19 @@ export default function AdminStudents() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input className="pl-9" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} />
+      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} onRowClick={setEditingStudent} />
       {showCreate && (
         <CreateUserDialog open={showCreate} onOpenChange={setShowCreate} role="student" school={school} classes={classes} onCreated={loadData} />
+      )}
+      {editingStudent && (
+        <StudentProfileDialog
+          open={!!editingStudent}
+          onOpenChange={v => { if (!v) setEditingStudent(null); }}
+          student={editingStudent}
+          classes={classes}
+          schoolId={user?.schoolId}
+          onSaved={loadData}
+        />
       )}
     </div>
   );
