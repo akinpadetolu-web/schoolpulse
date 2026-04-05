@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, Settings, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp
+  FileText, ClipboardList, Megaphone, Settings, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,8 @@ const adminNav = [
   { label: "Teacher Workload", path: "/school-admin/teacher-workload", icon: BarChart3 },
   { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },
   { label: "Student Reports", path: "/school-admin/student-reports", icon: BarChart3 },
+  { label: "Grade Weighting", path: "/school-admin/grade-weighting", icon: Award },
+  { label: "Report Cards", path: "/school-admin/report-cards", icon: FileText },
   { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
   { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   { label: "Calendar", path: "/school-admin/calendar", icon: CalendarDays },

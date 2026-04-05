@@ -40,6 +40,8 @@ import AdminAssignments from './pages/school-admin/AdminAssignments';
 import AdminAttendance from './pages/school-admin/AdminAttendance';
 import AdminStudentReports from './pages/school-admin/AdminStudentReports';
 import AdminAnnouncements from './pages/school-admin/AdminAnnouncements';
+import AdminGradeWeighting from './pages/school-admin/AdminGradeWeighting';
+import AdminReportCards from './pages/school-admin/AdminReportCards';
 import AdminSettings from './pages/school-admin/AdminSettings';
 
 // Teacher Layout + Pages
@@ -132,6 +134,8 @@ const AuthenticatedApp = () => {
         <Route path="attendance" element={<AdminAttendance />} />
         <Route path="student-reports" element={<AdminStudentReports />} />
         <Route path="announcements" element={<AdminAnnouncements />} />
+        <Route path="grade-weighting" element={<AdminGradeWeighting />} />
+        <Route path="report-cards" element={<AdminReportCards />} />
         <Route path="calendar" element={<SchoolCalendar />} />
         <Route path="performance" element={<PerformanceDashboard />} />
         <Route path="settings" element={<AdminSettings />} />

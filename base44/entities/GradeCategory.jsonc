@@ -1,0 +1,42 @@
+{
+  "name": "GradeCategory",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "categoryName": {
+      "type": "string",
+      "description": "e.g. Assignments, Tests, Exams, Classwork, Participation"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Percentage weight in final grade (0-100)"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "categoryName",
+    "weight"
+  ]
+}

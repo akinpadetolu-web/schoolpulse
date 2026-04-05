@@ -1,0 +1,76 @@
+{
+  "name": "ReportCardTemplate",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "e.g. Midterm Report, Final Report Card"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "midterm",
+        "final",
+        "custom"
+      ],
+      "default": "custom"
+    },
+    "includeAttendance": {
+      "type": "boolean",
+      "default": true
+    },
+    "includeComments": {
+      "type": "boolean",
+      "default": true
+    },
+    "includeBehavior": {
+      "type": "boolean",
+      "default": false
+    },
+    "includeSubjectAverages": {
+      "type": "boolean",
+      "default": true
+    },
+    "includeLessonProgress": {
+      "type": "boolean",
+      "default": true
+    },
+    "gradeScale": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "letter",
+        "gpa"
+      ],
+      "default": "percentage"
+    },
+    "schoolLogo": {
+      "type": "string",
+      "description": "URL to school logo"
+    },
+    "schoolBranding": {
+      "type": "object",
+      "properties": {
+        "primaryColor": {
+          "type": "string"
+        },
+        "secondaryColor": {
+          "type": "string"
+        }
+      }
+    },
+    "createdBy": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "name"
+  ]
+}

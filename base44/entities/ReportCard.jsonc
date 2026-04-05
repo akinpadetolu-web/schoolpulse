@@ -1,0 +1,122 @@
+{
+  "name": "ReportCard",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "studentEmail": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "templateId": {
+      "type": "string"
+    },
+    "templateName": {
+      "type": "string"
+    },
+    "period": {
+      "type": "string",
+      "description": "e.g. Term 1, Midterm 2026, Final 2026"
+    },
+    "generatedDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "subjectGrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "weightedAverage": {
+            "type": "number",
+            "description": "Final calculated grade for subject"
+          },
+          "letterGrade": {
+            "type": "string"
+          },
+          "categoryBreakdown": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryName": {
+                  "type": "string"
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "average": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "overallAverage": {
+      "type": "number"
+    },
+    "overallLetterGrade": {
+      "type": "string"
+    },
+    "attendanceRate": {
+      "type": "number"
+    },
+    "lessonCount": {
+      "type": "number"
+    },
+    "assignmentSubmissionRate": {
+      "type": "number"
+    },
+    "teacherComment": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "generated",
+        "approved",
+        "sent"
+      ],
+      "default": "draft"
+    },
+    "sentDate": {
+      "type": "string"
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "approvalDate": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "classId",
+    "period"
+  ]
+}
