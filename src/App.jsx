@@ -54,6 +54,7 @@ import TeacherLessonPlans from './pages/teacher/TeacherLessonPlans';
 import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
+import SchoolCalendar from './pages/shared/SchoolCalendar';
 
 // Student Layout + Pages
 import StudentLayout from './components/student/StudentLayout';
@@ -130,6 +131,7 @@ const AuthenticatedApp = () => {
         <Route path="attendance" element={<AdminAttendance />} />
         <Route path="student-reports" element={<AdminStudentReports />} />
         <Route path="announcements" element={<AdminAnnouncements />} />
+        <Route path="calendar" element={<SchoolCalendar />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
@@ -145,6 +147,7 @@ const AuthenticatedApp = () => {
         <Route path="quizzes" element={<TeacherQuizzes />} />
         <Route path="submissions" element={<TeacherSubmissions />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
+        <Route path="calendar" element={<SchoolCalendar />} />
       </Route>
 
       {/* Student */}
@@ -157,6 +160,7 @@ const AuthenticatedApp = () => {
         <Route path="lesson-plans" element={<StudentLessonPlans />} />
         <Route path="quizzes" element={<StudentQuizzes />} />
         <Route path="announcements" element={<StudentAnnouncements />} />
+        <Route path="calendar" element={<SchoolCalendar />} />
       </Route>
 
       {/* Parent */}
@@ -166,6 +170,7 @@ const AuthenticatedApp = () => {
         <Route path="assignments" element={<ParentAssignments />} />
         <Route path="grades" element={<ParentGrades />} />
         <Route path="announcements" element={<ParentAnnouncements />} />
+        <Route path="calendar" element={<SchoolCalendar />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

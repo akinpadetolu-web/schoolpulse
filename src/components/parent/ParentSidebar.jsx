@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
-import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { label: "Assignments", path: "/parent/assignments", icon: FileText },
   { label: "Grades", path: "/parent/grades", icon: ClipboardList },
   { label: "Announcements", path: "/parent/announcements", icon: Megaphone },
+  { label: "Calendar", path: "/parent/calendar", icon: CalendarDays },
 ];
 
 export default function ParentSidebar({ isOpen, onClose }) {

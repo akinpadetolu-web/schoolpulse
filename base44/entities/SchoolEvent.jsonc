@@ -1,0 +1,69 @@
+{
+  "name": "SchoolEvent",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "holiday",
+        "exam",
+        "parent_teacher_meeting",
+        "school_event",
+        "other"
+      ],
+      "default": "school_event"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "targetRoles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Roles this event is visible to: admin, teacher, student, parent"
+    },
+    "targetClassIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Empty = all classes, populated = specific classes only"
+    },
+    "targetClassNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "createdBy": {
+      "type": "string"
+    },
+    "createdByName": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "title",
+    "startDate",
+    "type"
+  ]
+}
