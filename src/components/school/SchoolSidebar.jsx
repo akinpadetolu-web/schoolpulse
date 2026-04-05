@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, Settings, LogOut, X, School, Tag, Zap, UserCog, UserCheck
+  FileText, ClipboardList, Megaphone, Settings, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +18,7 @@ const adminNav = [
   { label: "Bulk Assign", path: "/school-admin/bulk-assign", icon: Zap },
   { label: "Timetable", path: "/school-admin/timetable", icon: Calendar },
   { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },
+  { label: "Student Reports", path: "/school-admin/student-reports", icon: BarChart3 },
   { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
   { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   { label: "Settings", path: "/school-admin/settings", icon: Settings },

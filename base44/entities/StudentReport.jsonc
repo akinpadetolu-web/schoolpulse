@@ -1,0 +1,87 @@
+{
+  "name": "StudentReport",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "studentEmail": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "month": {
+      "type": "string",
+      "description": "YYYY-MM"
+    },
+    "monthLabel": {
+      "type": "string",
+      "description": "e.g. March 2026"
+    },
+    "attendancePresent": {
+      "type": "number"
+    },
+    "attendanceAbsent": {
+      "type": "number"
+    },
+    "attendanceExcused": {
+      "type": "number"
+    },
+    "attendanceLate": {
+      "type": "number"
+    },
+    "attendanceRate": {
+      "type": "number"
+    },
+    "schoolDays": {
+      "type": "number"
+    },
+    "lessonsPublished": {
+      "type": "number"
+    },
+    "assignmentsTotal": {
+      "type": "number"
+    },
+    "assignmentsSubmitted": {
+      "type": "number"
+    },
+    "submissionRate": {
+      "type": "number"
+    },
+    "teacherComment": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent"
+      ],
+      "default": "draft"
+    },
+    "generatedBy": {
+      "type": "string"
+    },
+    "sentAt": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "month"
+  ]
+}
