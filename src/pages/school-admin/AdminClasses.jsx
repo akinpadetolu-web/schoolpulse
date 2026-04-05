@@ -23,6 +23,7 @@ export default function AdminClasses() {
   const school = { id: schoolId, schoolName: user?.schoolName };
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -33,13 +34,15 @@ export default function AdminClasses() {
 
   async function loadData() {
     try {
-      const [c, s] = await Promise.all([
+      const [c, s, st] = await Promise.all([
         base44.entities.SchoolClass.filter({ schoolId }),
         base44.entities.Subject.filter({ schoolId, isArchived: false }),
+        base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
       ]);
       setClasses(c || []);
       setSubjects(s || []);
-    } catch { setClasses([]); setSubjects([]); }
+      setStudents(st || []);
+    } catch { setClasses([]); setSubjects([]); setStudents([]); }
     setLoading(false);
   }
 
@@ -181,8 +184,9 @@ export default function AdminClasses() {
                       <p className="text-sm font-semibold text-muted-foreground mb-2">{baseLevel}</p>
                       <div className="grid gap-2">
                         {items.map(c => {
-                          const subjectCount = subjects.filter(s => (s.applicableClasses || []).includes(c.id)).length;
-                          const hasWarning = tab === "active" && subjectCount === 0;
+                           const subjectCount = subjects.filter(s => (s.applicableClasses || []).includes(c.id)).length;
+                           const studentCount = students.filter(st => st.classId === c.id).length;
+                           const hasWarning = tab === "active" && subjectCount === 0;
                           return (
                             <Card key={c.id} className={`border-0 shadow-sm ${hasWarning ? 'border-l-4 border-l-amber-400' : ''}`}>
                               <CardContent className="p-4 flex items-center justify-between gap-4">
@@ -191,13 +195,14 @@ export default function AdminClasses() {
                                     {c.className.slice(0, 3)}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{c.className}</p>
-                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                      {c.educationLevel && <span className="text-xs text-muted-foreground capitalize">{c.educationLevel}</span>}
-                                      {c.academicTrack && <Badge variant="outline" className="text-xs">{c.academicTrack}</Badge>}
-                                      <span className="text-xs text-muted-foreground">{subjectCount} subject{subjectCount !== 1 ? "s" : ""}</span>
-                                      {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />No subjects</span>}
-                                    </div>
+                                   <p className="font-medium">{c.className}</p>
+                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                     {c.educationLevel && <span className="text-xs text-muted-foreground capitalize">{c.educationLevel}</span>}
+                                     {c.academicTrack && <Badge variant="outline" className="text-xs">{c.academicTrack}</Badge>}
+                                     <span className="text-xs text-muted-foreground">{studentCount} student{studentCount !== 1 ? "s" : ""}</span>
+                                     <span className="text-xs text-muted-foreground">{subjectCount} subject{subjectCount !== 1 ? "s" : ""}</span>
+                                     {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />No subjects</span>}
+                                   </div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1">
