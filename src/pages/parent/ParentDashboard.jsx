@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -124,8 +123,6 @@ export default function ParentDashboard() {
           <UserPlus className="w-4 h-4 mr-2" /> Add Child
         </Button>
       </div>
-
-      <DashboardCalendar />
 
       <div>
          <h2 className="text-lg font-semibold mb-4">My Children</h2>
