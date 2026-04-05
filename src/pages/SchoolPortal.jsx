@@ -195,13 +195,13 @@ export default function SchoolPortal() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Username or Email</Label>
-                    <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username or email" />
+                    <Label htmlFor="username">Username or Email</Label>
+                    <Input id="username" name="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username or email" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" />
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" />
                   </div>
 
                   {error && (
@@ -249,6 +249,8 @@ export default function SchoolPortal() {
                       {signupLinkCodes.map((code, i) => (
                         <div key={i} className="flex gap-2">
                           <Input
+                            id={`linkcode-${i}`}
+                            name={`linkcode-${i}`}
                             value={code}
                             onChange={e => {
                               const updated = [...signupLinkCodes];
@@ -273,23 +275,23 @@ export default function SchoolPortal() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Your Full Name</Label>
-                      <Input value={signupFullName} onChange={e => setSignupFullName(e.target.value)} placeholder="e.g. Jane Doe" />
+                      <Label htmlFor="fullname">Your Full Name</Label>
+                      <Input id="fullname" name="fullname" value={signupFullName} onChange={e => setSignupFullName(e.target.value)} placeholder="e.g. Jane Doe" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Email Address</Label>
-                      <Input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder="your@email.com" />
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input id="email" name="email" type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder="your@email.com" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Password</Label>
-                      <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="At least 6 characters" />
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input id="signup-password" name="password" type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="At least 6 characters" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Confirm Password</Label>
-                      <Input type="password" value={signupConfirm} onChange={e => setSignupConfirm(e.target.value)} placeholder="Repeat password" />
+                      <Label htmlFor="confirm-password">Confirm Password</Label>
+                      <Input id="confirm-password" name="confirm" type="password" value={signupConfirm} onChange={e => setSignupConfirm(e.target.value)} placeholder="Repeat password" />
                     </div>
 
                     {signupError && (
