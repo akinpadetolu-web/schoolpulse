@@ -35,6 +35,7 @@ import AdminSubjects from './pages/school-admin/AdminSubjects';
 import AdminTeacherAssignments from './pages/school-admin/AdminTeacherAssignments';
 import AdminBulkAssign from './pages/school-admin/AdminBulkAssign';
 import AdminTimetable from './pages/school-admin/AdminTimetable';
+import AdminTeacherWorkload from './pages/school-admin/AdminTeacherWorkload';
 import AdminAssignments from './pages/school-admin/AdminAssignments';
 import AdminAttendance from './pages/school-admin/AdminAttendance';
 import AdminStudentReports from './pages/school-admin/AdminStudentReports';
@@ -123,6 +124,7 @@ const AuthenticatedApp = () => {
         <Route path="teacher-assignments" element={<AdminTeacherAssignments />} />
         <Route path="bulk-assign" element={<AdminBulkAssign />} />
         <Route path="timetable" element={<AdminTimetable />} />
+        <Route path="teacher-workload" element={<AdminTeacherWorkload />} />
         <Route path="assignments" element={<AdminAssignments />} />
         <Route path="attendance" element={<AdminAttendance />} />
         <Route path="student-reports" element={<AdminStudentReports />} />

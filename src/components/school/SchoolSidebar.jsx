@@ -17,6 +17,7 @@ const adminNav = [
   { label: "Teacher Assignments", path: "/school-admin/teacher-assignments", icon: UserCog },
   { label: "Bulk Assign", path: "/school-admin/bulk-assign", icon: Zap },
   { label: "Timetable", path: "/school-admin/timetable", icon: Calendar },
+  { label: "Teacher Workload", path: "/school-admin/teacher-workload", icon: BarChart3 },
   { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },
   { label: "Student Reports", path: "/school-admin/student-reports", icon: BarChart3 },
   { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
