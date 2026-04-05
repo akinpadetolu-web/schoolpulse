@@ -43,7 +43,10 @@ export default function SchoolPortal() {
     try {
       const data = await base44.entities.School.filter({ isActive: true });
       setSchools(data || []);
-    } catch { setSchools([]); }
+    } catch (error) {
+      console.error('Failed to load schools:', error);
+      setSchools([]);
+    }
   }
 
   async function handleSubmit(e) {
@@ -66,6 +69,8 @@ export default function SchoolPortal() {
       if (!school) { setError("Invalid school selected"); setLoading(false); return; }
 
       const users = await base44.entities.SchoolUser.filter({ schoolId: school.id, role: role });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const user = (users || []).find(u =>
         (u.username === username || u.email === username) && !u.isArchived
       );
@@ -111,6 +116,8 @@ export default function SchoolPortal() {
       setSignupLoading(false);
       return setSignupError(`Code(s) not found: ${notFound.join(", ")}. Please verify them with the school.`);
     }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Check email not already taken by a parent in this school
     const existingParents = await base44.entities.SchoolUser.filter({ schoolId: signupSchool, role: 'parent' });
