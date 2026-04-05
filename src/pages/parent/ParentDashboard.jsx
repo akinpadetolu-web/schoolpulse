@@ -77,7 +77,10 @@ export default function ParentDashboard() {
       ]);
       setChildren((allStudents || []).filter(s => ids.includes(s.id)));
       setAttendance((att || []).filter(a => ids.includes(a.studentId)));
-      setAssignments((allAssignments || []).filter(a => ids.includes(a.classId)));
+      setAssignments((allAssignments || []).filter(a => ids.some(id => {
+        const child = (allStudents || []).find(s => s.id === id);
+        return a.classId === child?.classId;
+      })));
       setTimetable((allTimetable || []).filter(t => ids.some(id => {
         const child = (allStudents || []).find(s => s.id === id);
         return t.classId === child?.classId;
