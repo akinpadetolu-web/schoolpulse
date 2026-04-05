@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import UserTable from '@/components/backend/UserTable';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
+import TeacherProfileDialog from '@/components/school/TeacherProfileDialog';
 import { toast } from 'sonner';
 
 export default function AdminTeachers() {
@@ -16,6 +17,7 @@ export default function AdminTeachers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -53,9 +55,18 @@ export default function AdminTeachers() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input className="pl-9" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} />
+      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} onRowClick={setSelectedTeacher} />
       {showCreate && (
         <CreateUserDialog open={showCreate} onOpenChange={setShowCreate} role="teacher" school={school} classes={[]} onCreated={loadData} />
+      )}
+      {selectedTeacher && (
+        <TeacherProfileDialog
+          open={!!selectedTeacher}
+          onOpenChange={v => { if (!v) setSelectedTeacher(null); }}
+          teacher={selectedTeacher}
+          schoolId={user?.schoolId}
+          onSaved={loadData}
+        />
       )}
     </div>
   );
