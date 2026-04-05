@@ -187,6 +187,21 @@ export default function AdminTimetable() {
     loadData();
   }
 
+  async function handleBulkReset() {
+    if (!window.confirm("Are you sure you want to delete ALL timetable entries? This cannot be undone.")) return;
+    setSaving(true);
+    try {
+      await Promise.all(entries.map(e => base44.entities.TimetableEntry.delete(e.id)));
+      toast.success(`Reset all ${entries.length} timetable entries`);
+      loadData();
+    } catch (error) {
+      console.error('Failed to reset timetable:', error);
+      toast.error('Failed to reset timetable');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // ── AI Generator ─────────────────────────────────────────────────────────
   async function handleAiGenerate() {
     setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({});
@@ -498,6 +513,11 @@ USER PROMPT: "${aiPrompt.trim()}"
             Sync Teachers
           </Button>
           <Button onClick={() => setShowManualDialog(true)}><Plus className="w-4 h-4 mr-2" /> Add Entry</Button>
+          {entries.length > 0 && (
+            <Button variant="outline" onClick={handleBulkReset} disabled={saving} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+              <Trash2 className="w-4 h-4 mr-1" /> Reset All
+            </Button>
+          )}
         </div>
       </div>
 
