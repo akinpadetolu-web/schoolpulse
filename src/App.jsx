@@ -53,6 +53,7 @@ import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherLessonPlans from './pages/teacher/TeacherLessonPlans';
 import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
+import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
 
 // Student Layout + Pages
 import StudentLayout from './components/student/StudentLayout';
@@ -142,6 +143,7 @@ const AuthenticatedApp = () => {
         <Route path="attendance" element={<TeacherAttendance />} />
         <Route path="lesson-plans" element={<TeacherLessonPlans />} />
         <Route path="quizzes" element={<TeacherQuizzes />} />
+        <Route path="submissions" element={<TeacherSubmissions />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
       </Route>
 
