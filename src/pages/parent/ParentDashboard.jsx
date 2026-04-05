@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCircle, BookOpen, Calendar, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import UnifiedTimetable from '@/components/parent/UnifiedTimetable';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -257,6 +258,15 @@ export default function ParentDashboard() {
           <UserPlus className="w-4 h-4 mr-2" /> Add Child
         </Button>
       </div>
+
+      {/* Unified Timetable for All Children */}
+      {children.length > 0 && (
+        <UnifiedTimetable
+          children={children}
+          timetable={timetable}
+          loading={loadingTimetable}
+        />
+      )}
 
       <div>
          <h2 className="text-lg font-semibold mb-4">My Children</h2>
