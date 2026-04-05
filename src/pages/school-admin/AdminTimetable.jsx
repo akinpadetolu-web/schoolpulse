@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Trash2, RefreshCw, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Zap } from 'lucide-react';
+import { Plus, Loader2, Trash2, RefreshCw, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Zap, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -342,6 +343,113 @@ USER PROMPT: "${aiPrompt.trim()}"
     setSaving(false);
   }
 
+  // ── PDF Export ───────────────────────────────────────────────────────────
+  function handleExportPDF() {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    const colW = (pageW - margin * 2) / (DAYS.length + 1);
+
+    const className = selectedClass !== "all"
+      ? classes.find(c => c.id === selectedClass)?.className || "All Classes"
+      : "All Classes";
+
+    // Header background
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageW, 18, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SchoolPulse — Weekly Timetable', margin, 11);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(className, pageW - margin, 11, { align: 'right' });
+
+    // Column headers
+    const headerY = 22;
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Time', margin + 2, headerY + 5);
+    DAYS.forEach((day, i) => {
+      const x = margin + colW * (i + 1);
+      doc.setFillColor(241, 245, 249);
+      doc.rect(x, headerY, colW, 9, 'F');
+      doc.text(day, x + colW / 2, headerY + 5.5, { align: 'center' });
+    });
+
+    // Collect all unique time slots sorted
+    const timeSlots = [...new Set(filteredEntries.map(e => `${e.startTime}|${e.endTime}`))]
+      .sort()
+      .map(t => { const [s, e] = t.split('|'); return { startTime: s, endTime: e }; });
+
+    const rowH = 12;
+    let y = headerY + 9;
+
+    timeSlots.forEach((slot, rowIdx) => {
+      const rowY = y + rowIdx * rowH;
+      if (rowY + rowH > pageH - margin) return; // skip if out of page
+
+      // Alternating row bg
+      if (rowIdx % 2 === 0) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, rowY, pageW - margin * 2, rowH, 'F');
+      }
+
+      // Time label
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${slot.startTime}–${slot.endTime}`, margin + 2, rowY + 7.5);
+
+      DAYS.forEach((day, dayIdx) => {
+        const cellX = margin + colW * (dayIdx + 1) + 1;
+        const entriesInCell = filteredEntries.filter(e =>
+          e.dayOfWeek === day && e.startTime === slot.startTime && e.endTime === slot.endTime
+        );
+
+        entriesInCell.forEach((entry, eIdx) => {
+          const cellY = rowY + 1 + eIdx * (rowH - 2);
+          // Subject pill background
+          doc.setFillColor(219, 234, 254);
+          doc.roundedRect(cellX, cellY, colW - 3, rowH - 3, 1.5, 1.5, 'F');
+          doc.setTextColor(29, 78, 216);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.text(entry.subjectName || '', cellX + 2, cellY + 5, { maxWidth: colW - 6 });
+          if (entry.teacherName) {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+            doc.setFontSize(6);
+            doc.text(entry.teacherName, cellX + 2, cellY + 9, { maxWidth: colW - 6 });
+          }
+        });
+      });
+    });
+
+    // Border grid lines
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    const totalH = Math.min(timeSlots.length * rowH, pageH - margin - headerY - 9);
+    for (let i = 0; i <= DAYS.length + 1; i++) {
+      const x = margin + colW * i;
+      doc.line(x, headerY, x, headerY + 9 + totalH);
+    }
+    for (let i = 0; i <= timeSlots.length; i++) {
+      const lineY = headerY + 9 + i * rowH;
+      if (lineY <= pageH - margin) doc.line(margin, lineY, pageW - margin, lineY);
+    }
+
+    // Footer
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageW / 2, pageH - 5, { align: 'center' });
+
+    doc.save(`timetable-${className.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  }
+
   // ── View helpers ──────────────────────────────────────────────────────────
   const filteredEntries = selectedClass && selectedClass !== "all"
     ? entries.filter(e => e.classId === selectedClass)
@@ -427,6 +535,11 @@ USER PROMPT: "${aiPrompt.trim()}"
             {selectedClass !== "all" && (
               <Button variant="outline" size="sm" onClick={handleClearClass} className="text-destructive border-destructive/30 hover:bg-destructive/10">
                 <Trash2 className="w-4 h-4 mr-1" /> Clear This Class
+              </Button>
+            )}
+            {filteredEntries.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                <Download className="w-4 h-4 mr-1" /> Export PDF
               </Button>
             )}
           </div>
