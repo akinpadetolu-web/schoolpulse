@@ -40,6 +40,11 @@ export default function TeacherNotifications() {
       );
       setClasses(teacherClasses);
 
+      // Auto-select first assigned class
+      if (teacherClasses.length > 0) {
+        setSelectedClass(teacherClasses[0].id);
+      }
+
       // Get teacher's assigned subjects
       const allSubjects = await base44.entities.Subject.filter({ schoolId: user?.schoolId });
       const teacherSubjects = (allSubjects || []).filter(s =>
