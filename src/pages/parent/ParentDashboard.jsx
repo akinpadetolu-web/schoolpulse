@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCircle, BookOpen, Calendar, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { setCurrentUser } from '@/lib/auth';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -107,6 +108,7 @@ export default function ParentDashboard() {
     await base44.auth.updateMe({ linkedStudentIds: newLinked });
     // Refresh the user context to get the updated linkedStudentIds
     const updatedUser = await base44.auth.me();
+    setCurrentUser(updatedUser);
     toast.success(`${student.fullName} linked successfully!`);
     setLinkCode('');
     setShowAddChild(false);
