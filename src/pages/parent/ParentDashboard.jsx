@@ -62,12 +62,13 @@ export default function ParentDashboard() {
   const [linking, setLinking] = useState(false);
 
   // Auto-open the add child dialog if no children are linked yet (first login)
+  // Reload data whenever user.linkedStudentIds changes
   useEffect(() => {
     if (!user) return;
     const linkedIds = user?.linkedStudentIds || [];
     if (linkedIds.length === 0) setShowAddChild(true);
     load(linkedIds);
-  }, [user?.id]);
+  }, [user?.id, user?.linkedStudentIds]);
 
   async function load(linkedIds) {
     setLoading(true);
@@ -215,24 +216,15 @@ export default function ParentDashboard() {
       }
       const newLinked = [...currentLinked, student.id];
       await base44.auth.updateMe({ linkedStudentIds: newLinked });
-      
-      // Optimistically add the new child to the UI immediately
-      setChildren(prev => [...prev, student]);
-      
-      await new Promise(resolve => setTimeout(resolve, 500)); // Delay before fetching user update
+
+      // Update current user in session
       const updatedUser = await base44.auth.me();
       setCurrentUser(updatedUser);
       toast.success(`${student.fullName} linked successfully!`);
       setLinkCode('');
       setShowAddChild(false);
-      
-      // Fetch detailed data for the newly linked child
-      await Promise.all([
-        loadAttendanceData(newLinked),
-        loadGradesData(newLinked),
-        loadAssignmentsData(newLinked),
-        loadTimetableData(newLinked)
-      ]);
+
+      // useEffect will automatically reload data when user.linkedStudentIds changes
     } catch (error) {
       console.error('Error linking child:', error);
       toast.error('Failed to link child. Please try again.');
