@@ -41,7 +41,7 @@ function RichEditor({ content, onChange }) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden flex flex-col" style={{ minHeight: 360 }}>
+    <div className="border rounded-lg overflow-hidden flex flex-col" style={{ minHeight: 260 }}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b bg-muted/40">
         <ToolbarBtn icon={Bold} title="Bold" onClick={() => exec('bold')} />
@@ -66,7 +66,7 @@ function RichEditor({ content, onChange }) {
         suppressContentEditableWarning
         onInput={handleInput}
         className="flex-1 p-4 outline-none text-sm leading-relaxed overflow-y-auto prose prose-sm max-w-none"
-        style={{ minHeight: 300 }}
+        style={{ minHeight: 200 }}
         dangerouslySetInnerHTML={content === '' ? undefined : undefined}
         data-placeholder="Start typing your assignment here..."
       />
@@ -161,9 +161,9 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl h-[95vh] sm:h-auto sm:max-h-[92vh] overflow-y-auto p-4 sm:p-6 rounded-none sm:rounded-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl">{assignment.title}</DialogTitle>
+          <DialogTitle className="text-base sm:text-xl pr-6">{assignment.title}</DialogTitle>
           <div className="flex flex-wrap gap-2 mt-1">
             <span className="text-sm text-muted-foreground">{assignment.subjectName} • {assignment.teacherName}</span>
             {assignment.dueDate && (
@@ -206,7 +206,7 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
           {/* PDF upload */}
           <TabsContent value="upload" className="mt-3">
             <div
-              className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary transition-colors"
+              className="border-2 border-dashed rounded-lg p-6 sm:p-10 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               {file ? (

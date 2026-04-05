@@ -15,18 +15,17 @@ export default function StudentAssignments() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      const [asgn, subs] = await Promise.all([
-        base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }),
-        base44.entities.Submission.filter({ schoolId: user?.schoolId, studentId: user?.id }),
-      ]);
-      setAssignments(asgn || []);
-      setSubmissions(subs || []);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  async function load() {
+    const [asgn, subs] = await Promise.all([
+      base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }),
+      base44.entities.Submission.filter({ schoolId: user?.schoolId, studentId: user?.id }),
+    ]);
+    setAssignments(asgn || []);
+    setSubmissions(subs || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
 
   const submittedIds = new Set(submissions.map(s => s.assignmentId));
 
@@ -82,7 +81,7 @@ export default function StudentAssignments() {
 
       <AssignmentSubmitDialog
         open={!!selected}
-        onOpenChange={open => { if (!open) setSelected(null); }}
+        onOpenChange={open => { if (!open) { setSelected(null); load(); } }}
         assignment={selected}
         user={user}
       />
