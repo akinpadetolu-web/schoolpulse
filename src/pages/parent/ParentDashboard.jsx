@@ -101,27 +101,35 @@ export default function ParentDashboard() {
   async function handleAddChild(e) {
     e.preventDefault();
     setLinking(true);
-    // Find student with matching parentLinkCode
-    const matches = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student', parentLinkCode: linkCode.trim() });
-    if (!matches || matches.length === 0) {
-      toast.error('No student found with that link code. Please check with the school admin.');
+    try {
+      // Find student with matching parentLinkCode
+      const matches = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student', parentLinkCode: linkCode.trim() });
+      if (!matches || matches.length === 0) {
+        toast.error('No student found with that link code. Please check with the school admin.');
+        setLinking(false);
+        return;
+      }
+      const student = matches[0];
+      const currentLinked = user?.linkedStudentIds || [];
+      if (currentLinked.includes(student.id)) {
+        toast.info('This child is already linked to your account.');
+        setLinking(false);
+        return;
+      }
+      const newLinked = [...currentLinked, student.id];
+      await base44.auth.updateMe({ linkedStudentIds: newLinked });
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to avoid rate limit
+      const updatedUser = await base44.auth.me();
+      setCurrentUser(updatedUser);
+      toast.success(`${student.fullName} linked successfully!`);
+      setLinkCode('');
+      setShowAddChild(false);
+    } catch (error) {
+      console.error('Error linking child:', error);
+      toast.error('Failed to link child. Please try again.');
+    } finally {
       setLinking(false);
-      return;
     }
-    const student = matches[0];
-    const currentLinked = user?.linkedStudentIds || [];
-    if (currentLinked.includes(student.id)) {
-      toast.info('This child is already linked to your account.');
-      setLinking(false);
-      return;
-    }
-    const newLinked = [...currentLinked, student.id];
-    await base44.auth.updateMe({ linkedStudentIds: newLinked });
-    const updatedUser = await base44.auth.me();
-    setCurrentUser(updatedUser);
-    toast.success(`${student.fullName} linked successfully!`);
-    setLinkCode('');
-    setShowAddChild(false);
   }
 
   const attendanceByStudent = useMemo(() => {
