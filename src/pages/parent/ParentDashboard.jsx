@@ -93,8 +93,9 @@ export default function ParentDashboard() {
     toast.success(`${student.fullName} linked successfully!`);
     setLinkCode('');
     setShowAddChild(false);
-    // Reload page to get updated user
-    window.location.reload();
+    // Refresh user data and reload children list
+    await base44.auth.me(true);
+    await load();
   }
 
   const attendanceByStudent = useMemo(() => {
