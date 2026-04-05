@@ -97,8 +97,16 @@ export default function ParentDashboard() {
     setLoadingAttendance(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
-      const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId });
-      setAttendance((att || []).filter(a => ids.includes(a.studentId)));
+      if (ids.length === 0) {
+        setAttendance([]);
+        return;
+      }
+      const allAtt = [];
+      for (const studentId of ids) {
+        const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId, studentId });
+        if (att) allAtt.push(...att);
+      }
+      setAttendance(allAtt);
     } catch (error) {
       console.error('Failed to load attendance:', error);
       setAttendance([]);
@@ -111,8 +119,16 @@ export default function ParentDashboard() {
     setLoadingGrades(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1600));
-      const allGrades = await base44.entities.Grade.filter({ schoolId: user?.schoolId });
-      setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
+      if (ids.length === 0) {
+        setGrades([]);
+        return;
+      }
+      const allGrades = [];
+      for (const studentId of ids) {
+        const grades = await base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId });
+        if (grades) allGrades.push(...grades);
+      }
+      setGrades(allGrades);
     } catch (error) {
       console.error('Failed to load grades:', error);
       setGrades([]);
@@ -125,9 +141,22 @@ export default function ParentDashboard() {
     setLoadingAssignments(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2400));
-      const allAssignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId });
+      if (ids.length === 0) {
+        setAssignments([]);
+        return;
+      }
       const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
-      setAssignments((allAssignments || []).filter(a => linkedStudents.some(child => a.classId === child?.classId)));
+      const classIds = linkedStudents.map(s => s.classId).filter(Boolean);
+      if (classIds.length === 0) {
+        setAssignments([]);
+        return;
+      }
+      const allAssignments = [];
+      for (const classId of classIds) {
+        const assignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId });
+        if (assignments) allAssignments.push(...assignments);
+      }
+      setAssignments(allAssignments);
     } catch (error) {
       console.error('Failed to load assignments:', error);
       setAssignments([]);
@@ -140,9 +169,22 @@ export default function ParentDashboard() {
     setLoadingTimetable(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 3200));
-      const allTimetable = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId });
+      if (ids.length === 0) {
+        setTimetable([]);
+        return;
+      }
       const linkedStudents = children.length > 0 ? children : (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
-      setTimetable((allTimetable || []).filter(t => linkedStudents.some(child => t.classId === child?.classId)));
+      const classIds = linkedStudents.map(s => s.classId).filter(Boolean);
+      if (classIds.length === 0) {
+        setTimetable([]);
+        return;
+      }
+      const allTimetable = [];
+      for (const classId of classIds) {
+        const entries = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId });
+        if (entries) allTimetable.push(...entries);
+      }
+      setTimetable(allTimetable);
     } catch (error) {
       console.error('Failed to load timetable:', error);
       setTimetable([]);
