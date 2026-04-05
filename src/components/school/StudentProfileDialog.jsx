@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, RefreshCw, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import StudentGradeHistory from './StudentGradeHistory';
 
@@ -28,9 +28,19 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
   const [subjects, setSubjects] = useState([]);
   const [assignedSubjects, setAssignedSubjects] = useState(student?.assignedSubjects || []);
   const [saving, setSaving] = useState(false);
+  const [linkCode, setLinkCode] = useState(student?.parentLinkCode || "");
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   const selectedClass = classes.find(c => c.id === classId) || null;
   const subsets = getSubsetsForClass(selectedClass);
+
+  // Sync state when student changes
+  useEffect(() => {
+    setClassId(student?.classId || "");
+    setSubsetName(student?.subsetName || "");
+    setAssignedSubjects(student?.assignedSubjects || []);
+    setLinkCode(student?.parentLinkCode || "");
+  }, [student?.id]);
 
   // Auto-set subset when class changes
   useEffect(() => {
@@ -50,6 +60,22 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     setAssignedSubjects(prev =>
       prev.includes(subjectId) ? prev.filter(id => id !== subjectId) : [...prev, subjectId]
     );
+  }
+
+  async function generateLinkCode() {
+    setGeneratingCode(true);
+    const newCode = Math.random().toString(36).substring(2, 6).toUpperCase() +
+                    Math.random().toString(36).substring(2, 6).toUpperCase();
+    await base44.entities.SchoolUser.update(student.id, { parentLinkCode: newCode });
+    setLinkCode(newCode);
+    toast.success("Link code generated");
+    setGeneratingCode(false);
+    if (onSaved) onSaved();
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(linkCode);
+    toast.success("Code copied!");
   }
 
   async function handleSave() {
@@ -147,6 +173,30 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
                 )}
               </div>
             )}
+
+            {/* Parent Link Code */}
+            <div className="space-y-2 border rounded-lg p-4 bg-muted/30">
+              <Label>Parent Link Code</Label>
+              {linkCode ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-3 py-2 rounded-md border bg-background font-mono tracking-widest text-sm font-semibold">
+                    {linkCode}
+                  </div>
+                  <Button type="button" variant="outline" size="icon" onClick={copyCode}>
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" onClick={generateLinkCode} disabled={generatingCode}>
+                    {generatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="w-full" onClick={generateLinkCode} disabled={generatingCode}>
+                  {generatingCode ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                  Generate Link Code
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">Share this code with the parent to link their account to this student.</p>
+            </div>
 
             <div className="flex gap-2 pt-1">
               <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
