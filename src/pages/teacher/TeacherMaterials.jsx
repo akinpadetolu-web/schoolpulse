@@ -119,7 +119,7 @@ export default function TeacherMaterials() {
         </div>
       )}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add Material</DialogTitle></DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
