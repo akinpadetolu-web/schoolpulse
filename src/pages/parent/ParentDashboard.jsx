@@ -74,27 +74,20 @@ export default function ParentDashboard() {
         const linkedStudents = (allStudents || []).filter(s => ids.includes(s.id));
         setChildren(linkedStudents);
 
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Fetch attendance
+        // Stagger requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
         const att = await base44.entities.Attendance.filter({ schoolId: user?.schoolId });
         setAttendance((att || []).filter(a => ids.includes(a.studentId)));
 
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Fetch grades
+        await new Promise(resolve => setTimeout(resolve, 200));
         const allGrades = await base44.entities.Grade.filter({ schoolId: user?.schoolId });
         setGrades((allGrades || []).filter(g => ids.includes(g.studentId)));
 
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Fetch assignments
+        await new Promise(resolve => setTimeout(resolve, 200));
         const allAssignments = await base44.entities.Assignment.filter({ schoolId: user?.schoolId });
         setAssignments((allAssignments || []).filter(a => linkedStudents.some(child => a.classId === child?.classId)));
 
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Fetch timetable
+        await new Promise(resolve => setTimeout(resolve, 200));
         const allTimetable = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId });
         setTimetable((allTimetable || []).filter(t => linkedStudents.some(child => t.classId === child?.classId)));
       } catch (error) {
