@@ -12,7 +12,7 @@ import {
   Loader2, FileText, Download, Send, RefreshCw,
   CheckCircle2, Clock, Users, BarChart3, BookOpen, ClipboardList
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
+import { format, eachDayOfInterval, isWeekend } from 'date-fns';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
@@ -21,16 +21,18 @@ export default function AdminStudentReports() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [sendingId, setSendingId] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+  });
   const [selectedClassId, setSelectedClassId] = useState('all');
   const [classes, setClasses] = useState([]);
   const [reports, setReports] = useState([]);
-  const [commentDialog, setCommentDialog] = useState(null); // { report, comment }
+  const [commentDialog, setCommentDialog] = useState(null);
   const [savingComment, setSavingComment] = useState(false);
-  const [previewReport, setPreviewReport] = useState(null);
 
   useEffect(() => { loadClasses(); }, []);
-  useEffect(() => { if (!loading) loadReports(); }, [selectedMonth, selectedClassId]);
+  useEffect(() => { if (!loading) loadReports(); }, [dateRange, selectedClassId]);
 
   async function loadClasses() {
     const cls = await base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false });
@@ -39,20 +41,24 @@ export default function AdminStudentReports() {
   }
 
   async function loadReports() {
-    const reps = await base44.entities.StudentReport.filter({ schoolId: user?.schoolId, month: selectedMonth });
-    const filtered = selectedClassId === 'all' ? reps : reps.filter(r => r.classId === selectedClassId);
-    setReports(filtered || []);
+    const reps = await base44.entities.StudentReport.filter({ schoolId: user?.schoolId });
+    const filtered = (reps || []).filter(r => {
+      const reportDate = r.month || r.created_date?.split('T')[0];
+      const inRange = reportDate >= dateRange.startDate && reportDate <= dateRange.endDate;
+      const inClass = selectedClassId === 'all' || r.classId === selectedClassId;
+      return inRange && inClass;
+    });
+    setReports(filtered);
   }
 
-  // ── Generate reports for all students in selected month/class ──
+  // ── Generate reports for all students in selected date range/class ──
   async function generateReports() {
     setGenerating(true);
     try {
-      const [year, month] = selectedMonth.split('-').map(Number);
-      const monthStart = startOfMonth(new Date(year, month - 1));
-      const monthEnd = endOfMonth(new Date(year, month - 1));
-      const schoolDays = eachDayOfInterval({ start: monthStart, end: monthEnd }).filter(d => !isWeekend(d)).length;
-      const monthLabel = format(monthStart, 'MMMM yyyy');
+      const rangeStart = new Date(dateRange.startDate);
+      const rangeEnd = new Date(dateRange.endDate);
+      const schoolDays = eachDayOfInterval({ start: rangeStart, end: rangeEnd }).filter(d => !isWeekend(d)).length;
+      const rangeLabel = `${format(rangeStart, 'MMM d')} - ${format(rangeEnd, 'MMM d, yyyy')}`;
 
       // Fetch all data in parallel
       const studentFilter = { schoolId: user?.schoolId, role: 'student', isArchived: false };
@@ -66,16 +72,25 @@ export default function AdminStudentReports() {
         base44.entities.Submission.filter({ schoolId: user?.schoolId }),
       ]);
 
-      // Filter to the selected month
-      const monthAtt = attendance.filter(a => a.date?.startsWith(selectedMonth));
-      const monthPlans = lessonPlans.filter(p => p.date?.startsWith(selectedMonth));
-      const monthDueAssignments = assignments.filter(a => a.dueDate?.startsWith(selectedMonth) && a.isPublished);
+      // Filter to the selected date range
+      const rangeAtt = (attendance || []).filter(a => {
+        const d = new Date(a.date);
+        return d >= rangeStart && d <= rangeEnd;
+      });
+      const rangePlans = (lessonPlans || []).filter(p => {
+        const d = new Date(p.date);
+        return d >= rangeStart && d <= rangeEnd;
+      });
+      const rangeDueAssignments = (assignments || []).filter(a => {
+        const d = new Date(a.dueDate);
+        return d >= rangeStart && d <= rangeEnd && a.isPublished;
+      });
 
       let created = 0, updated = 0;
 
       for (const student of (students || [])) {
         // Attendance stats
-        const stuAtt = monthAtt.filter(a => a.studentId === student.id);
+        const stuAtt = rangeAtt.filter(a => a.studentId === student.id);
         const present = stuAtt.filter(a => a.status === 'present' || a.status === 'late').length;
         const absent = stuAtt.filter(a => a.status === 'absent').length;
         const excused = stuAtt.filter(a => a.status === 'excused').length;
@@ -83,13 +98,14 @@ export default function AdminStudentReports() {
         const rate = schoolDays > 0 ? Math.round((present / schoolDays) * 100) : 0;
 
         // Lesson plans published for this student's class
-        const classPlans = monthPlans.filter(p => p.classId === student.classId);
+        const classPlans = rangePlans.filter(p => p.classId === student.classId);
 
         // Assignments & submissions
-        const classAssignments = monthDueAssignments.filter(a => a.classId === student.classId);
-        const stuSubmissions = submissions.filter(s => s.studentId === student.id && classAssignments.some(a => a.id === s.assignmentId));
+        const classAssignments = rangeDueAssignments.filter(a => a.classId === student.classId);
+        const stuSubmissions = (submissions || []).filter(s => s.studentId === student.id && classAssignments.some(a => a.id === s.assignmentId));
         const subRate = classAssignments.length > 0 ? Math.round((stuSubmissions.length / classAssignments.length) * 100) : 100;
 
+        const reportMonth = format(rangeStart, 'yyyy-MM');
         const payload = {
           schoolId: user.schoolId,
           schoolName: user.schoolName,
@@ -98,8 +114,8 @@ export default function AdminStudentReports() {
           studentEmail: student.email || '',
           classId: student.classId || '',
           className: student.className || '',
-          month: selectedMonth,
-          monthLabel,
+          month: reportMonth,
+          monthLabel: rangeLabel,
           attendancePresent: present,
           attendanceAbsent: absent,
           attendanceExcused: excused,
@@ -114,12 +130,12 @@ export default function AdminStudentReports() {
           status: 'draft',
         };
 
-        // Check if report already exists for this student+month
-        const existing = reports.find(r => r.studentId === student.id && r.month === selectedMonth);
+        // Check if report already exists for this student+date range
+        const existing = reports.find(r => r.studentId === student.id && r.month === reportMonth);
         if (existing) {
           await base44.entities.StudentReport.update(existing.id, {
             ...payload,
-            teacherComment: existing.teacherComment || '', // preserve existing comment
+            teacherComment: existing.teacherComment || '',
             status: existing.status === 'sent' ? 'sent' : 'draft',
           });
           updated++;
@@ -354,13 +370,23 @@ ${report.schoolName}
       <Card className="border-0 shadow-sm mb-6">
         <CardContent className="p-4 flex flex-col sm:flex-row gap-3 items-end flex-wrap">
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Month</Label>
+            <Label className="text-xs text-muted-foreground">From Date</Label>
             <input
-              type="month"
-              value={selectedMonth}
-              min={format(new Date(new Date().getFullYear() - 5, new Date().getMonth(), 1), 'yyyy-MM')}
-              max={format(new Date(), 'yyyy-MM')}
-              onChange={e => setSelectedMonth(e.target.value)}
+              type="date"
+              value={dateRange.startDate}
+              max={dateRange.endDate}
+              onChange={e => setDateRange({ ...dateRange, startDate: e.target.value })}
+              className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">To Date</Label>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              min={dateRange.startDate}
+              max={format(new Date(), 'yyyy-MM-dd')}
+              onChange={e => setDateRange({ ...dateRange, endDate: e.target.value })}
               className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
