@@ -217,7 +217,7 @@ export default function AdminStudentReports() {
     statRow('Days Absent', report.attendanceAbsent, '');
     statRow('Days Excused', report.attendanceExcused, '');
     statRow('Attendance Rate', `${report.attendanceRate}%`,
-      report.attendanceRate >= 75 ? '✓ Good standing' : '⚠ Below 75%');
+      report.attendanceRate >= 75 ? '[OK] Good standing' : '[!] Below 75%');
     y += 4;
 
     doc.setDrawColor(220, 220, 220);
@@ -235,7 +235,7 @@ export default function AdminStudentReports() {
     statRow('Assignments Given', report.assignmentsTotal, '');
     statRow('Submitted', report.assignmentsSubmitted, '');
     statRow('Submission Rate', `${report.submissionRate}%`,
-      report.submissionRate >= 80 ? '✓ Good' : report.submissionRate >= 50 ? '~ Needs improvement' : '⚠ Low');
+      report.submissionRate >= 80 ? '[OK] Good' : report.submissionRate >= 50 ? '[~] Needs improvement' : '[!] Low');
     y += 4;
 
     doc.line(margin, y, W - margin, y); y += 8;
@@ -358,6 +358,8 @@ ${report.schoolName}
             <input
               type="month"
               value={selectedMonth}
+              min={format(new Date(new Date().getFullYear() - 5, new Date().getMonth(), 1), 'yyyy-MM')}
+              max={format(new Date(), 'yyyy-MM')}
               onChange={e => setSelectedMonth(e.target.value)}
               className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
