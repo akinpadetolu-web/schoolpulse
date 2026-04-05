@@ -1,0 +1,52 @@
+{
+  "name": "Attendance",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "YYYY-MM-DD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "late",
+        "excused"
+      ],
+      "default": "present"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "studentId",
+    "date",
+    "status"
+  ]
+}

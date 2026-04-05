@@ -36,6 +36,7 @@ import AdminTeacherAssignments from './pages/school-admin/AdminTeacherAssignment
 import AdminBulkAssign from './pages/school-admin/AdminBulkAssign';
 import AdminTimetable from './pages/school-admin/AdminTimetable';
 import AdminAssignments from './pages/school-admin/AdminAssignments';
+import AdminAttendance from './pages/school-admin/AdminAttendance';
 import AdminAnnouncements from './pages/school-admin/AdminAnnouncements';
 import AdminSettings from './pages/school-admin/AdminSettings';
 
@@ -46,6 +47,7 @@ import TeacherTimetable from './pages/teacher/TeacherTimetable';
 import TeacherAssignments from './pages/teacher/TeacherAssignments';
 import TeacherGrades from './pages/teacher/TeacherGrades';
 import TeacherMaterials from './pages/teacher/TeacherMaterials';
+import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 
 // Student Layout + Pages
@@ -117,6 +119,7 @@ const AuthenticatedApp = () => {
         <Route path="bulk-assign" element={<AdminBulkAssign />} />
         <Route path="timetable" element={<AdminTimetable />} />
         <Route path="assignments" element={<AdminAssignments />} />
+        <Route path="attendance" element={<AdminAttendance />} />
         <Route path="announcements" element={<AdminAnnouncements />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
@@ -128,6 +131,7 @@ const AuthenticatedApp = () => {
         <Route path="assignments" element={<TeacherAssignments />} />
         <Route path="grades" element={<TeacherGrades />} />
         <Route path="materials" element={<TeacherMaterials />} />
+        <Route path="attendance" element={<TeacherAttendance />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
       </Route>
 
