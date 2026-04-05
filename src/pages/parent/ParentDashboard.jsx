@@ -58,16 +58,16 @@ export default function ParentDashboard() {
     load();
   }, []);
 
-  async function load() {
+  async function load(linkedIds) {
     setLoading(true);
-    const linkedIds = user?.linkedStudentIds || [];
-    if (linkedIds.length > 0) {
+    const ids = linkedIds || user?.linkedStudentIds || [];
+    if (ids.length > 0) {
       const [allStudents, att] = await Promise.all([
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
         base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
       ]);
-      setChildren((allStudents || []).filter(s => linkedIds.includes(s.id)));
-      setAttendance((att || []).filter(a => linkedIds.includes(a.studentId)));
+      setChildren((allStudents || []).filter(s => ids.includes(s.id)));
+      setAttendance((att || []).filter(a => ids.includes(a.studentId)));
     }
     setLoading(false);
   }
@@ -89,13 +89,13 @@ export default function ParentDashboard() {
       setLinking(false);
       return;
     }
-    await base44.auth.updateMe({ linkedStudentIds: [...currentLinked, student.id] });
+    const newLinked = [...currentLinked, student.id];
+    await base44.auth.updateMe({ linkedStudentIds: newLinked });
     toast.success(`${student.fullName} linked successfully!`);
     setLinkCode('');
     setShowAddChild(false);
-    // Refresh user data and reload children list
-    await base44.auth.me(true);
-    await load();
+    // Refresh children list with new linked IDs
+    await load(newLinked);
   }
 
   const attendanceByStudent = useMemo(() => {
