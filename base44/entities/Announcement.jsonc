@@ -22,10 +22,39 @@
         "teacher",
         "student",
         "parent"
-      ]
+      ],
+      "description": "Primary role audience"
     },
-    "targetClassId": {
-      "type": "string"
+    "targetClassIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Empty = all classes for the role. Populated = only these classes."
+    },
+    "targetClassNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of targeted classes"
+    },
+    "targetSubjectIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "For teacher targeting: filter by subject"
+    },
+    "targetSubjectNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "targetAudienceLabel": {
+      "type": "string",
+      "description": "Human-readable summary of the audience, e.g. 'Students of JS1A, JS2B'"
     },
     "authorId": {
       "type": "string"

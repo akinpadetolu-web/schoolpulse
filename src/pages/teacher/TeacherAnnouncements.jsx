@@ -14,7 +14,24 @@ export default function TeacherAnnouncements() {
     async function load() {
       try {
         const data = await base44.entities.Announcement.filter({ schoolId: user?.schoolId });
-        const filtered = (data || []).filter(a => a.targetRole === "all" || a.targetRole === "teacher");
+        const teacherClassIds = [...new Set((user?.teachingAssignments || []).map(a => a.classId).filter(Boolean))];
+        const teacherSubjectIds = [...new Set((user?.teachingAssignments || []).map(a => a.subjectId).filter(Boolean))];
+
+        const filtered = (data || []).filter(a => {
+          if (a.targetRole === "all") return true;
+          if (a.targetRole !== "teacher") return false;
+          // Class filter
+          if (a.targetClassIds && a.targetClassIds.length > 0) {
+            const classMatch = teacherClassIds.some(cid => a.targetClassIds.includes(cid));
+            if (!classMatch) return false;
+          }
+          // Subject filter
+          if (a.targetSubjectIds && a.targetSubjectIds.length > 0) {
+            const subjectMatch = teacherSubjectIds.some(sid => a.targetSubjectIds.includes(sid));
+            if (!subjectMatch) return false;
+          }
+          return true;
+        });
         setItems(filtered);
       } catch { setItems([]); }
       setLoading(false);

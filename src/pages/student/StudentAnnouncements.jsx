@@ -14,7 +14,15 @@ export default function StudentAnnouncements() {
     async function load() {
       try {
         const data = await base44.entities.Announcement.filter({ schoolId: user?.schoolId });
-        setItems((data || []).filter(a => a.targetRole === "all" || a.targetRole === "student"));
+        setItems((data || []).filter(a => {
+          if (a.targetRole === "all") return true;
+          if (a.targetRole !== "student") return false;
+          // Class-specific: show only if no class restriction or student's class is in the list
+          if (a.targetClassIds && a.targetClassIds.length > 0) {
+            return a.targetClassIds.includes(user?.classId);
+          }
+          return true;
+        }));
       } catch { setItems([]); }
       setLoading(false);
     }

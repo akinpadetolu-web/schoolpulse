@@ -13,7 +13,21 @@ export default function ParentAnnouncements() {
     async function load() {
       try {
         const data = await base44.entities.Announcement.filter({ schoolId: user?.schoolId });
-        setItems((data || []).filter(a => a.targetRole === "all" || a.targetRole === "parent"));
+        // Parents see announcements targeted to "all" or "parent", filtered by their linked students' classes
+        const linkedClassIds = (user?.linkedStudentIds || []).length > 0
+          ? await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: "student" })
+              .then(students => students.filter(s => (user.linkedStudentIds || []).includes(s.id)).map(s => s.classId).filter(Boolean))
+          : [];
+
+        setItems((data || []).filter(a => {
+          if (a.targetRole === "all") return true;
+          if (a.targetRole !== "parent") return false;
+          if (a.targetClassIds && a.targetClassIds.length > 0) {
+            // Show if any of the parent's linked students are in the targeted classes
+            return linkedClassIds.some(cid => a.targetClassIds.includes(cid));
+          }
+          return true;
+        }));
       } catch { setItems([]); }
       setLoading(false);
     }
