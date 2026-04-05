@@ -211,7 +211,7 @@ export default function AdminStudentReports() {
     }
 
     // Attendance Section
-    sectionTitle('📅  Attendance');
+    sectionTitle('Attendance');
     statRow('School Days in Month', report.schoolDays, '');
     statRow('Days Present / Late', report.attendancePresent, '');
     statRow('Days Absent', report.attendanceAbsent, '');
@@ -224,14 +224,14 @@ export default function AdminStudentReports() {
     doc.line(margin, y, W - margin, y); y += 8;
 
     // Lesson Plans Section
-    sectionTitle('📖  Lesson Plans');
+    sectionTitle('Lesson Plans');
     statRow('Lessons Published This Month', report.lessonsPublished, '');
     y += 4;
 
     doc.line(margin, y, W - margin, y); y += 8;
 
     // Assignments Section
-    sectionTitle('📝  Assignments');
+    sectionTitle('Assignments');
     statRow('Assignments Given', report.assignmentsTotal, '');
     statRow('Submitted', report.assignmentsSubmitted, '');
     statRow('Submission Rate', `${report.submissionRate}%`,
@@ -242,7 +242,7 @@ export default function AdminStudentReports() {
 
     // Teacher Comment
     if (report.teacherComment) {
-      sectionTitle('💬  Teacher\'s Comment');
+      sectionTitle('Teacher\'s Comment');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(50, 50, 50);
