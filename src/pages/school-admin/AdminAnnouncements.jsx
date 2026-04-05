@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Megaphone, Users, GraduationCap, BookOpen, UserCheck, CheckSquare, Square } from 'lucide-react';
 import { toast } from 'sonner';
+import { createAnnouncementNotification } from '@/lib/notificationService';
 
 const ROLES = [
   { value: "all",     label: "Everyone",        icon: Users,          desc: "All students, teachers and parents" },
@@ -139,7 +140,7 @@ export default function AdminAnnouncements() {
     const targetSubjectNames = subjects.filter(s => targetSubjectIds.includes(s.id)).map(s => s.name);
     const audienceLabel = buildAudienceLabel(form.targetRole, targetClassIds, targetClassNames, targetSubjectIds, targetSubjectNames);
 
-    await base44.entities.Announcement.create({
+    const announcement = {
       schoolId: user.schoolId,
       schoolName: user.schoolName,
       title: form.title,
@@ -153,9 +154,12 @@ export default function AdminAnnouncements() {
       authorId: user.id,
       authorName: user.fullName,
       isPublished: true,
-    });
+    };
 
-    toast.success("Announcement published");
+    await base44.entities.Announcement.create(announcement);
+    await createAnnouncementNotification(announcement, user);
+
+    toast.success("Announcement published and notifications sent");
     setShowCreate(false);
     loadData();
     setSaving(false);

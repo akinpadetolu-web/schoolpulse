@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { createAssignmentNotification } from '@/lib/notificationService';
+import { toast } from 'sonner';
 
 export default function TeacherAssignments() {
   const user = getCurrentUser();
@@ -48,7 +50,7 @@ export default function TeacherAssignments() {
     try {
       const cls = classes.find(c => c.id === form.classId);
       const subj = subjects.find(s => s.id === form.subjectId);
-      await base44.entities.Assignment.create({
+      const assignment = {
         schoolId: user.schoolId,
         classId: form.classId,
         className: cls?.className || "",
@@ -62,11 +64,14 @@ export default function TeacherAssignments() {
         maxScore: Number(form.maxScore) || 100,
         isPublished: true,
         isArchived: false,
-      });
+      };
+      await base44.entities.Assignment.create(assignment);
+      await createAssignmentNotification(assignment, user);
+      toast.success("Assignment created and students notified");
       setForm({ title: "", description: "", classId: "", subjectId: "", dueDate: "", maxScore: 100 });
       setShowCreate(false);
       loadData();
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); toast.error("Failed to create assignment"); }
     setSaving(false);
   }
 
