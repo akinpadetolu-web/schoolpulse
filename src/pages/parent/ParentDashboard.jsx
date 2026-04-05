@@ -51,7 +51,12 @@ export default function ParentDashboard() {
   const [linkCode, setLinkCode] = useState('');
   const [linking, setLinking] = useState(false);
 
-  useEffect(() => { load(); }, []);
+  // Auto-open the add child dialog if no children are linked yet (first login)
+  useEffect(() => {
+    const linkedIds = user?.linkedStudentIds || [];
+    if (linkedIds.length === 0) setShowAddChild(true);
+    load();
+  }, []);
 
   async function load() {
     setLoading(true);
