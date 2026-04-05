@@ -1,0 +1,80 @@
+{
+  "name": "ExamResult",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string",
+      "description": "School ID"
+    },
+    "examName": {
+      "type": "string",
+      "description": "Name of the exam e.g. Midterm, Final, Diagnostic"
+    },
+    "examTerm": {
+      "type": "string",
+      "description": "Academic term of the exam e.g. Term 1"
+    },
+    "classId": {
+      "type": "string",
+      "description": "Class ID"
+    },
+    "className": {
+      "type": "string",
+      "description": "Class name"
+    },
+    "subjectId": {
+      "type": "string",
+      "description": "Subject ID"
+    },
+    "subjectName": {
+      "type": "string",
+      "description": "Subject name"
+    },
+    "studentId": {
+      "type": "string",
+      "description": "Student ID"
+    },
+    "studentName": {
+      "type": "string",
+      "description": "Student full name"
+    },
+    "studentEmail": {
+      "type": "string",
+      "description": "Student email"
+    },
+    "score": {
+      "type": "number",
+      "description": "Exam score (0-100)"
+    },
+    "maxScore": {
+      "type": "number",
+      "description": "Maximum possible score",
+      "default": 100
+    },
+    "grade": {
+      "type": "string",
+      "description": "Letter grade or grading scale equivalent"
+    },
+    "comments": {
+      "type": "string",
+      "description": "Teacher comments on performance"
+    },
+    "uploadedBy": {
+      "type": "string",
+      "description": "Teacher email who uploaded the results"
+    },
+    "uploadedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when results were uploaded"
+    }
+  },
+  "required": [
+    "schoolId",
+    "examName",
+    "classId",
+    "subjectId",
+    "studentId",
+    "score"
+  ]
+}

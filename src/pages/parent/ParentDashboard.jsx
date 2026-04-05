@@ -12,6 +12,7 @@ import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCi
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import UnifiedTimetable from '@/components/parent/UnifiedTimetable';
+import ExamProgressReport from '@/components/parent/ExamProgressReport';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -57,6 +58,8 @@ export default function ParentDashboard() {
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [loadingTimetable, setLoadingTimetable] = useState(false);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [examResults, setExamResults] = useState([]);
   const [showAddChild, setShowAddChild] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linking, setLinking] = useState(false);
@@ -91,6 +94,7 @@ export default function ParentDashboard() {
       loadGradesData(ids);
       loadAssignmentsData(ids);
       loadTimetableData(ids);
+      loadExamResultsData(ids);
     }
   }
 
@@ -193,6 +197,28 @@ export default function ParentDashboard() {
       setTimetable([]);
     } finally {
       setLoadingTimetable(false);
+    }
+  }
+
+  async function loadExamResultsData(ids) {
+    setLoadingExams(true);
+    try {
+      if (ids.length === 0) {
+        setExamResults([]);
+        setLoadingExams(false);
+        return;
+      }
+      const promises = ids.map(studentId => 
+        base44.entities.ExamResult.filter({ schoolId: user?.schoolId, studentId }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      const allResults = results.flat().filter(Boolean);
+      setExamResults(allResults);
+    } catch (error) {
+      console.error('Failed to load exam results:', error);
+      setExamResults([]);
+    } finally {
+      setLoadingExams(false);
     }
   }
 
@@ -307,11 +333,12 @@ export default function ParentDashboard() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="attendance" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4">
+                      <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
                         <TabsTrigger value="assignments" className="text-xs">Assignments</TabsTrigger>
                         <TabsTrigger value="timetable" className="text-xs">Timetable</TabsTrigger>
                         <TabsTrigger value="grades" className="text-xs">Grades</TabsTrigger>
+                        <TabsTrigger value="exams" className="text-xs">Exams</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="attendance" className="space-y-3 mt-4">
@@ -390,6 +417,16 @@ export default function ParentDashboard() {
                             ))}
                             {childGrades.length > 5 && <p className="text-xs text-muted-foreground">+{childGrades.length - 5} more</p>}
                           </div>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="exams" className="mt-4">
+                        {loadingExams ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading exam results...
+                          </div>
+                        ) : (
+                          <ExamProgressReport child={child} examResults={examResults} />
                         )}
                       </TabsContent>
                     </Tabs>
