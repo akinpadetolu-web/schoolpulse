@@ -79,11 +79,6 @@ export default function AdminBulkAssign() {
     setAssigning(false);
   }
 
-  async function handleCloneSubjectMapping() {
-    // Clone subject mappings from one class to another
-    toast.info("Select source and target class, then click Clone");
-  }
-
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (

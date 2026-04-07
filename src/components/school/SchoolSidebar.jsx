@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, Settings, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,7 +28,6 @@ const adminNav = [
   { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   { label: "Calendar", path: "/school-admin/calendar", icon: CalendarDays },
   { label: "Performance", path: "/school-admin/performance", icon: TrendingUp },
-  { label: "Settings", path: "/school-admin/settings", icon: Settings },
 ];
 
 export default function SchoolSidebar({ isOpen, onClose }) {
