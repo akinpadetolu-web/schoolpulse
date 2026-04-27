@@ -187,7 +187,7 @@ export default function SchoolPortal() {
                   <div className="space-y-2">
                     <Label>Role</Label>
                     <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
+                      <SelectTrigger className="bg-transparent px-3 py-2 text-sm rounded-3xl flex h-9 w-full items-center justify-between whitespace-nowrap border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"><SelectValue placeholder="Select your role" /></SelectTrigger>
                       <SelectContent>
                         {roles.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                       </SelectContent>
