@@ -166,7 +166,7 @@ export default function SchoolPortal() {
           <CardContent className="pt-6">
             <Tabs defaultValue="signin">
               <TabsList className="bg-muted text-muted-foreground mb-6 p-1 rounded-[28px] inline-flex h-9 items-center justify-center w-full">
-                <TabsTrigger value="signin" className="flex-1">Sign In</TabsTrigger>
+                <TabsTrigger value="signin" className="px-3 py-1 text-sm font-medium rounded-[20px] inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow flex-1">Sign In</TabsTrigger>
                 <TabsTrigger value="parent-signup" className="flex-1">Parent Sign Up</TabsTrigger>
               </TabsList>
 
