@@ -165,7 +165,7 @@ export default function SchoolPortal() {
         <Card className="shadow-xl border-0">
           <CardContent className="pt-6">
             <Tabs defaultValue="signin">
-              <TabsList className="w-full mb-6">
+              <TabsList className="bg-muted text-muted-foreground mb-6 p-1 rounded-[28px] inline-flex h-9 items-center justify-center w-full">
                 <TabsTrigger value="signin" className="flex-1">Sign In</TabsTrigger>
                 <TabsTrigger value="parent-signup" className="flex-1">Parent Sign Up</TabsTrigger>
               </TabsList>
