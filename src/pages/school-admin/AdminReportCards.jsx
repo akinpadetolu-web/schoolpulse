@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 
 export default function AdminReportCards() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [reportCards, setReportCards] = useState([]);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,7 +97,7 @@ function buildAudienceLabel(targetRole, targetClassIds, targetClassNames, target
 const EMPTY_FORM = { title: "", message: "", targetRole: "all" };
 
 export default function AdminAnnouncements() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [items, setItems] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);

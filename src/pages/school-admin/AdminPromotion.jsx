@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ function isPassing(score, gradingSystem) {
 }
 
 export default function AdminPromotion() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [rules, setRules] = useState([]);
   const [results, setResults] = useState([]);
   const [classes, setClasses] = useState([]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Plus, Loader2, Pencil, Archive, RotateCcw, Search, BookOpen, Tag } from
 import { toast } from 'sonner';
 
 export default function AdminSubjects() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
   const [subjects, setSubjects] = useState([]);
   const [categories, setCategories] = useState([]);

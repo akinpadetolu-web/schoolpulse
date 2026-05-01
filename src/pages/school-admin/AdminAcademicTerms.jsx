@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { getTerms, checkTermOverlap } from '@/lib/academicTermUtils';
 
 export default function AdminAcademicTerms() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);

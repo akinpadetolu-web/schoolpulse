@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function AdminAssignments() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 

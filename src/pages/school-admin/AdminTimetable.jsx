@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { getSubjectsForClass, autoLinkTeachersToTimetable } from '@/lib/schoolData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,7 +73,7 @@ function detectInternalClashes(slots, existingEntries = []) {
 }
 
 export default function AdminTimetable() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
   const [entries, setEntries] = useState([]);
   const [classes, setClasses] = useState([]);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
 export default function AdminSchoolReport() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
 

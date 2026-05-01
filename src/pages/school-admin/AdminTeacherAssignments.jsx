@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { autoLinkTeachersToTimetable } from '@/lib/schoolData';
 
 export default function AdminTeacherAssignments() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
   const [teachers, setTeachers] = useState([]);
   const [classes, setClasses] = useState([]);
