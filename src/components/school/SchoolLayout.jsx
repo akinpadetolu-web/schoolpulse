@@ -44,7 +44,7 @@ export default function SchoolLayout() {
           )}
           <h2 className="text-sm font-medium text-muted-foreground md:block hidden">{user.schoolName || "School"} — Admin</h2>
         </header>
-        <main className="flex-1 overflow-hidden relative">
+        <main className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -52,7 +52,7 @@ export default function SchoolLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="absolute inset-0 overflow-y-auto p-4 md:p-6"
+              className="p-4 md:p-6"
               style={{
                 paddingBottom: 'env(safe-area-inset-bottom)',
                 paddingLeft: 'env(safe-area-inset-left)',

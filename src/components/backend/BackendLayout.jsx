@@ -18,9 +18,9 @@ export default function BackendLayout() {
   if (!getCurrentSuperAdmin()) return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex">
+    <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <BackendSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-6 shrink-0">
           <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />

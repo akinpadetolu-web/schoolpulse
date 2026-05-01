@@ -51,7 +51,7 @@ export default function ParentLayout() {
           </div>
           <NotificationCenter />
         </header>
-        <main className="flex-1 overflow-y-auto md:pb-0 pb-16">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -59,8 +59,9 @@ export default function ParentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="w-full"
+              className="p-4 md:p-6"
               style={{
+                paddingBottom: 'env(safe-area-inset-bottom)',
                 paddingLeft: 'env(safe-area-inset-left)',
                 paddingRight: 'env(safe-area-inset-right)',
               }}
