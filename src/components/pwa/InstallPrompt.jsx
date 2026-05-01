@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Download } from 'lucide-react';
 import { getInstallPrompt, triggerInstallPrompt } from '@/lib/pwaManager';
 import { Button } from '@/components/ui/button';
