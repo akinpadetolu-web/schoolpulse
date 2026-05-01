@@ -69,14 +69,16 @@ export default function SchoolPortal() {
       if (!school) {setError("Invalid school selected");setLoading(false);return;}
 
       const users = await base44.entities.SchoolUser.filter({ schoolId: school.id, role: role });
+      if (!users) {setError("Could not reach server. Please check your connection and try again.");setLoading(false);return;}
       await new Promise((resolve) => setTimeout(resolve, 100));
 
+      const trimmedUsername = username.trim();
       const user = (users || []).find((u) =>
-      (u.username === username || u.email === username) && !u.isArchived
+        (u.username?.trim() === trimmedUsername || u.email?.trim() === trimmedUsername) && !u.isArchived
       );
 
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
-      if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
+      if (!comparePassword(password.trim(), user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
       setCurrentUser(user);
 
@@ -84,8 +86,9 @@ export default function SchoolPortal() {
       if (role === "teacher") navigate("/teacher");else
       if (role === "student") navigate("/student");else
       if (role === "parent") navigate("/parent");
-    } catch {
-      setError("Sign in failed. Please try again.");
+    } catch (err) {
+      console.error('Login error:', err);
+      setError("Sign in failed. Please check your connection and try again.");
     }
     setLoading(false);
   }
