@@ -1,7 +1,6 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio, CalendarDays, Video, Bell, Settings, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio, CalendarDays, Video, Bell, Settings, UserCheck, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
@@ -18,6 +17,7 @@ const studentNavGroups = [
     items: [
       { label: "Timetable", path: "/student/timetable", icon: Calendar },
       { label: "Assignments", path: "/student/assignments", icon: FileText },
+      { label: "Assignment Summary", path: "/student/assignment-summary", icon: TrendingUp },
       { label: "Grades", path: "/student/grades", icon: ClipboardList },
       { label: "Attendance", path: "/student/timetable", icon: UserCheck },
       { label: "E-Class", path: "/student/e-class", icon: Video },
