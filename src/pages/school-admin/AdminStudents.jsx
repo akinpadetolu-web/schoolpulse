@@ -5,10 +5,11 @@ import { hashPassword, generateTemporaryPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Loader2 } from 'lucide-react';
-import UserTable from '@/components/backend/UserTable';
+import { Plus, Search, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
 import StudentProfileDialog from '@/components/school/StudentProfileDialog';
+import StudentGridCard from '@/components/school/StudentGridCard';
 import { toast } from 'sonner';
 
 export default function AdminStudents() {
@@ -17,6 +18,8 @@ export default function AdminStudents() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedClass, setSelectedClass] = useState("all");
+  const [expandedClasses, setExpandedClasses] = useState(new Set());
   const [showCreate, setShowCreate] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
@@ -45,7 +48,43 @@ export default function AdminStudents() {
   async function handleArchive(u) { await base44.entities.SchoolUser.update(u.id, { isArchived: true }); loadData(); }
   async function handleRestore(u) { await base44.entities.SchoolUser.update(u.id, { isArchived: false }); loadData(); }
 
-  const filtered = students.filter(t => (t.fullName || "").toLowerCase().includes(search.toLowerCase()));
+  // Filter students by search across all classes
+  const filtered = students.filter(s =>
+    (s.fullName || "").toLowerCase().includes(search.toLowerCase()) ||
+    (s.username || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Group by class
+  const grouped = {};
+  filtered.forEach(student => {
+    const classId = student.classId || 'unassigned';
+    if (!grouped[classId]) grouped[classId] = [];
+    grouped[classId].push(student);
+  });
+
+  // Apply class filter
+  const displayGroups = selectedClass === 'all'
+    ? grouped
+    : { [selectedClass]: grouped[selectedClass] || [] };
+
+  // Sort groups by class name
+  const sortedClassIds = Object.keys(displayGroups).sort((a, b) => {
+    if (a === 'unassigned') return 1;
+    if (b === 'unassigned') return -1;
+    const classA = classes.find(c => c.id === a)?.className || '';
+    const classB = classes.find(c => c.id === b)?.className || '';
+    return classA.localeCompare(classB);
+  });
+
+  const toggleClass = (classId) => {
+    const newExpanded = new Set(expandedClasses);
+    if (newExpanded.has(classId)) {
+      newExpanded.delete(classId);
+    } else {
+      newExpanded.add(classId);
+    }
+    setExpandedClasses(newExpanded);
+  };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -55,11 +94,71 @@ export default function AdminStudents() {
         <h1 className="text-2xl font-bold">Students</h1>
         <Button onClick={() => setShowCreate(true)}><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
       </div>
-      <div className="relative mb-4 max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input className="pl-9" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Search by name or username..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
-      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} onRowClick={setEditingStudent} />
+
+      {/* Student Groups */}
+      <div className="space-y-6">
+        {sortedClassIds.map(classId => {
+          const classObj = classes.find(c => c.id === classId);
+          const className = classObj?.className || 'Unassigned';
+          const studentsInClass = displayGroups[classId] || [];
+          const isExpanded = expandedClasses.has(classId);
+
+          return (
+            <div key={classId}>
+              {/* Class Header */}
+              <button
+                onClick={() => toggleClass(classId)}
+                className="w-full flex items-center gap-2 p-4 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors mb-3"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="w-5 h-5 text-primary" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                )}
+                <h2 className="text-lg font-semibold flex-1 text-left">{className}</h2>
+                <span className="text-sm text-muted-foreground">{studentsInClass.length} student{studentsInClass.length !== 1 ? 's' : ''}</span>
+              </button>
+
+              {/* Class Content */}
+              {isExpanded && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pl-4">
+                  {studentsInClass.map(student => (
+                    <StudentGridCard
+                      key={student.id}
+                      student={student}
+                      onView={setEditingStudent}
+                      onEdit={setEditingStudent}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {sortedClassIds.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No students found.</p>
+          </div>
+        )}
+      </div>
       {showCreate && (
         <CreateUserDialog open={showCreate} onOpenChange={setShowCreate} role="student" school={school} classes={classes} onCreated={loadData} />
       )}

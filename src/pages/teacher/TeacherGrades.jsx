@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Loader2, Pencil, Trash2, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import TermAverages from '@/components/teacher/TermAverages';
+import MyStudentsSection from '@/components/teacher/MyStudentsSection';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -164,12 +165,29 @@ export default function TeacherGrades() {
     setShowDialog(false);
 
     try {
+      let gradeId;
       if (editingGrade) {
         await base44.entities.Grade.update(editingGrade.id, payload);
+        gradeId = editingGrade.id;
         toast.success("Grade updated");
       } else {
-        await base44.entities.Grade.create(payload);
+        const result = await base44.entities.Grade.create(payload);
+        gradeId = result?.id;
         toast.success("Grade saved");
+      }
+      // Trigger notification function
+      if (gradeId) {
+        try {
+          await base44.functions.invoke('onGradeSubmitted', {
+            gradeId,
+            schoolId: user.schoolId,
+            studentId: form.studentId,
+            teacherId: user.id,
+            subjectId: form.subjectId,
+          });
+        } catch (notifError) {
+          console.warn('Notification trigger failed (non-critical):', notifError);
+        }
       }
       loadData(); // sync with server
     } catch {
@@ -222,11 +240,22 @@ export default function TeacherGrades() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Grade</Button>
       </div>
 
-      <Tabs defaultValue="records">
+      <Tabs defaultValue="my-students">
         <TabsList className="mb-5">
+          <TabsTrigger value="my-students">My Students</TabsTrigger>
           <TabsTrigger value="records">All Records</TabsTrigger>
           <TabsTrigger value="averages">Term Averages</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="my-students">
+          <MyStudentsSection
+            teachingAssignments={user?.teachingAssignments || []}
+            students={allStudents}
+            grades={grades}
+            subjects={allSubjects}
+            classes={classes}
+          />
+        </TabsContent>
 
         <TabsContent value="records">
           {/* Summary cards */}
