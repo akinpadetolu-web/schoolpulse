@@ -40,13 +40,34 @@ export function generateUsername(fullName, existingUsernames = []) {
   return username;
 }
 
-// Session management
+// Session management — uses localStorage with sessionStorage fallback for cross-browser reliability
 const SESSION_KEY = "schoolpulse_session";
 const SUPER_ADMIN_SESSION_KEY = "schoolpulse_superadmin_session";
 
+function writeStorage(key, value) {
+  try { localStorage.setItem(key, value); } catch {}
+  try { sessionStorage.setItem(key, value); } catch {}
+}
+
+function readStorage(key) {
+  try {
+    const v = localStorage.getItem(key);
+    if (v) return v;
+  } catch {}
+  try {
+    return sessionStorage.getItem(key);
+  } catch {}
+  return null;
+}
+
+function removeStorage(key) {
+  try { localStorage.removeItem(key); } catch {}
+  try { sessionStorage.removeItem(key); } catch {}
+}
+
 export function getCurrentUser() {
   try {
-    const data = localStorage.getItem(SESSION_KEY);
+    const data = readStorage(SESSION_KEY);
     return data ? JSON.parse(data) : null;
   } catch { return null; }
 }
@@ -55,11 +76,11 @@ export function setCurrentUser(user) {
   if (!user) return;
   const safe = { ...user };
   delete safe.passwordHash;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
+  writeStorage(SESSION_KEY, JSON.stringify(safe));
 }
 
 export function clearCurrentUser() {
-  localStorage.removeItem(SESSION_KEY);
+  removeStorage(SESSION_KEY);
 }
 
 export function isAuthenticated() {
@@ -68,7 +89,7 @@ export function isAuthenticated() {
 
 export function getCurrentSuperAdmin() {
   try {
-    const data = localStorage.getItem(SUPER_ADMIN_SESSION_KEY);
+    const data = readStorage(SUPER_ADMIN_SESSION_KEY);
     return data ? JSON.parse(data) : null;
   } catch { return null; }
 }
@@ -77,11 +98,11 @@ export function setCurrentSuperAdmin(user) {
   if (!user) return;
   const safe = { ...user };
   delete safe.passwordHash;
-  localStorage.setItem(SUPER_ADMIN_SESSION_KEY, JSON.stringify(safe));
+  writeStorage(SUPER_ADMIN_SESSION_KEY, JSON.stringify(safe));
 }
 
 export function clearCurrentSuperAdmin() {
-  localStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+  removeStorage(SUPER_ADMIN_SESSION_KEY);
 }
 
 export function requireSuperAdminAuth() {
