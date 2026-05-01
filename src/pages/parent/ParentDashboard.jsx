@@ -194,30 +194,48 @@ export default function ParentDashboard() {
     e.preventDefault();
     setLinking(true);
     try {
-      // Find student with matching parentLinkCode
-      const matches = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student', parentLinkCode: linkCode.trim() });
+      const searchInput = linkCode.trim().toUpperCase();
+      
+      // Fetch all students in this school
+      const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
+      
+      // Search by parent link code OR student ID OR full name
+      const matches = (allStudents || []).filter(s => 
+        s.parentLinkCode?.toUpperCase() === searchInput ||
+        s.id === searchInput ||
+        s.fullName?.toUpperCase().includes(searchInput)
+      );
+      
       if (!matches || matches.length === 0) {
-        toast.error('No student found with that link code. Please check with the school admin.');
+        toast.error('Student not found. Search by link code, ID, or name.');
         setLinking(false);
         return;
       }
+      
       const student = matches[0];
       const currentLinked = user?.linkedStudentIds || [];
+      
+      // Prevent duplicate linking
       if (currentLinked.includes(student.id)) {
-        toast.info('This child is already linked to your account.');
+        toast.info(`${student.fullName} is already linked to your account.`);
         setLinking(false);
         return;
       }
+      
+      // Update parent's linkedStudentIds in SchoolUser entity
       const newLinked = [...currentLinked, student.id];
-      await base44.auth.updateMe({ linkedStudentIds: newLinked });
-
-      // Updated user will trigger useEffect via user.linkedStudentIds change
-      await base44.auth.me();
+      await base44.entities.SchoolUser.update(user.id, { linkedStudentIds: newLinked });
+      
+      // Reload parent data to reflect the change
+      const updatedParent = await base44.entities.SchoolUser.filter({ id: user.id });
+      if (updatedParent && updatedParent[0]) {
+        // Trigger useEffect by directly updating the linked IDs
+        await load(newLinked);
+      }
+      
       toast.success(`${student.fullName} linked successfully!`);
       setLinkCode('');
       setShowAddChild(false);
-
-      // useEffect will automatically reload data when user.linkedStudentIds changes
     } catch (error) {
       console.error('Error linking child:', error);
       toast.error('Failed to link child. Please try again.');
@@ -418,14 +436,14 @@ export default function ParentDashboard() {
           <DialogHeader>
             <DialogTitle>Link a Child</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Enter the student link code provided by your school administrator to connect your child's account.</p>
+          <p className="text-sm text-muted-foreground">Search for your child by link code, student ID, or full name.</p>
           <form onSubmit={handleAddChild} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label>Student Link Code</Label>
+              <Label>Search</Label>
               <Input
                 value={linkCode}
                 onChange={e => setLinkCode(e.target.value)}
-                placeholder="e.g. LINK-AB12CD"
+                placeholder="Link code, student ID, or full name"
                 required
               />
             </div>
