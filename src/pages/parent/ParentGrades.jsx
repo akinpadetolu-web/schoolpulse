@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
 function getColor(pct) {
@@ -17,6 +18,7 @@ export default function ParentGrades() {
   const [children, setChildren] = useState([]);
   const [grades, setGrades] = useState([]);
   const [examResults, setExamResults] = useState([]);
+  const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +30,9 @@ export default function ParentGrades() {
           const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
           const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
           setChildren(linked);
+          if (linked.length > 0) {
+            setSelectedChildId('');
+          }
 
           const [allGrades, allExams] = await Promise.all([
             Promise.all(linkedIds.map(id => base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: id }).catch(() => []))),
@@ -40,16 +45,36 @@ export default function ParentGrades() {
       setLoading(false);
     }
     load();
-  }, [user?.id, user?.linkedStudentIds]);
+  }, [user?.id, user?.linkedStudentIds, user?.schoolId]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   if (children.length === 0) return <div className="text-center text-muted-foreground py-12">No linked children found.</div>;
 
+  const filteredChildren = selectedChildId ? children.filter(c => c.id === selectedChildId) : children;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Children's Grades</h1>
-      {children.map(child => {
+      
+      {children.length > 1 && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Filter by child</label>
+          <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="All Children" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All Children</SelectItem>
+              {children.map(child => (
+                <SelectItem key={child.id} value={child.id}>{child.fullName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {filteredChildren.map(child => {
         const childGrades = grades.filter(g => g.studentId === child.id);
         const childExams = examResults.filter(e => e.studentId === child.id);
 
