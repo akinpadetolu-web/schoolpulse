@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Megaphone } from 'lucide-react';
 
 export default function TeacherAnnouncements() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 

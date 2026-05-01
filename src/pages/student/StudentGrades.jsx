@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 
 export default function StudentGrades() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
 

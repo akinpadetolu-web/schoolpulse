@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 export default function TeacherDashboard() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [stats, setStats] = useState({ timetable: 0, assignments: 0, materials: 0 });
   const [loading, setLoading] = useState(true);
 

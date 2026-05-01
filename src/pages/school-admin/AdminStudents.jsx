@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { hashPassword, generateTemporaryPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
@@ -12,7 +12,7 @@ import StudentProfileDialog from '@/components/school/StudentProfileDialog';
 import { toast } from 'sonner';
 
 export default function AdminStudents() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);

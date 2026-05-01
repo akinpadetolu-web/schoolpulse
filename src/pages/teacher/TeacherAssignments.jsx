@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { createAssignmentNotification } from '@/lib/notificationService';
 import { toast } from 'sonner';
 
 export default function TeacherAssignments() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [assignments, setAssignments] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);

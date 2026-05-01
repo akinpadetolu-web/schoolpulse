@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ function getTypeInfo(type) {
 }
 
 export default function SchoolCalendar() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const isAdmin = user?.role === 'admin';
 
   const [currentMonth, setCurrentMonth] = useState(new Date());

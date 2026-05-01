@@ -55,40 +55,5 @@
     "schoolId",
     "studentId",
     "subjectId"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "teacher"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.studentId": "{{user.id}}"
-        },
-        {
-          "data.schoolId": "{{user.data.schoolId}}",
-          "user_condition": {
-            "role": "teacher"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "teacher"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+  ]
 }

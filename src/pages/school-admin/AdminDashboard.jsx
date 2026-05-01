@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { Users, GraduationCap, BookOpen, ClipboardList, Loader2, AlertTriangle, Plus, Tag, Zap, Calendar, Wand2 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
   const [stats, setStats] = useState({ teachers: 0, students: 0, classes: 0, subjects: 0, categories: 0 });
   const [warnings, setWarnings] = useState([]);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePassword, setCurrentUser, hashPassword, generateUsername } from '@/lib/auth';
+import { comparePassword, hashPassword, generateUsername } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2 } from 
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
+  const { login } = useSchoolAuth();
   const [schools, setSchools] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState("");
   const [role, setRole] = useState("");
@@ -80,7 +82,7 @@ export default function SchoolPortal() {
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
       if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
-      setCurrentUser(user);
+      login(user);
 
       if (role === "admin") navigate("/school-admin");else
       if (role === "teacher") navigate("/teacher");else

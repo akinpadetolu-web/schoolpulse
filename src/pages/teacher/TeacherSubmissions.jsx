@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import { Loader2, ChevronRight, CheckCircle2, Clock, Star, FileText, ExternalLin
 import ReactMarkdown from 'react-markdown';
 
 export default function TeacherSubmissions() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [students, setStudents] = useState([]);

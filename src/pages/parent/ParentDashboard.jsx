@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ function AttendanceBar({ present, absent, late, excused }) {
 }
 
 export default function ParentDashboard() {
-  const { user } = useAuth();
+  const { schoolUser: user } = useSchoolAuth();
   const [children, setChildren] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [assignments, setAssignments] = useState([]);

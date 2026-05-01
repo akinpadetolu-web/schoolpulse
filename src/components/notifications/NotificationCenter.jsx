@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Bell, X, CheckCircle2, AlertCircle, FileText, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -13,7 +13,7 @@ const notificationIcons = {
 };
 
 export default function NotificationCenter() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);

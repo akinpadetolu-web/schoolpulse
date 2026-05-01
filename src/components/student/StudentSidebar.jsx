@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,7 +20,7 @@ const navItems = [
 export default function StudentSidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const { schoolUser: user, logout } = useSchoolAuth();
   const isActive = (path) => path === "/student" ? location.pathname === "/student" : location.pathname.startsWith(path);
 
   return (
@@ -43,7 +43,7 @@ export default function StudentSidebar({ isOpen, onClose }) {
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           <div className="px-3 py-2 mb-2"><p className="text-sm font-medium truncate">{user?.fullName}</p><p className="text-xs text-sidebar-foreground/60">{user?.className || ""}</p></div>
-          <button onClick={() => { clearCurrentUser(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" /> Sign Out</button>
+          <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" /> Sign Out</button>
         </div>
       </aside>
     </>

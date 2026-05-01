@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
@@ -8,7 +8,7 @@ import { format, eachDayOfInterval, startOfMonth, endOfMonth, isSameMonth, isTod
 import { Button } from '@/components/ui/button';
 
 export default function DashboardCalendar() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);

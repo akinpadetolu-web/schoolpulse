@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Plus, Loader2, BookOpen, FileText, Upload, ExternalLink } from 'lucide-
 import { toast } from 'sonner';
 
 export default function TeacherMaterials() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [materials, setMaterials] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);

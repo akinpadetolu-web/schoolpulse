@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, BookOpen } from 'lucide-react';
 
 export default function StudentMaterials() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
 

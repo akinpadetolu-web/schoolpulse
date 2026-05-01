@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function TeacherAttendance() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');

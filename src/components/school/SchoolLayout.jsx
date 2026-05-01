@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import SchoolSidebar from './SchoolSidebar';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 
 export default function SchoolLayout() {
   const navigate = useNavigate();
+  const { schoolUser: user } = useSchoolAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const user = getCurrentUser();
     if (!user || user.role !== "admin") navigate("/");
-  }, [navigate]);
+  }, [user, navigate]);
 
-  const user = getCurrentUser();
   if (!user || user.role !== "admin") return null;
 
   return (

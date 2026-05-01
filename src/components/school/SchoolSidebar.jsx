@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearCurrentUser, getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
   FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle
@@ -36,10 +36,10 @@ const adminNav = [
 export default function SchoolSidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const { schoolUser: user, logout } = useSchoolAuth();
 
   function handleLogout() {
-    clearCurrentUser();
+    logout();
     navigate("/");
   }
 

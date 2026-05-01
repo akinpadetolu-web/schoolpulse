@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import ParentSidebar from './ParentSidebar';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,13 @@ import { Menu } from 'lucide-react';
 
 export default function ParentLayout() {
   const navigate = useNavigate();
+  const { schoolUser: user } = useSchoolAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const user = getCurrentUser();
     if (!user || user.role !== "parent") navigate("/");
-  }, [navigate]);
+  }, [user, navigate]);
 
-  const user = getCurrentUser();
   if (!user || user.role !== "parent") return null;
 
   return (
