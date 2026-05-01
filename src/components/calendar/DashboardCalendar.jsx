@@ -69,9 +69,9 @@ export default function DashboardCalendar() {
 
   return (
     <Card className="border-0 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5" />
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between pb-3 gap-3">
+        <CardTitle className="text-base md:text-lg flex items-center gap-2 whitespace-nowrap">
+          <CalendarIcon className="w-5 h-5 flex-shrink-0" />
           School Calendar
         </CardTitle>
         <div className="flex items-center gap-1">
@@ -83,7 +83,7 @@ export default function DashboardCalendar() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm font-medium w-32 text-center">{format(currentDate, 'MMM yyyy')}</span>
+          <span className="text-xs md:text-sm font-medium w-20 md:w-32 text-center whitespace-nowrap">{format(currentDate, 'MMM yyyy')}</span>
           <Button
             variant="ghost"
             size="icon"
@@ -95,21 +95,21 @@ export default function DashboardCalendar() {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 md:space-y-4 overflow-x-auto">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 min-w-full">
           {weekDays.map(day => (
-            <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2">
+            <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2 min-w-[40px]">
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 min-w-full">
           {paddedDays.map((day, idx) => {
             if (!day) {
-              return <div key={`empty-${idx}`} className="aspect-square" />;
+              return <div key={`empty-${idx}`} className="aspect-square min-w-[40px]" />;
             }
 
             const dateStr = format(day, 'yyyy-MM-dd');
@@ -120,14 +120,14 @@ export default function DashboardCalendar() {
             return (
               <div
                 key={dateStr}
-                className={`aspect-square p-1.5 rounded-lg border text-center text-xs transition-colors ${
+                className={`aspect-square p-1 rounded-lg border text-center text-xs transition-colors min-w-[40px] md:min-w-0 ${
                   isCurrentDay
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:bg-accent'
                 } ${!isCurrentMonth ? 'opacity-40' : ''}`}
               >
-                <div className="font-medium text-sm mb-1">{format(day, 'd')}</div>
-                <div className="space-y-0.5">
+                <div className="font-medium text-xs md:text-sm mb-0.5">{format(day, 'd')}</div>
+                <div className="space-y-0.5 hidden md:block">
                   {dayEvents.slice(0, 2).map((e, i) => (
                     <div
                       key={`${dateStr}-${i}`}
@@ -140,6 +140,9 @@ export default function DashboardCalendar() {
                   {dayEvents.length > 2 && (
                     <div className="text-xs text-muted-foreground">+{dayEvents.length - 2}</div>
                   )}
+                </div>
+                <div className="md:hidden">
+                  {dayEvents.length > 0 && <div className="text-xs text-primary font-semibold">•</div>}
                 </div>
               </div>
             );

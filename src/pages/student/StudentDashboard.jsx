@@ -102,69 +102,71 @@ export default function StudentDashboard() {
 
   return (
     <PullToRefreshWrapper {...ptr}>
-    <div className="space-y-6 p-4 md:p-0">
+    <div className="space-y-6 p-4 md:p-0 pb-20 md:pb-6">
       {/* Header */}
-      <div>
+      <div className="mt-2">
         <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
         <p className="text-muted-foreground">{user?.className || user?.schoolName}</p>
       </div>
 
-      {/* Top stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Top stat cards - responsive grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Overall Grade */}
-        <Card className="border-0 shadow-sm col-span-2 sm:col-span-1">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+            <div className="w-full">
               <p className="text-sm text-muted-foreground">Overall Average</p>
               {overallAvg != null ? (
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-3xl font-bold">{overallAvg}%</p>
-                  <span className={`text-lg font-bold ${letterGrade?.color}`}>{letterGrade?.label}</span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <p className="text-2xl md:text-3xl font-bold">{overallAvg}%</p>
+                  <span className={`text-base md:text-lg font-bold ${letterGrade?.color}`}>{letterGrade?.label}</span>
                 </div>
               ) : (
-                <p className="text-2xl font-bold mt-1 text-muted-foreground">—</p>
+                <p className="text-2xl font-bold mt-2 text-muted-foreground">N/A</p>
               )}
             </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-2">
               <Award className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Assignments */}
+        {/* Completed Assignments */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+            <div className="w-full">
               <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-3xl font-bold mt-1">{completedCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-2">{completedCount}</p>
               <p className="text-xs text-muted-foreground">of {assignments.length}</p>
             </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-2">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
+        {/* Pending Assignments */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+            <div className="w-full">
               <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-3xl font-bold mt-1">{pendingCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-2">{pendingCount}</p>
               {overdueCount > 0 && <p className="text-xs text-red-500 font-medium">{overdueCount} overdue</p>}
             </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600 mt-2">
               <Clock className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
+        {/* Timetable Slots */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+            <div className="w-full">
               <p className="text-sm text-muted-foreground">Timetable Slots</p>
-              <p className="text-3xl font-bold mt-1">{timetableCount}</p>
+              <p className="text-2xl md:text-3xl font-bold mt-2">{timetableCount}</p>
             </div>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600">
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-2">
               <Calendar className="w-5 h-5" />
             </div>
           </CardContent>
@@ -172,10 +174,12 @@ export default function StudentDashboard() {
       </div>
 
       {/* Calendar */}
-      <DashboardCalendar />
+      <div className="overflow-x-hidden">
+        <DashboardCalendar />
+      </div>
 
       {/* Charts + Pending list */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Subject Performance Bar Chart */}
         <Card className="border-0 shadow-sm lg:col-span-2">
           <CardHeader className="pb-2">

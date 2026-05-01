@@ -51,7 +51,7 @@ export default function StudentLayout() {
           </div>
           <NotificationCenter />
         </header>
-        <main className="flex-1 overflow-hidden relative">
+        <main className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -59,9 +59,8 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="absolute inset-0 overflow-y-auto"
+              className="w-full"
               style={{
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 4rem)',
                 paddingLeft: 'env(safe-area-inset-left)',
                 paddingRight: 'env(safe-area-inset-right)',
               }}

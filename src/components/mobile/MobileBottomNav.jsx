@@ -14,6 +14,7 @@ const studentTabs = [
   { label: "Assignments", path: "/student/assignments", icon: FileText },
   { label: "Timetable", path: "/student/timetable", icon: Calendar },
   { label: "Grades", path: "/student/grades", icon: GraduationCap },
+  { label: "More", path: "/student/profile", icon: Bell },
 ];
 
 const parentTabs = [
@@ -52,11 +53,12 @@ export default function MobileBottomNav({ role }) {
           <button
             key={tab.path}
             onClick={() => handleTabPress(tab)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 select-none transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 select-none transition-colors `}
             style={{ minHeight: '56px' }}
+            aria-current={active ? "page" : undefined}
           >
-            <tab.icon className="w-5 h-5" aria-hidden="true" />
-            <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
+            <tab.icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
+            <span className={`text-[11px] font-medium leading-tight ${active ? 'text-primary' : 'text-muted-foreground'}`}>{tab.label}</span>
           </button>
         );
       })}
