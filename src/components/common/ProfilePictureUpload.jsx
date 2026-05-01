@@ -23,9 +23,9 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
       return;
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be under 5MB');
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be under 10MB');
       return;
     }
 
@@ -133,7 +133,7 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="font-medium">Click to upload or drag and drop</p>
               <p className="text-sm text-muted-foreground">
-                JPG, PNG, or WEBP (max 5MB)
+                JPG, PNG, or WEBP (max 10MB)
               </p>
               <input
                 ref={fileInputRef}

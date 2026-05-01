@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
+import AccountSettings from '@/components/common/AccountSettings';
 
 export default function ParentProfile() {
   const { schoolUser: user } = useSchoolAuth();
@@ -15,43 +17,56 @@ export default function ParentProfile() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">My Profile</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Picture</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProfilePictureUpload 
-            user={userData}
-            onSuccess={setUserData}
-          />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="general">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Full Name</label>
-            <p className="text-lg text-foreground">{userData.fullName}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Email</label>
-            <p className="text-lg text-foreground">{userData.email}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium">School</label>
-            <p className="text-lg text-foreground">{userData.schoolName}</p>
-          </div>
-          {userData.linkedStudentIds && userData.linkedStudentIds.length > 0 && (
-            <div>
-              <label className="text-sm font-medium">Linked Children</label>
-              <p className="text-lg text-foreground">{userData.linkedStudentIds.length} child(ren)</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Picture</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProfilePictureUpload 
+                user={userData}
+                onSuccess={setUserData}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Full Name</label>
+                <p className="text-lg text-foreground">{userData.fullName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <p className="text-lg text-foreground">{userData.email}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">School</label>
+                <p className="text-lg text-foreground">{userData.schoolName}</p>
+              </div>
+              {userData.linkedStudentIds && userData.linkedStudentIds.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium">Linked Children</label>
+                  <p className="text-lg text-foreground">{userData.linkedStudentIds.length} child(ren)</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <AccountSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
