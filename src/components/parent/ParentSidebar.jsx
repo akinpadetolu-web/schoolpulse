@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
 
@@ -49,7 +50,11 @@ export default function ParentSidebar({ isOpen, onClose }) {
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />}
-      <aside className={`fixed top-0 left-0 h-screen w-64 bg-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:static md:w-64 md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={cn(
+        "w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300",
+        isOpen ? "fixed top-0 left-0 h-screen z-50 translate-x-0" : "fixed top-0 left-0 h-screen z-50 -translate-x-full",
+        "md:static md:w-64 md:flex-shrink-0 md:translate-x-0 md:flex"
+      )}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <Users className="w-6 h-6 text-sidebar-primary" />
