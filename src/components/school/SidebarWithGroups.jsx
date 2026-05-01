@@ -20,7 +20,7 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
                 key={item.path}
                 to={item.path}
                 onClick={onItemClick}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] ${
                   isActive(item.path)
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
