@@ -112,10 +112,9 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
     }
+    // For auth_required and other errors, fall through and let SchoolPortal handle auth
+    // Do NOT call navigateToLogin() — this app uses its own custom school auth at "/"
   }
 
   return (
