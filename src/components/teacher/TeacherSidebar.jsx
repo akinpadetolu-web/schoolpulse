@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { label: "Materials", path: "/teacher/materials", icon: BookOpen },
   { label: "Attendance", path: "/teacher/attendance", icon: UserCheck },
   { label: "Lesson Plans", path: "/teacher/lesson-plans", icon: NotebookPen },
+  { label: "E-Class Sessions", path: "/teacher/e-class", icon: Video },
   { label: "Announcements", path: "/teacher/announcements", icon: Megaphone },
   { label: "Notifications", path: "/teacher/notifications", icon: Bell },
   { label: "Student Progress", path: "/teacher/progress", icon: BarChart3 },

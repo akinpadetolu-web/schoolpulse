@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Timetable", path: "/parent/timetable", icon: Calendar },
   { label: "Assignments", path: "/parent/assignments", icon: FileText },
   { label: "Grades", path: "/parent/grades", icon: ClipboardList },
+  { label: "E-Class Schedule", path: "/parent/e-class", icon: Video },
   { label: "Announcements", path: "/parent/announcements", icon: Megaphone },
   { label: "Calendar", path: "/parent/calendar", icon: CalendarDays },
 ];

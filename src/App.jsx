@@ -51,6 +51,10 @@ const AdminGradeWeighting = lazy(() => import('./pages/school-admin/AdminGradeWe
 const AdminReportCards = lazy(() => import('./pages/school-admin/AdminReportCards'));
 const AdminSchoolReport = lazy(() => import('./pages/school-admin/AdminSchoolReport'));
 const AdminApprovals = lazy(() => import('./pages/school-admin/AdminApprovals'));
+const AdminEClass = lazy(() => import('./pages/school-admin/AdminEClass'));
+const TeacherEClass = lazy(() => import('./pages/teacher/TeacherEClass'));
+const StudentEClass = lazy(() => import('./pages/student/StudentEClass'));
+const ParentEClass = lazy(() => import('./pages/parent/ParentEClass'));
 const AdminAcademicTerms = lazy(() => import('./pages/school-admin/AdminAcademicTerms'));
 const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
 const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
@@ -166,6 +170,7 @@ const AuthenticatedApp = () => {
           <Route path="grading-system" element={<AdminGradingSystem />} />
           <Route path="promotion" element={<AdminPromotion />} />
           <Route path="hr" element={<AdminHR />} />
+          <Route path="e-class" element={<AdminEClass />} />
         </Route>
 
         {/* Teacher */}
@@ -180,6 +185,7 @@ const AuthenticatedApp = () => {
           <Route path="quizzes" element={<TeacherQuizzes />} />
           <Route path="submissions" element={<TeacherSubmissions />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="e-class" element={<TeacherEClass />} />
           <Route path="notifications" element={<TeacherNotifications />} />
           <Route path="progress" element={<TeacherProgressDashboard />} />
           <Route path="exam-results" element={<TeacherExamResults />} />
@@ -197,6 +203,7 @@ const AuthenticatedApp = () => {
           <Route path="lesson-plans" element={<StudentLessonPlans />} />
           <Route path="quizzes" element={<StudentQuizzes />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
+          <Route path="e-class" element={<StudentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
         </Route>
 
@@ -207,6 +214,7 @@ const AuthenticatedApp = () => {
           <Route path="assignments" element={<ParentAssignments />} />
           <Route path="grades" element={<ParentGrades />} />
           <Route path="announcements" element={<ParentAnnouncements />} />
+          <Route path="e-class" element={<ParentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
         </Route>
 

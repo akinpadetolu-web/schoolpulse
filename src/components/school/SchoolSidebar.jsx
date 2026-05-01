@@ -27,6 +27,7 @@ const adminNav = [
   { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
   { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   { label: "Approvals", path: "/school-admin/approvals", icon: CheckSquare },
+  { label: "E-Class Monitoring", path: "/school-admin/e-class", icon: ArrowUpCircle },
   { label: "Calendar", path: "/school-admin/calendar", icon: CalendarDays },
   { label: "Performance", path: "/school-admin/performance", icon: TrendingUp },
   { label: "Grading System", path: "/school-admin/grading-system", icon: Award },

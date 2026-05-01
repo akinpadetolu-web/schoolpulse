@@ -1,0 +1,75 @@
+{
+  "name": "VirtualClass",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "E-class title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Topics or description"
+    },
+    "meetLink": {
+      "type": "string",
+      "description": "Google Meet link"
+    },
+    "startDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Session start time"
+    },
+    "endDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Session end time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "ongoing",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "teacherId",
+    "title",
+    "meetLink",
+    "startDateTime"
+  ]
+}
