@@ -8,10 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2, UserPlus, CheckCircle2, XCircle, Clock, AlertCircle, BookOpen, Calendar, FileText } from 'lucide-react';
+import { GraduationCap, Loader2, UserPlus, TrendingUp, TrendingDown, AlertCircle, BookOpen, Calendar, FileText, FlaskConical, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import UnifiedTimetable from '@/components/parent/UnifiedTimetable';
 import ExamProgressReport from '@/components/parent/ExamProgressReport';
 
 function AttendanceBar({ present, absent, late, excused }) {
@@ -51,13 +50,11 @@ export default function ParentDashboard() {
   const [children, setChildren] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [timetable, setTimetable] = useState([]);
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
-  const [loadingTimetable, setLoadingTimetable] = useState(false);
   const [loadingExams, setLoadingExams] = useState(false);
   const [examResults, setExamResults] = useState([]);
   const [showAddChild, setShowAddChild] = useState(false);
@@ -93,7 +90,6 @@ export default function ParentDashboard() {
       loadAttendanceData(ids);
       loadGradesData(ids);
       loadAssignmentsData(ids);
-      loadTimetableData(ids);
       loadExamResultsData(ids);
     }
   }
@@ -168,35 +164,6 @@ export default function ParentDashboard() {
       setAssignments([]);
     } finally {
       setLoadingAssignments(false);
-    }
-  }
-
-  async function loadTimetableData(ids) {
-    setLoadingTimetable(true);
-    try {
-      if (ids.length === 0) {
-        setTimetable([]);
-        setLoadingTimetable(false);
-        return;
-      }
-      const linkedStudents = (await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' })).filter(s => ids.includes(s.id));
-      const classIds = [...new Set(linkedStudents.map(s => s.classId).filter(Boolean))];
-      if (classIds.length === 0) {
-        setTimetable([]);
-        setLoadingTimetable(false);
-        return;
-      }
-      const promises = classIds.map(classId => 
-        base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId }).catch(() => [])
-      );
-      const results = await Promise.all(promises);
-      const allTimetable = results.flat().filter(Boolean);
-      setTimetable(allTimetable);
-    } catch (error) {
-      console.error('Failed to load timetable:', error);
-      setTimetable([]);
-    } finally {
-      setLoadingTimetable(false);
     }
   }
 
@@ -285,15 +252,6 @@ export default function ParentDashboard() {
         </Button>
       </div>
 
-      {/* Unified Timetable for All Children */}
-      {children.length > 0 && (
-        <UnifiedTimetable
-          children={children}
-          timetable={timetable}
-          loading={loadingTimetable}
-        />
-      )}
-
       <div>
          <h2 className="text-lg font-semibold mb-4">My Children</h2>
         {children.length === 0 ? (
@@ -313,9 +271,23 @@ export default function ParentDashboard() {
               const childColor = childColors[index % childColors.length];
               const att = attendanceByStudent[child.id] || { present: 0, absent: 0, late: 0, excused: 0 };
               const childAssignments = assignments.filter(a => a.classId === child.classId);
-              const childTimetable = timetable.filter(t => t.classId === child.classId);
               const childGrades = grades.filter(g => g.studentId === child.id);
-              const avgGrade = childGrades.length > 0 ? Math.round(childGrades.reduce((sum, g) => sum + (g.score || 0), 0) / childGrades.length) : null;
+              const childExamResults = examResults.filter(e => e.studentId === child.id);
+
+              // Compute per-subject averages from grades
+              const gradesBySubject = {};
+              childGrades.forEach(g => {
+                if (!gradesBySubject[g.subjectName]) gradesBySubject[g.subjectName] = [];
+                gradesBySubject[g.subjectName].push((g.score / (g.maxScore || 100)) * 100);
+              });
+              const subjectAverages = Object.entries(gradesBySubject).map(([subject, scores]) => ({
+                subject,
+                avg: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
+              }));
+
+              const avgGrade = subjectAverages.length > 0
+                ? Math.round(subjectAverages.reduce((s, v) => s + v.avg, 0) / subjectAverages.length)
+                : (childExamResults.length > 0 ? Math.round(childExamResults.reduce((s, e) => s + ((e.score / (e.maxScore || 100)) * 100), 0) / childExamResults.length) : null);
               
               return (
                 <Card key={child.id} className={`border-2 shadow-sm ${childColor}`}>
@@ -332,11 +304,31 @@ export default function ParentDashboard() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {/* Grades Summary */}
+                    {(subjectAverages.length > 0 || childExamResults.length > 0) && (
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Grade Summary</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {subjectAverages.map(({ subject, avg }) => (
+                            <div key={subject} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2">
+                              <span className="text-xs font-medium truncate">{subject}</span>
+                              <span className={`text-xs font-bold ml-2 ${avg >= 70 ? 'text-emerald-600' : avg >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{avg}%</span>
+                            </div>
+                          ))}
+                          {childExamResults.length > 0 && subjectAverages.length === 0 && childExamResults.map(e => (
+                            <div key={e.id} className="flex items-center justify-between bg-white rounded-lg border px-3 py-2">
+                              <span className="text-xs font-medium truncate">{e.subjectName}</span>
+                              <span className={`text-xs font-bold ml-2 ${((e.score / (e.maxScore || 100)) * 100) >= 70 ? 'text-emerald-600' : ((e.score / (e.maxScore || 100)) * 100) >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{Math.round((e.score / (e.maxScore || 100)) * 100)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <Tabs defaultValue="attendance" className="w-full">
-                      <TabsList className="grid w-full grid-cols-5">
+                      <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
                         <TabsTrigger value="assignments" className="text-xs">Assignments</TabsTrigger>
-                        <TabsTrigger value="timetable" className="text-xs">Timetable</TabsTrigger>
                         <TabsTrigger value="grades" className="text-xs">Grades</TabsTrigger>
                         <TabsTrigger value="exams" className="text-xs">Exams</TabsTrigger>
                       </TabsList>
@@ -370,29 +362,6 @@ export default function ParentDashboard() {
                               </div>
                             ))}
                             {childAssignments.length > 5 && <p className="text-xs text-muted-foreground">+{childAssignments.length - 5} more</p>}
-                          </div>
-                        )}
-                      </TabsContent>
-                      
-                      <TabsContent value="timetable" className="space-y-3 mt-4">
-                        {loadingTimetable ? (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="w-4 h-4 animate-spin" /> Loading timetable...
-                          </div>
-                        ) : childTimetable.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No timetable entries</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {childTimetable.slice(0, 5).map(t => (
-                              <div key={t.id} className="flex items-start gap-2 p-2 bg-white rounded border">
-                                <Calendar className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{t.subjectName || 'Subject'}</p>
-                                  <p className="text-xs text-muted-foreground">{t.day} • {t.startTime || 'Time TBA'}</p>
-                                </div>
-                              </div>
-                            ))}
-                            {childTimetable.length > 5 && <p className="text-xs text-muted-foreground">+{childTimetable.length - 5} more</p>}
                           </div>
                         )}
                       </TabsContent>

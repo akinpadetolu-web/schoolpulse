@@ -1,52 +1,153 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 
+function getColor(pct) {
+  if (pct >= 70) return 'text-emerald-600';
+  if (pct >= 50) return 'text-amber-600';
+  return 'text-red-600';
+}
+
 export default function ParentGrades() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
+  const [children, setChildren] = useState([]);
   const [grades, setGrades] = useState([]);
+  const [examResults, setExamResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
     async function load() {
       try {
         const linkedIds = user?.linkedStudentIds || [];
         if (linkedIds.length > 0) {
-          const all = await base44.entities.Grade.filter({ schoolId: user?.schoolId });
-          setGrades((all || []).filter(g => linkedIds.includes(g.studentId)));
+          const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
+          const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
+          setChildren(linked);
+
+          const [allGrades, allExams] = await Promise.all([
+            Promise.all(linkedIds.map(id => base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: id }).catch(() => []))),
+            Promise.all(linkedIds.map(id => base44.entities.ExamResult.filter({ schoolId: user?.schoolId, studentId: id }).catch(() => []))),
+          ]);
+          setGrades(allGrades.flat().filter(Boolean));
+          setExamResults(allExams.flat().filter(Boolean));
         }
       } catch { /* ignore */ }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [user?.id, user?.linkedStudentIds]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
+  if (children.length === 0) return <div className="text-center text-muted-foreground py-12">No linked children found.</div>;
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Children's Grades</h1>
-      {grades.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">No grades available.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <Table>
-            <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Subject</TableHead><TableHead>Type</TableHead><TableHead>Score</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {grades.map(g => (
-                <TableRow key={g.id}>
-                  <TableCell className="font-medium">{g.studentName}</TableCell>
-                  <TableCell>{g.subjectName}</TableCell>
-                  <TableCell className="capitalize">{g.assessmentType}</TableCell>
-                  <TableCell>{g.score}/{g.maxScore}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Children's Grades</h1>
+      {children.map(child => {
+        const childGrades = grades.filter(g => g.studentId === child.id);
+        const childExams = examResults.filter(e => e.studentId === child.id);
+
+        // Group grades by subject
+        const bySubject = {};
+        childGrades.forEach(g => {
+          if (!bySubject[g.subjectName]) bySubject[g.subjectName] = [];
+          bySubject[g.subjectName].push(g);
+        });
+
+        // Group exams by subject
+        const examsBySubject = {};
+        childExams.forEach(e => {
+          if (!examsBySubject[e.subjectName]) examsBySubject[e.subjectName] = [];
+          examsBySubject[e.subjectName].push(e);
+        });
+
+        const overallAvg = childGrades.length > 0
+          ? Math.round(childGrades.reduce((sum, g) => sum + ((g.score / (g.maxScore || 100)) * 100), 0) / childGrades.length)
+          : null;
+
+        return (
+          <Card key={child.id} className="border-0 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{child.fullName}</CardTitle>
+                {overallAvg !== null && (
+                  <Badge className={`text-sm px-3 py-1 ${overallAvg >= 70 ? 'bg-emerald-100 text-emerald-700' : overallAvg >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                    Overall: {overallAvg}%
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="classwork">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="classwork">Classwork & Tests</TabsTrigger>
+                  <TabsTrigger value="exams">Exam Results</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="classwork">
+                  {Object.keys(bySubject).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No grade records yet.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(bySubject).map(([subject, gs]) => {
+                        const avg = Math.round(gs.reduce((s, g) => s + ((g.score / (g.maxScore || 100)) * 100), 0) / gs.length);
+                        return (
+                          <div key={subject}>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-medium text-sm">{subject}</p>
+                              <span className={`text-sm font-semibold ${getColor(avg)}`}>{avg}% avg</span>
+                            </div>
+                            <div className="space-y-1">
+                              {gs.map(g => (
+                                <div key={g.id} className="flex items-center justify-between text-xs text-muted-foreground bg-secondary/50 rounded px-3 py-1.5">
+                                  <span className="capitalize">{g.assessmentType} {g.term ? `• ${g.term}` : ''}</span>
+                                  <span className={`font-medium ${getColor((g.score / (g.maxScore || 100)) * 100)}`}>{g.score}/{g.maxScore}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="exams">
+                  {Object.keys(examsBySubject).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No exam results yet.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(examsBySubject).map(([subject, exams]) => (
+                        <div key={subject}>
+                          <p className="font-medium text-sm mb-2">{subject}</p>
+                          <div className="space-y-1">
+                            {exams.map(e => {
+                              const pct = Math.round((e.score / (e.maxScore || 100)) * 100);
+                              return (
+                                <div key={e.id} className="flex items-center justify-between text-xs text-muted-foreground bg-secondary/50 rounded px-3 py-1.5">
+                                  <span>{e.examName} {e.examTerm ? `• ${e.examTerm}` : ''}</span>
+                                  <span className={`font-medium ${getColor(pct)}`}>{e.score}/{e.maxScore || 100} ({pct}%)</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
