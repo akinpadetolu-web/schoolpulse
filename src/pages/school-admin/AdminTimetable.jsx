@@ -203,142 +203,79 @@ export default function AdminTimetable() {
   }
 
   // ── AI Generator ─────────────────────────────────────────────────────────
+  const [aiTargetClasses, setAiTargetClasses] = useState([]);
+  const [aiProgress, setAiProgress] = useState(0);
+
   async function handleAiGenerate() {
-    setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({});
+    setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({}); setAiProgress(0);
     if (!aiPrompt.trim()) return setAiError("Please describe what you want, e.g. 'Generate a timetable for SS2 Science B with double periods for Maths and Physics'");
+    
+    // For now, use all classes if none selected, otherwise use selected
+    const targetIds = aiTargetClasses.length > 0 ? aiTargetClasses : classes.map(c => c.id);
+    if (targetIds.length === 0) return setAiError("No classes selected");
+    
     setAiGenerating(true);
+    setAiProgress(20);
 
-    // Build rich context for the AI
-    const classesInfo = classes.map(c => ({
-      id: c.id, name: c.className, level: c.educationLevel, track: c.academicTrack || ""
-    }));
+    try {
+      // Call backend function instead of inline
+      setAiProgress(40);
+      const result = await base44.functions.invoke('generateTimetable', {
+        schoolId,
+        prompt: aiPrompt.trim(),
+        targetClassIds: targetIds,
+      });
 
-    const subjectsInfo = subjects.map(s => ({
-      id: s.id, name: s.name, code: s.code || "", category: s.categoryName || "",
-      compulsory: s.isCompulsory, classes: s.applicableClasses || []
-    }));
+      setAiProgress(80);
 
-    const teachersInfo = teachers.map(t => ({
-      id: t.id, name: t.fullName,
-      subjects: (t.teachingAssignments || []).map(a => ({ subjectId: a.subjectId, classId: a.classId }))
-    }));
+      const slots = (result?.data?.slots || []).map(s => ({
+        schoolId,
+        classId: s.classId || "",
+        className: s.className || "",
+        subjectId: s.subjectId || "",
+        subjectName: s.subjectName || "",
+        teacherId: s.teacherId || "",
+        teacherName: s.teacherName || "",
+        dayOfWeek: s.dayOfWeek || "",
+        startTime: s.startTime || "",
+        endTime: s.endTime || "",
+      }));
 
-    const existingEntriesSummary = entries.map(e => ({
-      classId: e.classId, className: e.className, subjectName: e.subjectName,
-      teacherId: e.teacherId, teacherName: e.teacherName,
-      day: e.dayOfWeek, start: e.startTime, end: e.endTime
-    }));
-
-    const systemContext = `
-You are an expert school timetable scheduler AI for a Nigerian secondary school management system called SchoolPulse.
-
-SCHOOL DATA:
-Classes: ${JSON.stringify(classesInfo)}
-Subjects: ${JSON.stringify(subjectsInfo)}
-Teachers: ${JSON.stringify(teachersInfo)}
-Existing timetable entries (already scheduled): ${JSON.stringify(existingEntriesSummary)}
-
-SCHEDULING RULES (MANDATORY - NEVER VIOLATE):
-1. No class can have two subjects at the same time on the same day (class clash).
-2. No teacher can be in two places at the same time on the same day (teacher clash).
-3. Periods must not overlap within a class.
-4. Default school periods: 08:00-09:00, 09:00-10:00, 10:15-11:15, 11:15-12:15, 13:00-14:00, 14:00-15:00
-5. Double periods: use consecutive times e.g. 08:00-10:00 for Maths if requested.
-6. Each class should have 5-6 periods per day (Mon-Fri).
-7. Compulsory subjects must appear at least twice a week.
-8. Balance subject distribution — avoid clustering one subject on consecutive days.
-9. Assign teachers to subjects based on their teachingAssignments. Leave teacherId/teacherName empty if no teacher assigned.
-10. Analyse the existing timetable to avoid re-scheduling already-scheduled entries.
-
-When generating, always:
-- Identify exactly which class(es) the user is referring to from the classes list (support fuzzy matching e.g. "js1a" → "JS1A", "ss2 science" → any SS2 Science class)
-- Extract any special constraints from the prompt (double periods, specific days, excluded subjects, start time preferences, number of periods per day, etc.)
-- Explain your reasoning in the "reasoning" field
-- Return ONLY subjects that are mapped to the target class (applicableClasses includes the class ID)
-
-USER PROMPT: "${aiPrompt.trim()}"
-`;
-
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: systemContext,
-      model: "gemini_3_1_pro",
-      response_json_schema: {
-        type: "object",
-        properties: {
-          reasoning: { type: "string", description: "Brief explanation of decisions made" },
-          targetClasses: {
-            type: "array",
-            items: { type: "string" },
-            description: "Class IDs being scheduled"
-          },
-          slots: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                classId: { type: "string" },
-                className: { type: "string" },
-                subjectId: { type: "string" },
-                subjectName: { type: "string" },
-                teacherId: { type: "string" },
-                teacherName: { type: "string" },
-                dayOfWeek: { type: "string", enum: ["Monday","Tuesday","Wednesday","Thursday","Friday"] },
-                startTime: { type: "string", description: "HH:MM" },
-                endTime: { type: "string", description: "HH:MM" },
-              },
-              required: ["classId","className","subjectId","subjectName","dayOfWeek","startTime","endTime"]
-            }
-          },
-          warnings: {
-            type: "array",
-            items: { type: "string" },
-            description: "Any issues or notes about the generated schedule"
-          }
-        },
-        required: ["slots", "reasoning"]
+      if (slots.length === 0) {
+        setAiError("AI didn't generate any entries. Try a more specific prompt, e.g. 'Generate timetable for JS1A'");
+        setAiProgress(0);
+        setAiGenerating(false);
+        return;
       }
-    });
 
-    const slots = (result?.slots || []).map(s => ({
-      schoolId,
-      classId: s.classId || "",
-      className: s.className || "",
-      subjectId: s.subjectId || "",
-      subjectName: s.subjectName || "",
-      teacherId: s.teacherId || "",
-      teacherName: s.teacherName || "",
-      dayOfWeek: s.dayOfWeek || "",
-      startTime: s.startTime || "",
-      endTime: s.endTime || "",
-    }));
+      // Run clash detection
+      const clashMap = {};
+      slots.forEach((slot, i) => {
+        const otherPreview = slots.filter((_, j) => j !== i);
+        const clashes = detectClashes(slot, [...entries, ...otherPreview]);
+        if (clashes.length > 0) clashMap[i] = clashes;
+      });
 
-    if (slots.length === 0) {
-      setAiError("AI didn't generate any entries. Try a more specific prompt, e.g. 'Generate timetable for JS1A'");
+      setAiPreview(slots);
+      setAiClashMap(clashMap);
+      if (result?.data?.reasoning) setAiLog(result.data.reasoning);
+      if (result?.data?.warnings?.length > 0) {
+        result.data.warnings.forEach(w => toast.warning(w, { duration: 6000 }));
+      }
+      const clashCount = Object.keys(clashMap).length;
+      if (clashCount > 0) {
+        toast.warning(`${clashCount} clash(es) detected in preview — review before saving`);
+      } else {
+        toast.success(`${slots.length} entries generated with no clashes`);
+      }
+      setAiProgress(100);
+    } catch (error) {
+      setAiError(`Generation failed: ${error.message}`);
+      console.error('AI generation error:', error);
+    } finally {
+      setTimeout(() => setAiProgress(0), 500);
       setAiGenerating(false);
-      return;
     }
-
-    // Run clash detection against existing entries + within preview itself
-    const clashMap = {};
-    slots.forEach((slot, i) => {
-      const otherPreview = slots.filter((_, j) => j !== i);
-      const clashes = detectClashes(slot, [...entries, ...otherPreview]);
-      if (clashes.length > 0) clashMap[i] = clashes;
-    });
-
-    setAiPreview(slots);
-    setAiClashMap(clashMap);
-    if (result?.reasoning) setAiLog(result.reasoning);
-    if (result?.warnings?.length > 0) {
-      result.warnings.forEach(w => toast.warning(w, { duration: 6000 }));
-    }
-    const clashCount = Object.keys(clashMap).length;
-    if (clashCount > 0) {
-      toast.warning(`${clashCount} clash(es) detected in preview — review before saving`);
-    } else {
-      toast.success(`${slots.length} entries generated with no clashes`);
-    }
-    setAiGenerating(false);
   }
 
   async function handleSaveAiPreview() {
@@ -633,12 +570,35 @@ USER PROMPT: "${aiPrompt.trim()}"
               </div>
 
               <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Target classes (optional — leave blank for all)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {classes.map(c => (
+                      <label key={c.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-secondary/50">
+                        <input
+                          type="checkbox"
+                          checked={aiTargetClasses.includes(c.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setAiTargetClasses([...aiTargetClasses, c.id]);
+                            } else {
+                              setAiTargetClasses(aiTargetClasses.filter(id => id !== c.id));
+                            }
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">{c.className}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <Label>Your instructions</Label>
                   <Textarea
                     className="mt-1"
-                    rows={4}
-                    placeholder="Be as specific as you like — mention class names, preferred days, double periods, subject priorities, time restrictions..."
+                    rows={3}
+                    placeholder="Be specific — double periods for Maths on Monday/Wednesday, avoid Friday afternoon classes, etc..."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
                   />
@@ -648,13 +608,26 @@ USER PROMPT: "${aiPrompt.trim()}"
                     <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />{aiError}
                   </div>
                 )}
+
+                {aiGenerating && aiProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Generating timetable...</span>
+                      <span className="font-semibold text-primary">{aiProgress}%</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                      <div className="bg-primary h-full transition-all duration-300" style={{ width: `${aiProgress}%` }} />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
-                  <Button onClick={handleAiGenerate} disabled={aiGenerating} className="flex-1">
+                  <Button onClick={handleAiGenerate} disabled={aiGenerating || !aiPrompt.trim()} className="flex-1">
                     {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                    {aiGenerating ? "Generating — this may take a moment..." : "Generate Timetable"}
+                    {aiGenerating ? "Generating (faster than before)..." : "Generate Timetable"}
                   </Button>
                   {aiPreview.length > 0 && (
-                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); }}>
+                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); }}>
                       <RefreshCw className="w-4 h-4 mr-1" /> Reset
                     </Button>
                   )}
