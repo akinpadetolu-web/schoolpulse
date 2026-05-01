@@ -32,7 +32,7 @@ export default function StudentLayout() {
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 md:h-16 flex items-center justify-between px-3 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -51,7 +51,7 @@ export default function StudentLayout() {
           </div>
           <NotificationCenter />
         </header>
-        <main className="flex-1 overflow-y-auto md:pb-0 pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

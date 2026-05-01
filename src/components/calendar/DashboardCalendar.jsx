@@ -54,6 +54,7 @@ export default function DashboardCalendar() {
   });
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDaysShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const firstDayOfWeek = days[0].getDay();
   const paddedDays = Array(firstDayOfWeek).fill(null).concat(days);
 
@@ -95,21 +96,22 @@ export default function DashboardCalendar() {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3 md:space-y-4 overflow-x-auto">
+      <CardContent className="space-y-3 md:space-y-4">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1 min-w-full">
-          {weekDays.map(day => (
-            <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2 min-w-[40px]">
-              {day}
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map((day, idx) => (
+            <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2">
+              <span className="md:hidden">{weekDaysShort[idx]}</span>
+              <span className="hidden md:inline">{day}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-1 min-w-full">
+        <div className="grid grid-cols-7 gap-1">
           {paddedDays.map((day, idx) => {
             if (!day) {
-              return <div key={`empty-${idx}`} className="aspect-square min-w-[40px]" />;
+              return <div key={`empty-${idx}`} className="aspect-square" />;
             }
 
             const dateStr = format(day, 'yyyy-MM-dd');
@@ -120,7 +122,7 @@ export default function DashboardCalendar() {
             return (
               <div
                 key={dateStr}
-                className={`aspect-square p-1 rounded-lg border text-center text-xs transition-colors min-w-[40px] md:min-w-0 ${
+                className={`aspect-square p-1 rounded-lg border text-center text-xs transition-colors ${
                   isCurrentDay
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:bg-accent'

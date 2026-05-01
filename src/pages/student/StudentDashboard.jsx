@@ -102,7 +102,7 @@ export default function StudentDashboard() {
 
   return (
     <PullToRefreshWrapper {...ptr}>
-    <div className="space-y-6 p-4 md:p-0 pb-20 md:pb-6">
+    <div className="space-y-6 p-4 md:p-6 md:pr-6 pb-20 md:pb-6">
       {/* Header */}
       <div className="mt-2">
         <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
@@ -110,10 +110,10 @@ export default function StudentDashboard() {
       </div>
 
       {/* Top stat cards - responsive grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-fr">
         {/* Overall Grade */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
             <div className="w-full">
               <p className="text-sm text-muted-foreground">Overall Average</p>
               {overallAvg != null ? (
@@ -133,7 +133,7 @@ export default function StudentDashboard() {
 
         {/* Completed Assignments */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
             <div className="w-full">
               <p className="text-sm text-muted-foreground">Completed</p>
               <p className="text-2xl md:text-3xl font-bold mt-2">{completedCount}</p>
@@ -147,7 +147,7 @@ export default function StudentDashboard() {
 
         {/* Pending Assignments */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
             <div className="w-full">
               <p className="text-sm text-muted-foreground">Pending</p>
               <p className="text-2xl md:text-3xl font-bold mt-2">{pendingCount}</p>
@@ -161,7 +161,7 @@ export default function StudentDashboard() {
 
         {/* Timetable Slots */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full">
+          <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
             <div className="w-full">
               <p className="text-sm text-muted-foreground">Timetable Slots</p>
               <p className="text-2xl md:text-3xl font-bold mt-2">{timetableCount}</p>
