@@ -97,8 +97,39 @@
 
   /* Ensure minimum 44px touch targets on mobile */
   @media (max-width: 767px) {
-    button, [role="button"] {
+    button, [role="button"], a {
       min-height: 44px;
+      min-width: 44px;
     }
+  }
+
+  /* Text wrapping and overflow fixes */
+  * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Touch target class */
+  .touch-target {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+
+  /* Input sizing for mobile */
+  @media (max-width: 767px) {
+    input, textarea, select {
+      font-size: 16px;
+    }
+  }
+
+  /* Smooth scrolling with momentum */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }

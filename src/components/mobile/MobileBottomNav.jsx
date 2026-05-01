@@ -44,8 +44,11 @@ export default function MobileBottomNav({ role }) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex items-stretch"
+      style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: 'calc(3.5rem + env(safe-area-inset-bottom))'
+      }}
     >
       {tabs.map(tab => {
         const active = isActive(tab);
@@ -53,12 +56,12 @@ export default function MobileBottomNav({ role }) {
           <button
             key={tab.path}
             onClick={() => handleTabPress(tab)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 select-none transition-colors `}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 select-none transition-colors active:bg-accent/50 touch-target ${active ? 'text-primary' : 'text-muted-foreground'}`}
             style={{ minHeight: '56px' }}
             aria-current={active ? "page" : undefined}
           >
-            <tab.icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
-            <span className={`text-[11px] font-medium leading-tight ${active ? 'text-primary' : 'text-muted-foreground'}`}>{tab.label}</span>
+            <tab.icon className={`w-6 h-6 ${active ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
+            <span className={`text-[10px] font-semibold leading-tight ${active ? 'text-primary' : 'text-muted-foreground'}`}>{tab.label}</span>
           </button>
         );
       })}

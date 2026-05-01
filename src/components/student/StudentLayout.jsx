@@ -30,28 +30,28 @@ export default function StudentLayout() {
   if (!user || user.role !== "student") return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex">
+    <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 md:ml-64 flex flex-col min-w-0">
         <header
-          className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
+          className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 md:h-16 flex items-center justify-between px-3 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {!isRootScreen ? (
-              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={() => navigate(-1)}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+              <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-5 h-5" />
               </Button>
             )}
-            <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Student Portal</h2>
+            <h2 className="text-xs md:text-sm font-medium text-muted-foreground md:block hidden">Student Portal</h2>
           </div>
           <NotificationCenter />
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto md:pb-0 pb-16 md:pb-0">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -59,7 +59,7 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="w-full"
+              className="w-full h-full"
               style={{
                 paddingLeft: 'env(safe-area-inset-left)',
                 paddingRight: 'env(safe-area-inset-right)',
