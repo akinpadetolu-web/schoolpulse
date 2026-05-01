@@ -20,7 +20,6 @@ const studentNavGroups = [
       { label: "Assignment Summary", path: "/student/assignment-summary", icon: TrendingUp },
       { label: "Grades", path: "/student/grades", icon: ClipboardList },
       { label: "Grade Trends", path: "/student/grade-trends", icon: TrendingUp },
-      { label: "Attendance", path: "/student/timetable", icon: UserCheck },
       { label: "E-Class", path: "/student/e-class", icon: Video },
     ]
   },
