@@ -1,0 +1,47 @@
+{
+  "name": "TimeClocking",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "staffId": {
+      "type": "string"
+    },
+    "staffName": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "YYYY-MM-DD"
+    },
+    "clockInTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When staff clocked in"
+    },
+    "clockOutTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When staff clocked out"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "clocked_in",
+        "clocked_out"
+      ],
+      "default": "clocked_in"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "staffId",
+    "date",
+    "clockInTime"
+  ]
+}

@@ -64,6 +64,8 @@ const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
 const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
 const AdminPromotion = lazy(() => import('./pages/school-admin/AdminPromotion'));
 const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
+const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
+const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 
 // Teacher
 const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
@@ -177,6 +179,8 @@ const AuthenticatedApp = () => {
           <Route path="grading-system" element={<AdminGradingSystem />} />
           <Route path="promotion" element={<AdminPromotion />} />
           <Route path="hr" element={<AdminHR />} />
+          <Route path="staff-attendance" element={<AdminStaffAttendance />} />
+          <Route path="leave-requests" element={<AdminLeaveRequests />} />
           <Route path="e-class" element={<AdminEClass />} />
         </Route>
 

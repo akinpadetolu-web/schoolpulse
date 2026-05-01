@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
@@ -47,11 +47,18 @@ const adminNavGroups = [
     ]
   },
   {
+    label: 'STAFF',
+    items: [
+      { label: "Clock In/Out", path: "/school-admin/staff-attendance", icon: Clock },
+      { label: "Leave Requests", path: "/school-admin/leave-requests", icon: AlertCircle },
+      { label: "HR", path: "/school-admin/hr", icon: Briefcase },
+    ]
+  },
+  {
     label: 'SETTINGS',
     items: [
       { label: "School Settings", path: "/school-admin/settings", icon: Settings },
       { label: "Feature Controls", path: "/school-admin/grading-system", icon: Gauge },
-      { label: "Account", path: "/school-admin/hr", icon: UserCog },
     ]
   },
 ];

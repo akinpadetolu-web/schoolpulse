@@ -6,6 +6,8 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
+import TeacherClockInWidget from '@/components/teacher/TeacherClockInWidget';
+import TeacherLeaveRequestWidget from '@/components/teacher/TeacherLeaveRequestWidget';
 import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 
 export default function TeacherDashboard() {
@@ -66,6 +68,10 @@ export default function TeacherDashboard() {
           </div>
         </div>
       )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <TeacherClockInWidget />
+        <TeacherLeaveRequestWidget />
+      </div>
       <DashboardCalendar />
       <div className="mt-8 pt-6 border-t">
         <DeleteAccountDialog />
