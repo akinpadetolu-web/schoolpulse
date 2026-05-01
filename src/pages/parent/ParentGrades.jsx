@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 function getColor(pct) {
   if (pct >= 70) return 'text-emerald-600';
@@ -20,6 +22,7 @@ export default function ParentGrades() {
   const [examResults, setExamResults] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,6 +59,27 @@ export default function ParentGrades() {
 
     return () => unsubscribe();
   }, [user?.id, user?.linkedStudentIds, user?.schoolId]);
+
+  async function downloadReport(child) {
+    setDownloadingId(child.id);
+    try {
+      const response = await base44.functions.invoke('downloadSubjectAverageReport', { studentId: child.id });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subject_averages_${child.fullName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Report downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download report');
+      console.error(error);
+    }
+    setDownloadingId(null);
+  }
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -111,11 +135,25 @@ export default function ParentGrades() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{child.fullName}</CardTitle>
-                {overallAvg !== null && (
-                  <Badge className={`text-sm px-3 py-1 ${overallAvg >= 70 ? 'bg-emerald-100 text-emerald-700' : overallAvg >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                    Overall: {overallAvg}%
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {overallAvg !== null && (
+                    <Badge className={`text-sm px-3 py-1 ${overallAvg >= 70 ? 'bg-emerald-100 text-emerald-700' : overallAvg >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                      Overall: {overallAvg}%
+                    </Badge>
+                  )}
+                  {child.subjectAverages && child.subjectAverages.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadReport(child)}
+                      disabled={downloadingId === child.id}
+                      className="gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      {downloadingId === child.id ? 'Downloading...' : 'Report'}
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>
             </CardHeader>
