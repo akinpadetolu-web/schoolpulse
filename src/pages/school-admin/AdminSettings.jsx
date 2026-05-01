@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Settings } from 'lucide-react';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 
 export default function AdminSettings() {
   return (
@@ -10,6 +11,11 @@ export default function AdminSettings() {
         <CardContent className="py-12 text-center">
           <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">School settings coming soon.</p>
+        </CardContent>
+      </Card>
+      <Card className="border-0 shadow-sm mt-4">
+        <CardContent className="pt-6">
+          <DeleteAccountDialog />
         </CardContent>
       </Card>
     </div>

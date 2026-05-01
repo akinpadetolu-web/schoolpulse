@@ -1,0 +1,57 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, FileText, Calendar, Bell, GraduationCap } from 'lucide-react';
+
+const teacherTabs = [
+  { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
+  { label: "Assignments", path: "/teacher/assignments", icon: FileText },
+  { label: "Timetable", path: "/teacher/timetable", icon: Calendar },
+  { label: "Notifications", path: "/teacher/notifications", icon: Bell },
+];
+
+const studentTabs = [
+  { label: "Dashboard", path: "/student", icon: LayoutDashboard },
+  { label: "Assignments", path: "/student/assignments", icon: FileText },
+  { label: "Timetable", path: "/student/timetable", icon: Calendar },
+  { label: "Grades", path: "/student/grades", icon: GraduationCap },
+];
+
+const parentTabs = [
+  { label: "Dashboard", path: "/parent", icon: LayoutDashboard },
+  { label: "Assignments", path: "/parent/assignments", icon: FileText },
+  { label: "Timetable", path: "/parent/timetable", icon: Calendar },
+  { label: "Grades", path: "/parent/grades", icon: GraduationCap },
+];
+
+export default function MobileBottomNav({ role }) {
+  const location = useLocation();
+
+  const tabs = role === 'teacher' ? teacherTabs : role === 'student' ? studentTabs : parentTabs;
+
+  const isActive = (path, rootPath) =>
+    path === rootPath ? location.pathname === rootPath : location.pathname.startsWith(path);
+
+  const rootPath = `/${role}`;
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      {tabs.map(tab => {
+        const active = isActive(tab.path, rootPath);
+        return (
+          <Link
+            key={tab.path}
+            to={tab.path}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 select-none transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`}
+            style={{ minHeight: '56px' }}
+          >
+            <tab.icon className="w-5 h-5" />
+            <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

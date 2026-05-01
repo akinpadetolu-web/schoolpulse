@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { queryClientInstance } from '@/lib/query-client';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
@@ -202,12 +203,24 @@ const AuthenticatedApp = () => {
   );
 };
 
+function DarkModeDetector() {
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = (e) => document.documentElement.classList.toggle('dark', e.matches);
+    apply(mq);
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <SchoolAuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
+            <DarkModeDetector />
             <AuthenticatedApp />
           </Router>
           <Toaster />

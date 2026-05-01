@@ -84,5 +84,19 @@
   }
   body {
     @apply bg-background text-foreground font-inter;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, [role="button"], nav a, nav button {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Ensure minimum 44px touch targets on mobile */
+  @media (max-width: 767px) {
+    button, [role="button"] {
+      min-height: 44px;
+    }
   }
 }
