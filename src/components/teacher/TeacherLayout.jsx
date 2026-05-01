@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import TeacherSidebar from './TeacherSidebar';
+import HeaderUserMenu from '@/components/common/HeaderUserMenu';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,19 +36,22 @@ export default function TeacherLayout() {
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
-          className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-6 shrink-0 select-none"
+          className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          {!isRootScreen ? (
-            <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => navigate(-1)}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
-          )}
-          <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Teacher Portal</h2>
+          <div className="flex items-center gap-2">
+            {!isRootScreen ? (
+              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => navigate(-1)}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
+                <Menu className="w-5 h-5" />
+              </Button>
+            )}
+            <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Teacher Portal</h2>
+          </div>
+          <HeaderUserMenu />
         </header>
         <main className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait" initial={false}>
