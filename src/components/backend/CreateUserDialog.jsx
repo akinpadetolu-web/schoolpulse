@@ -63,7 +63,19 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
         }
       }
 
+      // Create the custom SchoolUser record
       await base44.entities.SchoolUser.create(userData);
+      
+      // Invite the user to Base44 auth system so they can log in
+      if (form.email) {
+        const inviteRole = role === "teacher" ? "user" : role === "student" ? "user" : role;
+        try {
+          await base44.users.inviteUser(form.email, inviteRole);
+        } catch (inviteErr) {
+          console.warn("Base44 invite failed (user may already exist):", inviteErr);
+        }
+      }
+      
       await logAudit({ schoolId: school.id, schoolName: school.schoolName, action: `${role}_created`, entityType: "SchoolUser", performedBy: "superAdmin", performedByName: "Super Admin", details: `${roleLabel} "${form.fullName}" created` });
 
       setCredentials({ username, password: tempPassword, parentLinkCode });
