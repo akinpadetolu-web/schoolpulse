@@ -11,6 +11,14 @@ import {
 
 export function Toaster() {
   const { toasts } = useToast();
+  
+  if (!toasts || !Array.isArray(toasts)) {
+    return (
+      <ToastProvider>
+        <ToastViewport />
+      </ToastProvider>
+    );
+  }
 
   return (
     <ToastProvider>
