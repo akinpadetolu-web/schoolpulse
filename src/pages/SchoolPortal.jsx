@@ -32,6 +32,11 @@ export default function SchoolPortal() {
 
   // Parent signup state
   const [signupSchool, setSignupSchool] = useState("");
+  const [signupSchoolName, setSignupSchoolName] = useState("");
+  const [signupSearchQuery, setSignupSearchQuery] = useState("");
+  const [signupSearchSuggestions, setSignupSearchSuggestions] = useState([]);
+  const [signupShowSuggestions, setSignupShowSuggestions] = useState(false);
+  const [signupSearchLoading, setSignupSearchLoading] = useState(false);
   const [signupLinkCodes, setSignupLinkCodes] = useState([""]);
   const [signupFullName, setSignupFullName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -116,6 +121,44 @@ export default function SchoolPortal() {
     setUsername("");
     setPassword("");
     setError("");
+  }
+
+  function handleSignupSearchChange(value) {
+    setSignupSearchQuery(value);
+    
+    if (value.trim().length < 2) {
+      setSignupSearchSuggestions([]);
+      setSignupShowSuggestions(false);
+      return;
+    }
+
+    setSignupSearchLoading(true);
+    const lowerQuery = value.trim().toLowerCase();
+    const filtered = schools
+      .filter(s => 
+        s.schoolName?.toLowerCase().includes(lowerQuery) || 
+        s.schoolCode?.toLowerCase().includes(lowerQuery)
+      )
+      .slice(0, 8);
+    
+    setSignupSearchSuggestions(filtered);
+    setSignupShowSuggestions(true);
+    setSignupSearchLoading(false);
+  }
+
+  function handleSelectSignupSchool(school) {
+    setSignupSchool(school.id);
+    setSignupSchoolName(school.schoolName);
+    setSignupSearchQuery(school.schoolName);
+    setSignupShowSuggestions(false);
+  }
+
+  function handleChangeSignupSchool() {
+    setSignupSchool("");
+    setSignupSchoolName("");
+    setSignupSearchQuery("");
+    setSignupSearchSuggestions([]);
+    setSignupShowSuggestions(false);
   }
 
   async function handleSubmit(e) {
@@ -357,19 +400,79 @@ export default function SchoolPortal() {
                   </div> :
 
                 <form onSubmit={handleSignup} className="space-y-4">
-                    <p className="text-sm text-muted-foreground -mt-1 mb-2">
-                      Parents can self-register using the <strong>student link code</strong> provided by the school.
-                    </p>
+                   <p className="text-sm text-muted-foreground -mt-1 mb-2">
+                     Parents can self-register using the <strong>student link code</strong> provided by the school.
+                   </p>
 
-                    <div className="space-y-2">
-                      <Label>School</Label>
-                      <Select value={signupSchool} onValueChange={setSignupSchool}>
-                        <SelectTrigger><SelectValue placeholder="Select your child's school" /></SelectTrigger>
-                        <SelectContent>
-                          {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.schoolName} {s.address && `• ${s.address}`}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                   {!signupSchool ? (
+                     <div className="space-y-3">
+                       <div className="relative z-10">
+                         <Label className="mb-2 block">Search for your school</Label>
+                         <div className="relative">
+                           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                           <Input
+                             type="text"
+                             value={signupSearchQuery}
+                             onChange={(e) => handleSignupSearchChange(e.target.value)}
+                             onFocus={() => signupSearchQuery.length >= 2 && setSignupShowSuggestions(true)}
+                             placeholder="Search for your child's school..."
+                             className="pl-11 bg-transparent pr-3 py-2 text-base rounded-3xl flex h-10 w-full border border-input shadow-sm transition-colors placeholder:text-muted-foreground"
+                           />
+                           {signupSearchLoading && <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-primary" />}
+                         </div>
+
+                         {signupShowSuggestions && (
+                           <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-input rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto pointer-events-auto">
+                             {signupSearchSuggestions.length === 0 && signupSearchQuery.length >= 2 ? (
+                               <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                                 No schools found matching "{signupSearchQuery}"
+                               </div>
+                             ) : (
+                               signupSearchSuggestions.map((school) => (
+                                 <button
+                                   key={school.id}
+                                   type="button"
+                                   onClick={() => handleSelectSignupSchool(school)}
+                                   className="w-full text-left px-4 py-3 hover:bg-accent transition-colors border-b last:border-b-0 flex items-start justify-between"
+                                 >
+                                   <div className="flex-1 min-w-0">
+                                     <div className="font-medium text-sm text-foreground">{school.schoolName}</div>
+                                     {school.address && <div className="text-xs text-muted-foreground truncate">{school.address}</div>}
+                                   </div>
+                                 </button>
+                               ))
+                             )}
+                           </div>
+                         )}
+                       </div>
+                       {signupSearchQuery.length > 0 && signupSearchQuery.length < 2 && (
+                         <p className="text-xs text-muted-foreground">Type at least 2 characters to search</p>
+                       )}
+                     </div>
+                   ) : (
+                     <div className="space-y-3">
+                       <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                         <div className="flex items-center gap-3">
+                           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/20">
+                             <Check className="w-5 h-5 text-primary" />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-sm font-medium text-foreground">{signupSchoolName}</p>
+                             <p className="text-xs text-muted-foreground">School selected</p>
+                           </div>
+                         </div>
+                       </div>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="sm"
+                         onClick={handleChangeSignupSchool}
+                         className="w-full text-xs"
+                       >
+                         Change School
+                       </Button>
+                     </div>
+                   )}
 
                     <div className="space-y-2">
                       <Label>Student Link Code(s) <span className="text-muted-foreground font-normal">(up to 4 children)</span></Label>
