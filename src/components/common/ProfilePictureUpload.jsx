@@ -51,9 +51,12 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
       // Compress before uploading
       const compressedBlob = await compressImage(blob);
       
+      // Convert blob to File object
+      const file = new File([compressedBlob], 'profile-picture.jpg', { type: 'image/jpeg' });
+      
       // Upload to Base44
       const uploadResult = await base44.integrations.Core.UploadFile({
-        file: compressedBlob,
+        file: file,
       });
 
       if (!uploadResult?.file_url) {
