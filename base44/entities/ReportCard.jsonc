@@ -111,6 +111,11 @@
     },
     "approvalDate": {
       "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description or summary of this report card"
     }
   },
   "required": [
