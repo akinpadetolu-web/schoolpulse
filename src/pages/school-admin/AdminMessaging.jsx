@@ -25,15 +25,22 @@ export default function AdminMessaging() {
   async function loadMessages() {
     if (!user?.schoolId) return;
     try {
-      const msgs = await base44.entities.Message.filter({
+      // Get all messages between admin and parents (both sent and received)
+      const allMessages = await base44.entities.Message.filter({
         schoolId: user.schoolId,
-        receiverId: user.id,
       });
-      setMessages(msgs || []);
+      
+      // Filter to only parent conversations
+      const relevantMessages = (allMessages || []).filter(msg => 
+        (msg.senderRole === 'parent' && msg.receiverId === user.id) ||
+        (msg.senderRole === 'admin' && msg.senderId === user.id && msg.receiverRole === 'parent')
+      );
+      
+      setMessages(relevantMessages);
 
-      // Mark as read
-      for (const msg of msgs || []) {
-        if (!msg.isRead) {
+      // Mark parent messages as read
+      for (const msg of relevantMessages) {
+        if (msg.senderRole === 'parent' && !msg.isRead) {
           await base44.entities.Message.update(msg.id, { isRead: true });
         }
       }
