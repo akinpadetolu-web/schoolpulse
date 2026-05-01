@@ -22,18 +22,18 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
-      });
-      
       try {
+        // First, check app public settings (with token if available)
+        // This will tell us if auth is required, user not registered, etc.
+        const appClient = createAxiosClient({
+          baseURL: `/api/apps/public`,
+          headers: {
+            'X-App-Id': appParams.appId
+          },
+          token: appParams.token, // Include token if available
+          interceptResponses: true
+        });
+        
         const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
         setAppPublicSettings(publicSettings);
         
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         console.error('App state check failed:', appError);
         
         // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
+        if (appError?.status === 403 && appError?.data?.extra_data?.reason) {
           const reason = appError.data.extra_data.reason;
           if (reason === 'auth_required') {
             setAuthError({
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           setAuthError({
             type: 'unknown',
-            message: appError.message || 'Failed to load app'
+            message: appError?.message || 'Failed to load app'
           });
         }
         setIsLoadingPublicSettings(false);
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Unexpected error:', error);
       setAuthError({
         type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
+        message: error?.message || 'An unexpected error occurred'
       });
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
