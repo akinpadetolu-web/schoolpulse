@@ -240,15 +240,15 @@ export default function SchoolPortal() {
                       <div className="relative z-10">
                         <Label className="mb-2 block">Search for your school</Label>
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
-                            placeholder="Search for your school..."
-                            className="pl-10 bg-transparent px-3 py-1 text-base rounded-3xl flex h-10 w-full border border-input shadow-sm transition-colors"
-                          />
+                           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                           <Input
+                             type="text"
+                             value={searchQuery}
+                             onChange={(e) => handleSearchChange(e.target.value)}
+                             onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                             placeholder="Search for your school..."
+                             className="pl-11 bg-transparent pr-3 py-2 text-base rounded-3xl flex h-10 w-full border border-input shadow-sm transition-colors placeholder:text-muted-foreground"
+                           />
                           {searchLoading && <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-primary" />}
                         </div>
 
