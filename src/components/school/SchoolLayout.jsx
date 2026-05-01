@@ -4,6 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import SchoolSidebar from './SchoolSidebar';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SchoolLayout() {
   const navigate = useNavigate();
@@ -39,15 +40,24 @@ export default function SchoolLayout() {
           )}
           <h2 className="text-sm font-medium text-muted-foreground">{user.schoolName || "School"} — Admin</h2>
         </header>
-        <main
-          className="flex-1 overflow-y-auto overscroll-none p-4 md:p-6"
-          style={{
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            paddingLeft: 'env(safe-area-inset-left)',
-            paddingRight: 'env(safe-area-inset-right)',
-          }}
-        >
-          <Outlet />
+        <main className="flex-1 overflow-hidden relative">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ x: isRootScreen ? -16 : 16, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: isRootScreen ? 16 : -16, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeInOut' }}
+              className="absolute inset-0 overflow-y-auto overscroll-none p-4 md:p-6"
+              style={{
+                paddingBottom: 'env(safe-area-inset-bottom)',
+                paddingLeft: 'env(safe-area-inset-left)',
+                paddingRight: 'env(safe-area-inset-right)',
+              }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

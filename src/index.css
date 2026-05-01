@@ -88,7 +88,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  button, a, [role="button"], nav a, nav button {
+  button, a, [role="button"], nav a, nav button,
+  label, input[type="checkbox"], input[type="radio"],
+  [role="tab"], [role="menuitem"], [role="option"] {
     user-select: none;
     -webkit-user-select: none;
   }

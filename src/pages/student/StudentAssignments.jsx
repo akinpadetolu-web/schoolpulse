@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +17,7 @@ export default function StudentAssignments() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [asgn, subs] = await Promise.all([
       base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }),
       base44.entities.Submission.filter({ schoolId: user?.schoolId, studentId: user?.id }),
@@ -23,16 +25,19 @@ export default function StudentAssignments() {
     setAssignments(asgn || []);
     setSubmissions(subs || []);
     setLoading(false);
-  }
+  }, [user?.id]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const ptr = usePullToRefresh(load);
 
   const submittedIds = new Set(submissions.map(s => s.assignmentId));
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
-    <div>
+    <PullToRefreshWrapper {...ptr}>
+    <div className="p-4 md:p-0">
       <h1 className="text-2xl font-bold mb-6">Assignments</h1>
       {assignments.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">No assignments yet.</p>
@@ -86,5 +91,6 @@ export default function StudentAssignments() {
         user={user}
       />
     </div>
+    </PullToRefreshWrapper>
   );
 }

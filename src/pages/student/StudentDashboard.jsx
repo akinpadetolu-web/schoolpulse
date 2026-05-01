@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award } from 'lucide-react';
@@ -33,23 +35,24 @@ export default function StudentDashboard() {
   const [timetableCount, setTimetableCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!user?.id) return;
-    async function load() {
-      const [tt, asgn, grd, subs] = await Promise.all([
-        base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
-        base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
-        base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
-        base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
-      ]);
-      setTimetableCount((tt || []).length);
-      setAssignments(asgn || []);
-      setGrades(grd || []);
-      setSubmissions(subs || []);
-      setLoading(false);
-    }
-    load();
+    const [tt, asgn, grd, subs] = await Promise.all([
+      base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
+      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
+      base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
+      base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
+    ]);
+    setTimetableCount((tt || []).length);
+    setAssignments(asgn || []);
+    setGrades(grd || []);
+    setSubmissions(subs || []);
+    setLoading(false);
   }, [user?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const ptr = usePullToRefresh(load);
 
   // Overall average
   const overallAvg = useMemo(() => {
@@ -97,7 +100,8 @@ export default function StudentDashboard() {
   );
 
   return (
-    <div className="space-y-6">
+    <PullToRefreshWrapper {...ptr}>
+    <div className="space-y-6 p-4 md:p-0">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
@@ -271,5 +275,6 @@ export default function StudentDashboard() {
         </Card>
       </div>
     </div>
+    </PullToRefreshWrapper>
   );
 }

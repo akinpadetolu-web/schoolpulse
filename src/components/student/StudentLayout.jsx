@@ -6,6 +6,7 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ROOT_PATHS = ['/student', '/student/assignments', '/student/timetable', '/student/grades'];
 
@@ -46,15 +47,24 @@ export default function StudentLayout() {
           </div>
           <NotificationCenter />
         </header>
-        <main
-          className="flex-1 overflow-y-auto overscroll-none p-4 md:p-6"
-          style={{
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 4rem)',
-            paddingLeft: 'env(safe-area-inset-left)',
-            paddingRight: 'env(safe-area-inset-right)',
-          }}
-        >
-          <Outlet />
+        <main className="flex-1 overflow-hidden relative">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ x: isRootScreen ? -16 : 16, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: isRootScreen ? 16 : -16, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeInOut' }}
+              className="absolute inset-0 overflow-y-auto overscroll-none"
+              style={{
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 4rem)',
+                paddingLeft: 'env(safe-area-inset-left)',
+                paddingRight: 'env(safe-area-inset-right)',
+              }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <MobileBottomNav role="student" />
