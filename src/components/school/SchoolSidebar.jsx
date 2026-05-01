@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
@@ -44,6 +44,7 @@ const adminNavGroups = [
     items: [
       { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
       { label: "Messages", path: "/school-admin/messages", icon: MessageSquare },
+      { label: "Email Campaign", path: "/school-admin/email-campaign", icon: Mail },
       { label: "Notifications", path: "/school-admin/approvals", icon: CheckSquare },
     ]
   },
