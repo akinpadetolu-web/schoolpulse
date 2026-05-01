@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { getCurrentSuperAdmin } from '@/lib/auth';
 import BackendSidebar from './BackendSidebar';
