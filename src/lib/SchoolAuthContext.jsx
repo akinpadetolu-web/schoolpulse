@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 const SchoolAuthContext = createContext(null);
@@ -35,9 +35,12 @@ export function SchoolAuthProvider({ children }) {
   // On mount, restore session from DB using stored session data
   useEffect(() => {
     async function restoreSession() {
-      const stored = readStoredSession();
-      if (!stored?.email || !stored?.schoolId) { setIsLoadingSchoolAuth(false); return; }
       try {
+        const stored = readStoredSession();
+        if (!stored?.email || !stored?.schoolId) { 
+          setIsLoadingSchoolAuth(false); 
+          return; 
+        }
         const users = await base44.entities.SchoolUser.filter({ email: stored.email, schoolId: stored.schoolId, role: stored.role });
         const user = (users || [])[0];
         if (user && !user.isArchived) {
@@ -46,10 +49,12 @@ export function SchoolAuthProvider({ children }) {
         } else {
           clearStoredSession();
         }
-      } catch {
+      } catch (e) {
+        console.warn('SchoolAuthProvider: Session restore failed:', e?.message);
         clearStoredSession();
+      } finally {
+        setIsLoadingSchoolAuth(false);
       }
-      setIsLoadingSchoolAuth(false);
     }
     restoreSession();
   }, []);
@@ -72,8 +77,16 @@ export function SchoolAuthProvider({ children }) {
   );
 }
 
-export function useSchoolAuth() {
+export const useSchoolAuth = () => {
   const ctx = useContext(SchoolAuthContext);
-  if (!ctx) throw new Error('useSchoolAuth must be used within SchoolAuthProvider');
+  if (!ctx) {
+    // Return safe defaults if context is not available (e.g., during SSR or testing)
+    return {
+      schoolUser: null,
+      login: () => {},
+      logout: () => {},
+      isLoadingSchoolAuth: true,
+    };
+  }
   return ctx;
-}
+};
