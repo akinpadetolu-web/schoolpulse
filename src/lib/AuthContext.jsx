@@ -12,48 +12,37 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
   useEffect(() => {
-    const init = async () => {
-      await checkAppState();
+    const initializeAuth = async () => {
+      try {
+        setIsLoadingAuth(true);
+        setAuthError(null);
+        setIsLoadingPublicSettings(false);
+
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setUser(null);
+        setIsAuthenticated(false);
+        if (error.status === 401 || error.status === 403) {
+          setAuthError({
+            type: 'auth_required',
+            message: 'Authentication required'
+          });
+        } else {
+          setAuthError({
+            type: 'unknown',
+            message: error.message || 'An unknown authentication error occurred'
+          });
+        }
+      } finally {
+        setIsLoadingAuth(false);
+      }
     };
-    init();
+    initializeAuth();
   }, []);
 
-  const checkAppState = async () => {
-    try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      setIsLoadingPublicSettings(false);
-    } catch (error) {
-      console.error('Error:', error);
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
-  };
-
-  const checkUserAuth = async () => {
-    try {
-      // Now check if the user is authenticated
-      setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-    } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
-    }
-  };
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
@@ -82,8 +71,7 @@ export const AuthProvider = ({ children }) => {
       authError,
       appPublicSettings,
       logout,
-      navigateToLogin,
-      checkAppState
+      navigateToLogin
     }}>
       {children}
     </AuthContext.Provider>
