@@ -1,28 +1,10 @@
-import { base44 } from '@/api/base44Client';
-import { hashPassword } from './auth';
-
-const SUPER_ADMIN_EMAIL = "thespaceshipagency@gmail.com";
-const SUPER_ADMIN_PASSWORD = "superadmin123";
-
+/**
+ * Super admin initialization is handled server-side via the `initSuperAdmin` backend function.
+ * Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD environment variables in the dashboard,
+ * then call the backend function once from the admin panel to create the super admin account.
+ * Hardcoded credentials have been removed for security.
+ */
 export async function ensureSuperAdminExists() {
-  try {
-    const existing = await base44.entities.SchoolUser.filter({ email: SUPER_ADMIN_EMAIL, role: "superAdmin" });
-    if (existing && existing.length > 0) return existing[0];
-    
-    const admin = await base44.entities.SchoolUser.create({
-      fullName: "SchoolPulse Super Admin",
-      email: SUPER_ADMIN_EMAIL,
-      username: "superadmin",
-      passwordHash: hashPassword(SUPER_ADMIN_PASSWORD),
-      role: "superAdmin",
-      schoolId: "",
-      schoolName: "",
-      mustChangePassword: false,
-      isArchived: false,
-    });
-    return admin;
-  } catch (e) {
-    console.error("Super admin init error:", e);
-    return null;
-  }
+  console.warn("ensureSuperAdminExists: Super admin creation is now handled via the initSuperAdmin backend function. Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD env vars and invoke the function from the backend.");
+  return null;
 }

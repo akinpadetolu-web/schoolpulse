@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePassword, hashPassword, generateUsername } from '@/lib/auth';
+import { comparePassword } from '@/lib/auth';
+import { base44 as base44sdk } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -117,49 +118,26 @@ export default function SchoolPortal() {
     if (signupPassword !== signupConfirm) return setSignupError("Passwords do not match");
 
     setSignupLoading(true);
-    // Find students matching all provided codes
-    const students = await base44.entities.SchoolUser.filter({ schoolId: signupSchool, role: 'student', isArchived: false });
-    const linked = (students || []).filter((s) => trimmedCodes.includes(s.parentLinkCode));
+    try {
+      const response = await base44sdk.functions.invoke('parentSignup', {
+        schoolId: signupSchool,
+        linkCodes: trimmedCodes,
+        fullName: signupFullName.trim(),
+        email: signupEmail.trim(),
+        password: signupPassword,
+      });
 
-    if (linked.length === 0) {
+      if (response.data?.error) {
+        setSignupLoading(false);
+        return setSignupError(response.data.error);
+      }
+
       setSignupLoading(false);
-      return setSignupError("No students found with those link codes. Please check and try again.");
-    }
-    if (linked.length !== trimmedCodes.length) {
-      const foundCodes = linked.map((s) => s.parentLinkCode);
-      const notFound = trimmedCodes.filter((c) => !foundCodes.includes(c));
+      setSignupSuccess(true);
+    } catch (err) {
       setSignupLoading(false);
-      return setSignupError(`Code(s) not found: ${notFound.join(", ")}. Please verify them with the school.`);
+      setSignupError(err?.response?.data?.error || "Sign up failed. Please try again.");
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Check email not already taken by a parent in this school
-    const existingParents = await base44.entities.SchoolUser.filter({ schoolId: signupSchool, role: 'parent' });
-    if ((existingParents || []).some((p) => p.email === signupEmail.trim())) {
-      setSignupLoading(false);
-      return setSignupError("An account with this email already exists. Please sign in.");
-    }
-
-    const existingUsernames = (existingParents || []).map((p) => p.username).filter(Boolean);
-    const school = schools.find((s) => s.id === signupSchool);
-    const newUsername = generateUsername(signupFullName, existingUsernames);
-
-    await base44.entities.SchoolUser.create({
-      schoolId: signupSchool,
-      schoolName: school?.schoolName || "",
-      fullName: signupFullName.trim(),
-      email: signupEmail.trim(),
-      username: newUsername,
-      passwordHash: hashPassword(signupPassword),
-      role: 'parent',
-      linkedStudentIds: linked.map((s) => s.id),
-      mustChangePassword: false,
-      isArchived: false
-    });
-
-    setSignupLoading(false);
-    setSignupSuccess(true);
   }
 
   const roles = isMobile ?
