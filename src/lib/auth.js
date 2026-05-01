@@ -1,34 +1,18 @@
-// Password hashing using a consistent cross-browser algorithm
+// Simple password hashing using base64 encoding with a salt prefix
 const SALT = "SP2024_";
-
-function simpleHash(str) {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  // Convert to unsigned 32-bit hex string, padded to 8 chars
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
 
 export function hashPassword(password) {
   const salted = SALT + password;
-  // Use multiple rounds for a longer hash, consistent across all browsers
-  let h1 = simpleHash(salted);
-  let h2 = simpleHash(salted + h1);
-  let h3 = simpleHash(h1 + salted);
-  let h4 = simpleHash(h2 + h3 + salted);
-  return `sp_${h1}${h2}${h3}${h4}`;
+  return btoa(unescape(encodeURIComponent(salted)));
 }
 
 export function comparePassword(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) return false;
-  const newHash = hashPassword(inputPassword);
-  if (newHash === storedHash) return true;
-  // Fallback: also check old btoa-based hash for existing accounts
+  // Check new encoding-safe hash
+  if (hashPassword(inputPassword) === storedHash) return true;
+  // Fallback: check old plain btoa hash (for existing stored passwords)
   try {
-    const oldHash = btoa(SALT + inputPassword);
-    return oldHash === storedHash;
+    return btoa(SALT + inputPassword) === storedHash;
   } catch { return false; }
 }
 

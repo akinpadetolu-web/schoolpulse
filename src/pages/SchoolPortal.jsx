@@ -78,7 +78,7 @@ export default function SchoolPortal() {
       );
 
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
-      if (!comparePassword(password.trim(), user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
+      if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
       setCurrentUser(user);
 
