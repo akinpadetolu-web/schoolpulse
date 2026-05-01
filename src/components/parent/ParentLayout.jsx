@@ -32,7 +32,7 @@ export default function ParentLayout() {
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <ParentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 md:ml-64 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 md:h-16 flex items-center justify-between px-3 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
