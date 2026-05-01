@@ -50,6 +50,7 @@ const AdminAnnouncements = lazy(() => import('./pages/school-admin/AdminAnnounce
 const AdminGradeWeighting = lazy(() => import('./pages/school-admin/AdminGradeWeighting'));
 const AdminReportCards = lazy(() => import('./pages/school-admin/AdminReportCards'));
 const AdminSchoolReport = lazy(() => import('./pages/school-admin/AdminSchoolReport'));
+const AdminApprovals = lazy(() => import('./pages/school-admin/AdminApprovals'));
 const AdminAcademicTerms = lazy(() => import('./pages/school-admin/AdminAcademicTerms'));
 const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
 const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
@@ -157,6 +158,7 @@ const AuthenticatedApp = () => {
           <Route path="grade-weighting" element={<AdminGradeWeighting />} />
           <Route path="report-cards" element={<AdminReportCards />} />
           <Route path="school-report" element={<AdminSchoolReport />} />
+          <Route path="approvals" element={<AdminApprovals />} />
           <Route path="academic-terms" element={<AdminAcademicTerms />} />
           <Route path="calendar" element={<SchoolCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />

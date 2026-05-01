@@ -20,12 +20,21 @@ export default function StudentLessonPlans() {
         schoolId: user?.schoolId,
         classId: user?.classId,
         isPublished: true,
+        status: 'approved',
       });
       setPlans((data || []).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
       setLoading(false);
     }
     load();
-  }, []);
+
+    // Subscribe to approved lesson updates
+    const unsubscribe = base44.entities.LessonPlan.subscribe((event) => {
+      if (event.data?.classId === user?.classId && event.data?.status === 'approved') {
+        load();
+      }
+    });
+    return () => unsubscribe();
+  }, [user?.classId, user?.schoolId]);
 
   const filteredPlans = plans.filter(p => {
     if (!p.date) return true;

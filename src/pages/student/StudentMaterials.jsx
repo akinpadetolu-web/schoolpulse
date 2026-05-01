@@ -12,13 +12,26 @@ export default function StudentMaterials() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await base44.entities.LessonMaterial.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true });
+        const data = await base44.entities.LessonMaterial.filter({ 
+          schoolId: user?.schoolId, 
+          classId: user?.classId, 
+          isPublished: true,
+          status: 'approved',
+        });
         setMaterials(data || []);
       } catch { setMaterials([]); }
       setLoading(false);
     }
     load();
-  }, []);
+
+    // Subscribe to approved material updates
+    const unsubscribe = base44.entities.LessonMaterial.subscribe((event) => {
+      if (event.data?.classId === user?.classId && event.data?.status === 'approved') {
+        load();
+      }
+    });
+    return () => unsubscribe();
+  }, [user?.classId, user?.schoolId]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 

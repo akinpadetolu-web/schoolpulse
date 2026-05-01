@@ -38,6 +38,28 @@
     "topic": {
       "type": "string"
     },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Approval status"
+    },
+    "approvedBy": {
+      "type": "string",
+      "description": "Admin ID who approved/rejected"
+    },
+    "approvalDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approvalNotes": {
+      "type": "string",
+      "description": "Admin feedback on approval/rejection"
+    },
     "isPublished": {
       "type": "boolean",
       "default": false
