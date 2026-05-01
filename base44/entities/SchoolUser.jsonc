@@ -120,7 +120,36 @@
           "average"
         ]
       },
-      "description": "Array of objects storing student's average score per subject"
+      "description": "Cumulative average scores per subject (all terms)"
+    },
+    "termSubjectGrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string",
+            "description": "Academic term (e.g., 'Term 1', 'Midterm 2026')"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "weightedAverage": {
+            "type": "number",
+            "description": "Weighted average for this subject in this term"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "term",
+          "subjectId",
+          "weightedAverage"
+        ]
+      },
+      "description": "Term-specific weighted averages by subject"
     }
   },
   "required": [

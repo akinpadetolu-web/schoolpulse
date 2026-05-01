@@ -42,6 +42,52 @@
         }
       }
     },
+    "assessmentWeights": {
+      "type": "array",
+      "description": "Weights for different assessment types to calculate subject averages",
+      "items": {
+        "type": "object",
+        "properties": {
+          "assessmentType": {
+            "type": "string",
+            "enum": [
+              "exam",
+              "test",
+              "quiz",
+              "assignment",
+              "classwork"
+            ],
+            "description": "Type of assessment"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Percentage weight for this assessment type (0-100)"
+          }
+        },
+        "required": [
+          "assessmentType",
+          "weight"
+        ]
+      },
+      "default": [
+        {
+          "assessmentType": "exam",
+          "weight": 40
+        },
+        {
+          "assessmentType": "test",
+          "weight": 30
+        },
+        {
+          "assessmentType": "quiz",
+          "weight": 15
+        },
+        {
+          "assessmentType": "assignment",
+          "weight": 15
+        }
+      ]
+    },
     "passMark": {
       "type": "number",
       "default": 40,
