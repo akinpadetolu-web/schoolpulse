@@ -3,21 +3,27 @@ import { base44 } from '@/api/base44Client';
 
 const SchoolAuthContext = createContext(null);
 
-const SESSION_KEY = 'schoolpulse_uid';
+const SESSION_KEY = 'schoolpulse_session_v2';
 
-function readStoredId() {
-  try { return localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || null; } catch { return null; }
+function readStoredSession() {
+  try {
+    const v = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    return v ? JSON.parse(v) : null;
+  } catch { return null; }
 }
 
-function writeStoredId(id) {
-  try { localStorage.setItem(SESSION_KEY, id); } catch {}
-  try { sessionStorage.setItem(SESSION_KEY, id); } catch {}
+function writeStoredSession(user) {
+  const data = JSON.stringify({ id: user.id, email: user.email, schoolId: user.schoolId, role: user.role });
+  try { localStorage.setItem(SESSION_KEY, data); } catch {}
+  try { sessionStorage.setItem(SESSION_KEY, data); } catch {}
 }
 
-function clearStoredId() {
+function clearStoredSession() {
   try { localStorage.removeItem(SESSION_KEY); } catch {}
   try { sessionStorage.removeItem(SESSION_KEY); } catch {}
-  // Also clear old full-session keys
+  // Also clear old keys
+  try { localStorage.removeItem('schoolpulse_uid'); } catch {}
+  try { sessionStorage.removeItem('schoolpulse_uid'); } catch {}
   try { localStorage.removeItem('schoolpulse_session'); } catch {}
   try { sessionStorage.removeItem('schoolpulse_session'); } catch {}
 }
@@ -26,22 +32,22 @@ export function SchoolAuthProvider({ children }) {
   const [schoolUser, setSchoolUser] = useState(null);
   const [isLoadingSchoolAuth, setIsLoadingSchoolAuth] = useState(true);
 
-  // On mount, restore session from DB using stored user ID
+  // On mount, restore session from DB using stored session data
   useEffect(() => {
     async function restoreSession() {
-      const storedId = readStoredId();
-      if (!storedId) { setIsLoadingSchoolAuth(false); return; }
+      const stored = readStoredSession();
+      if (!stored?.email || !stored?.schoolId) { setIsLoadingSchoolAuth(false); return; }
       try {
-        const users = await base44.entities.SchoolUser.filter({ id: storedId });
+        const users = await base44.entities.SchoolUser.filter({ email: stored.email, schoolId: stored.schoolId, role: stored.role });
         const user = (users || [])[0];
         if (user && !user.isArchived) {
           const { passwordHash, ...safe } = user;
           setSchoolUser(safe);
         } else {
-          clearStoredId();
+          clearStoredSession();
         }
       } catch {
-        clearStoredId();
+        clearStoredSession();
       }
       setIsLoadingSchoolAuth(false);
     }
@@ -51,12 +57,12 @@ export function SchoolAuthProvider({ children }) {
   const login = (user) => {
     const { passwordHash, ...safe } = user;
     setSchoolUser(safe);
-    writeStoredId(user.id);
+    writeStoredSession(user);
   };
 
   const logout = () => {
     setSchoolUser(null);
-    clearStoredId();
+    clearStoredSession();
   };
 
   return (
