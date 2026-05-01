@@ -237,7 +237,7 @@ export default function SchoolPortal() {
                   {!selectedSchool ? (
                     // School Search Step
                     <div className="space-y-3">
-                      <div className="relative">
+                      <div className="relative z-10">
                         <Label className="mb-2 block">Search for your school</Label>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -254,7 +254,7 @@ export default function SchoolPortal() {
 
                         {/* Search Suggestions Dropdown */}
                         {showSuggestions && (
-                          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-input rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-input rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto pointer-events-auto">
                             {searchSuggestions.length === 0 && searchQuery.length >= 2 ? (
                               <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                                 No schools found matching "{searchQuery}"
