@@ -1,0 +1,60 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "senderId": {
+      "type": "string"
+    },
+    "senderName": {
+      "type": "string"
+    },
+    "senderRole": {
+      "type": "string",
+      "enum": [
+        "parent",
+        "admin",
+        "teacher",
+        "student"
+      ]
+    },
+    "receiverId": {
+      "type": "string"
+    },
+    "receiverRole": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "parent",
+        "teacher",
+        "student"
+      ]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "isRead": {
+      "type": "boolean",
+      "default": false
+    },
+    "replyToId": {
+      "type": "string",
+      "description": "ID of the message this is replying to"
+    }
+  },
+  "required": [
+    "schoolId",
+    "senderId",
+    "senderName",
+    "senderRole",
+    "receiverId",
+    "receiverRole",
+    "subject",
+    "content"
+  ]
+}

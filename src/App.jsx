@@ -104,6 +104,8 @@ const ParentAssignments = lazy(() => import('./pages/parent/ParentAssignments'))
 const ParentGrades = lazy(() => import('./pages/parent/ParentGrades'));
 const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncements'));
 const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
+const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
+const AdminMessaging = lazy(() => import('./pages/school-admin/AdminMessaging'));
 
 function PageLoader() {
   return (
@@ -183,6 +185,7 @@ const AuthenticatedApp = () => {
           <Route path="staff-attendance" element={<AdminStaffAttendance />} />
           <Route path="leave-requests" element={<AdminLeaveRequests />} />
           <Route path="e-class" element={<AdminEClass />} />
+          <Route path="messages" element={<AdminMessaging />} />
         </Route>
 
         {/* Teacher */}
@@ -228,6 +231,7 @@ const AuthenticatedApp = () => {
           <Route path="assignments" element={<ParentAssignments />} />
           <Route path="grades" element={<ParentGrades />} />
           <Route path="announcements" element={<ParentAnnouncements />} />
+          <Route path="messages" element={<ParentMessaging />} />
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
           <Route path="profile" element={<ParentProfile />} />

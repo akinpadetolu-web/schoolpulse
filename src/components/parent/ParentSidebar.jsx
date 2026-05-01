@@ -1,7 +1,6 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
@@ -28,6 +27,7 @@ const parentNavGroups = [
     label: 'COMMUNICATION',
     items: [
       { label: "Announcements", path: "/parent/announcements", icon: Megaphone },
+      { label: "Messages", path: "/parent/messages", icon: MessageSquare },
       { label: "Notifications", path: "/parent/announcements", icon: Bell },
     ]
   },
