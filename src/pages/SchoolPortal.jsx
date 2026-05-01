@@ -13,7 +13,7 @@ import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2 } from 
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
-  const { login } = useSchoolAuth();
+  const { login, schoolUser, isLoadingSchoolAuth } = useSchoolAuth();
   const [schools, setSchools] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState("");
   const [role, setRole] = useState("");
@@ -40,6 +40,16 @@ export default function SchoolPortal() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Auto-redirect already logged-in users
+  useEffect(() => {
+    if (!isLoadingSchoolAuth && schoolUser) {
+      if (schoolUser.role === "admin") navigate("/school-admin");
+      else if (schoolUser.role === "teacher") navigate("/teacher");
+      else if (schoolUser.role === "student") navigate("/student");
+      else if (schoolUser.role === "parent") navigate("/parent");
+    }
+  }, [isLoadingSchoolAuth, schoolUser, navigate]);
 
   async function loadSchools() {
     try {
@@ -155,6 +165,14 @@ export default function SchoolPortal() {
   const roles = isMobile ?
   [{ value: "teacher", label: "Teacher" }, { value: "student", label: "Student" }, { value: "parent", label: "Parent" }] :
   [{ value: "admin", label: "School Admin" }, { value: "teacher", label: "Teacher" }, { value: "student", label: "Student" }, { value: "parent", label: "Parent" }];
+
+  if (isLoadingSchoolAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
