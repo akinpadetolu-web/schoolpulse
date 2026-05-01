@@ -31,7 +31,16 @@ export default function TeacherSubmissions() {
   const [feedback, setFeedback] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    loadData(); 
+    // Subscribe to submission updates
+    const unsubscribe = base44.entities.Submission.subscribe((event) => {
+      if (event.type === 'update' && event.data.schoolId === user.schoolId) {
+        loadData();
+      }
+    });
+    return unsubscribe;
+  }, [user.schoolId]);
 
   async function loadData() {
     const [a, s, st] = await Promise.all([
@@ -107,14 +116,53 @@ export default function TeacherSubmissions() {
   async function handleGrade(e) {
     e.preventDefault();
     setSaving(true);
-    await base44.entities.Submission.update(gradingSubmission.submission.id, {
-      score: Number(score),
-      feedback,
-      isGraded: true,
-    });
-    await loadData();
-    setSaving(false);
-    setGradingSubmission(null);
+    try {
+      // Update submission
+      const updatedSubmission = await base44.entities.Submission.update(gradingSubmission.submission.id, {
+        score: Number(score),
+        feedback,
+        isGraded: true,
+      });
+
+      // Create grade record for student
+      const assignment = selectedAssignment;
+      const gradeData = {
+        schoolId: user.schoolId,
+        studentId: gradingSubmission.student.id,
+        studentName: gradingSubmission.student.fullName,
+        classId: assignment.classId,
+        subjectId: assignment.subjectId,
+        subjectName: assignment.subjectName,
+        teacherId: user.id,
+        assessmentType: 'assignment',
+        score: Number(score),
+        maxScore: assignment.maxScore,
+        comment: feedback,
+        term: 'current',
+      };
+      
+      const newGrade = await base44.entities.Grade.create(gradeData);
+
+      // Trigger notification to parents/students/admins
+      try {
+        await base44.functions.invoke('onGradeSubmitted', {
+          gradeId: newGrade?.id,
+          schoolId: user.schoolId,
+          studentId: gradingSubmission.student.id,
+          teacherId: user.id,
+          subjectId: assignment.subjectId,
+        });
+      } catch (notifyError) {
+        console.warn('Notification trigger failed (non-critical):', notifyError);
+      }
+
+      setSaving(false);
+      setGradingSubmission(null);
+      // Data will auto-refresh via subscription
+    } catch (error) {
+      console.error('Error grading submission:', error);
+      setSaving(false);
+    }
   }
 
   // Stats for selected assignment

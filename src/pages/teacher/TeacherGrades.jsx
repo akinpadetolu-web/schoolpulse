@@ -64,7 +64,16 @@ export default function TeacherGrades() {
   const [filterType, setFilterType] = useState("all");
   const [search, setSearch] = useState("");
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    loadData(); 
+    // Subscribe to grade updates for real-time sync
+    const unsubscribe = base44.entities.Grade.subscribe((event) => {
+      if (event.data?.teacherId === user?.id && event.data?.schoolId === user?.schoolId) {
+        loadData();
+      }
+    });
+    return unsubscribe;
+  }, [user?.id, user?.schoolId]);
 
   async function loadData() {
     const assignedClassIds = [...new Set(
