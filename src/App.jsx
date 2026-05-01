@@ -8,6 +8,10 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import InstallPrompt from '@/components/pwa/InstallPrompt';
+import OfflineIndicator from '@/components/pwa/OfflineIndicator';
+import UpdatePrompt from '@/components/pwa/UpdatePrompt';
+import { initializePWA } from '@/lib/pwaManager';
 
 // Eagerly loaded layouts (small, needed immediately)
 import BackendLayout from './components/backend/BackendLayout';
@@ -241,6 +245,13 @@ function DarkModeDetector() {
   return null;
 }
 
+function PWAInitializer() {
+  useEffect(() => {
+    initializePWA().catch(err => console.error('[PWA] Initialization failed:', err));
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -248,7 +259,11 @@ function App() {
         <QueryClientProvider client={queryClientInstance}>
           <Router>
             <DarkModeDetector />
+            <PWAInitializer />
             <AuthenticatedApp />
+            <OfflineIndicator />
+            <InstallPrompt />
+            <UpdatePrompt />
           </Router>
           <Toaster />
           <SonnerToaster position="top-right" richColors />
