@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, Search, X, Check } from 'lucide-react';
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
@@ -23,6 +23,12 @@ export default function SchoolPortal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // School search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Parent signup state
   const [signupSchool, setSignupSchool] = useState("");
@@ -40,6 +46,14 @@ export default function SchoolPortal() {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+    
+    // Load saved school from localStorage on mount
+    const savedSchoolId = localStorage.getItem('lastSchoolId');
+    const savedSchoolName = localStorage.getItem('lastSchoolName');
+    if (savedSchoolId && savedSchoolName) {
+      setSelectedSchool(savedSchoolId);
+      setSearchQuery(savedSchoolName);
+    }
   }, []);
 
   // Auto-redirect already logged-in users
@@ -60,6 +74,48 @@ export default function SchoolPortal() {
       console.error('Failed to load schools:', error);
       setSchools([]);
     }
+  }
+
+  function handleSearchChange(value) {
+    setSearchQuery(value);
+    
+    if (value.trim().length < 2) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    const lowerQuery = value.trim().toLowerCase();
+    const filtered = schools
+      .filter(s => 
+        s.schoolName?.toLowerCase().includes(lowerQuery) || 
+        s.schoolCode?.toLowerCase().includes(lowerQuery)
+      )
+      .slice(0, 8);
+    
+    setSearchSuggestions(filtered);
+    setShowSuggestions(true);
+    setSearchLoading(false);
+  }
+
+  function handleSelectSchool(school) {
+    setSelectedSchool(school.id);
+    setSearchQuery(school.schoolName);
+    setShowSuggestions(false);
+    localStorage.setItem('lastSchoolId', school.id);
+    localStorage.setItem('lastSchoolName', school.schoolName);
+  }
+
+  function handleChangeSchool() {
+    setSelectedSchool("");
+    setSearchQuery("");
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+    setRole("");
+    setUsername("");
+    setPassword("");
+    setError("");
   }
 
   async function handleSubmit(e) {
@@ -92,6 +148,10 @@ export default function SchoolPortal() {
 
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
       if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
+
+      // Save school on successful login
+      localStorage.setItem('lastSchoolId', school.id);
+      localStorage.setItem('lastSchoolName', school.schoolName);
 
       login(user);
 
@@ -174,47 +234,113 @@ export default function SchoolPortal() {
               {/* ── Sign In ── */}
               <TabsContent value="signin">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>School</Label>
-                    <Select value={selectedSchool} onValueChange={setSelectedSchool}>
-                      <SelectTrigger className="bg-transparent px-3 py-2 text-sm rounded-3xl flex h-9 w-full items-center justify-between whitespace-nowrap border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"><SelectValue placeholder="Select your school" /></SelectTrigger>
-                      <SelectContent>
-                        {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.schoolName}</SelectItem>)}
-                        {schools.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground">No schools available</div>}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {!selectedSchool ? (
+                    // School Search Step
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Label className="mb-2 block">Search for your school</Label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                            placeholder="Search for your school..."
+                            className="pl-10 bg-transparent px-3 py-1 text-base rounded-3xl flex h-10 w-full border border-input shadow-sm transition-colors"
+                          />
+                          {searchLoading && <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-primary" />}
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger className="bg-transparent px-3 py-2 text-sm rounded-3xl flex h-9 w-full items-center justify-between whitespace-nowrap border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"><SelectValue placeholder="Select your role" /></SelectTrigger>
-                      <SelectContent>
-                        {roles.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username or Email</Label>
-                    <Input id="username" name="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username or email" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
-                  </div>
-
-                  {error &&
-                  <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
-                      <AlertCircle className="w-4 h-4 shrink-0" /><span>{error}</span>
+                        {/* Search Suggestions Dropdown */}
+                        {showSuggestions && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-input rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                            {searchSuggestions.length === 0 && searchQuery.length >= 2 ? (
+                              <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                                No schools found matching "{searchQuery}"
+                              </div>
+                            ) : (
+                              searchSuggestions.map((school) => (
+                                <button
+                                  key={school.id}
+                                  type="button"
+                                  onClick={() => handleSelectSchool(school)}
+                                  className="w-full text-left px-4 py-3 hover:bg-accent transition-colors border-b last:border-b-0 flex items-start justify-between"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-foreground">{school.schoolName}</div>
+                                    {school.address && <div className="text-xs text-muted-foreground truncate">{school.address}</div>}
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {searchQuery.length > 0 && searchQuery.length < 2 && (
+                        <p className="text-xs text-muted-foreground">Type at least 2 characters to search</p>
+                      )}
                     </div>
-                  }
+                  ) : (
+                    // School Selected - Show confirmation
+                    <div className="space-y-3">
+                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/20">
+                            <Check className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{searchQuery}</p>
+                            <p className="text-xs text-muted-foreground">School selected</p>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleChangeSchool}
+                        className="w-full text-xs"
+                      >
+                        Change School
+                      </Button>
+                    </div>
+                  )}
 
-                  <Button type="submit" className="bg-primary text-primary-foreground px-4 py-2 text-base font-medium rounded-3xl inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 w-full h-11" disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                    Sign In
-                  </Button>
+                  {selectedSchool && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Role</Label>
+                        <Select value={role} onValueChange={setRole}>
+                          <SelectTrigger className="bg-transparent px-3 py-2 text-sm rounded-3xl flex h-9 w-full items-center justify-between whitespace-nowrap border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"><SelectValue placeholder="Select your role" /></SelectTrigger>
+                          <SelectContent>
+                            {roles.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Username or Email</Label>
+                        <Input id="username" name="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username or email" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+                      </div>
+
+                      {error &&
+                      <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
+                          <AlertCircle className="w-4 h-4 shrink-0" /><span>{error}</span>
+                        </div>
+                      }
+
+                      <Button type="submit" className="bg-primary text-primary-foreground px-4 py-2 text-base font-medium rounded-3xl inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 w-full h-11" disabled={loading}>
+                        {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        Sign In
+                      </Button>
+                    </>
+                  )}
                 </form>
               </TabsContent>
 
@@ -240,7 +366,7 @@ export default function SchoolPortal() {
                       <Select value={signupSchool} onValueChange={setSignupSchool}>
                         <SelectTrigger><SelectValue placeholder="Select your child's school" /></SelectTrigger>
                         <SelectContent>
-                          {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.schoolName}</SelectItem>)}
+                          {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.schoolName} {s.address && `• ${s.address}`}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
