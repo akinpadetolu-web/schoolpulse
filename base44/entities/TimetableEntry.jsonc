@@ -41,6 +41,11 @@
     },
     "term": {
       "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Additional notes or details about this timetable entry"
     }
   },
   "required": [

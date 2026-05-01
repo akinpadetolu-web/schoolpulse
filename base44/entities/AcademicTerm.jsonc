@@ -27,6 +27,11 @@
       "type": "string",
       "format": "date",
       "description": "End date of the academic term (YYYY-MM-DD)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description of this academic term"
     }
   },
   "required": [
@@ -35,5 +40,25 @@
     "academicYear",
     "startDate",
     "endDate"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "data.schoolId": "{{user.data.schoolId}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

@@ -33,6 +33,11 @@
     "academicTrack": {
       "type": "string"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description of the subject and its learning goals"
+    },
     "isCompulsory": {
       "type": "boolean",
       "default": false

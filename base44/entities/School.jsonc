@@ -22,6 +22,11 @@
       "type": "string",
       "description": "Contact phone"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description of the school"
+    },
     "isActive": {
       "type": "boolean",
       "default": true

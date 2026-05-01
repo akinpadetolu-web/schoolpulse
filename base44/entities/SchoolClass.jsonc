@@ -27,6 +27,11 @@
     "academicTrack": {
       "type": "string"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description of the class"
+    },
     "isArchived": {
       "type": "boolean",
       "default": false

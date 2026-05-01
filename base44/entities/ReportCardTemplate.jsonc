@@ -67,6 +67,11 @@
     },
     "createdBy": {
       "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A description of this report card template's purpose or structure"
     }
   },
   "required": [

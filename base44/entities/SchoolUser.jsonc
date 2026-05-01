@@ -86,6 +86,11 @@
         }
       }
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "A brief description or profile summary for the user"
+    },
     "mustChangePassword": {
       "type": "boolean",
       "default": true
@@ -98,5 +103,41 @@
   "required": [
     "fullName",
     "role"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.schoolId": "{{user.data.schoolId}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
