@@ -260,19 +260,19 @@ export default function ParentDashboard() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
-          <p className="text-muted-foreground">{user?.schoolName}</p>
+    <div className="space-y-4 px-3 sm:px-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold truncate">Welcome, {user?.fullName}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.schoolName}</p>
         </div>
-        <Button onClick={() => setShowAddChild(true)}>
+        <Button onClick={() => setShowAddChild(true)} className="h-9 sm:h-10">
           <UserPlus className="w-4 h-4 mr-2" /> Add Child
         </Button>
       </div>
 
-      <div>
-         <h2 className="text-lg font-semibold mb-4">My Children</h2>
+      <div className="space-y-4">
+         <h2 className="text-lg font-semibold px-3 sm:px-0">My Children</h2>
         {children.length === 0 ? (
           <Card className="border-0 shadow-sm">
             <CardContent className="py-10 text-center text-muted-foreground flex flex-col items-center gap-3">
