@@ -1,0 +1,59 @@
+{
+  "name": "GradingSystem",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "e.g. Standard Nigerian Grading"
+    },
+    "isDefault": {
+      "type": "boolean",
+      "default": false
+    },
+    "grades": {
+      "type": "array",
+      "description": "Grade bands from highest to lowest",
+      "items": {
+        "type": "object",
+        "properties": {
+          "letter": {
+            "type": "string",
+            "description": "e.g. A1, B2, C4, F9"
+          },
+          "label": {
+            "type": "string",
+            "description": "e.g. Excellent, Very Good, Pass, Fail"
+          },
+          "minScore": {
+            "type": "number"
+          },
+          "maxScore": {
+            "type": "number"
+          },
+          "isPassing": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "passMark": {
+      "type": "number",
+      "default": 40,
+      "description": "Minimum score to pass a subject"
+    },
+    "promotionPassCount": {
+      "type": "number",
+      "description": "Minimum subjects a student must pass to be promoted"
+    }
+  },
+  "required": [
+    "schoolId",
+    "name"
+  ]
+}

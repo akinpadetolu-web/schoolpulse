@@ -45,6 +45,9 @@ import AdminReportCards from './pages/school-admin/AdminReportCards';
 import AdminSchoolReport from './pages/school-admin/AdminSchoolReport';
 import AdminAcademicTerms from './pages/school-admin/AdminAcademicTerms';
 import AdminSettings from './pages/school-admin/AdminSettings';
+import AdminGradingSystem from './pages/school-admin/AdminGradingSystem';
+import AdminPromotion from './pages/school-admin/AdminPromotion';
+import AdminHR from './pages/school-admin/AdminHR';
 
 // Teacher Layout + Pages
 import TeacherLayout from './components/teacher/TeacherLayout';
@@ -146,6 +149,9 @@ const AuthenticatedApp = () => {
         <Route path="calendar" element={<SchoolCalendar />} />
         <Route path="performance" element={<PerformanceDashboard />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="grading-system" element={<AdminGradingSystem />} />
+        <Route path="promotion" element={<AdminPromotion />} />
+        <Route path="hr" element={<AdminHR />} />
       </Route>
 
       {/* Teacher */}

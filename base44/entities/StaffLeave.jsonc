@@ -1,0 +1,73 @@
+{
+  "name": "StaffLeave",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "staffId": {
+      "type": "string"
+    },
+    "staffName": {
+      "type": "string"
+    },
+    "staffRole": {
+      "type": "string"
+    },
+    "leaveType": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "sick",
+        "maternity",
+        "paternity",
+        "compassionate",
+        "unpaid",
+        "other"
+      ],
+      "default": "annual"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "daysRequested": {
+      "type": "number"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "reviewedBy": {
+      "type": "string"
+    },
+    "reviewedAt": {
+      "type": "string"
+    },
+    "reviewNote": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "staffId",
+    "leaveType",
+    "startDate",
+    "endDate"
+  ]
+}

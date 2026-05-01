@@ -1,0 +1,107 @@
+{
+  "name": "PromotionResult",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "currentClassId": {
+      "type": "string"
+    },
+    "currentClassName": {
+      "type": "string"
+    },
+    "termId": {
+      "type": "string"
+    },
+    "termName": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "overallAverage": {
+      "type": "number"
+    },
+    "subjectsPassed": {
+      "type": "number"
+    },
+    "subjectsFailed": {
+      "type": "number"
+    },
+    "totalSubjects": {
+      "type": "number"
+    },
+    "compulsorySubjectsPassed": {
+      "type": "boolean"
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "promote",
+        "repeat",
+        "review"
+      ],
+      "description": "promote = meets all criteria, repeat = fails criteria, review = borderline"
+    },
+    "recommendedClassId": {
+      "type": "string"
+    },
+    "recommendedClassName": {
+      "type": "string"
+    },
+    "adminDecision": {
+      "type": "string",
+      "enum": [
+        "promote",
+        "repeat",
+        "pending"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "subjectBreakdown": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "average": {
+            "type": "number"
+          },
+          "letterGrade": {
+            "type": "string"
+          },
+          "passed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "generatedBy": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "currentClassId",
+    "recommendation"
+  ]
+}

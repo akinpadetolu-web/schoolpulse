@@ -1,0 +1,72 @@
+{
+  "name": "PromotionRule",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "fromClassId": {
+      "type": "string",
+      "description": "Current class ID"
+    },
+    "fromClassName": {
+      "type": "string"
+    },
+    "toClassId": {
+      "type": "string",
+      "description": "Class to promote to on pass"
+    },
+    "toClassName": {
+      "type": "string"
+    },
+    "repeatClassId": {
+      "type": "string",
+      "description": "Class to repeat on fail (usually same)"
+    },
+    "repeatClassName": {
+      "type": "string"
+    },
+    "minOverallAverage": {
+      "type": "number",
+      "description": "Minimum overall average % to be promoted",
+      "default": 40
+    },
+    "minSubjectsPassed": {
+      "type": "number",
+      "description": "Minimum number of subjects student must pass",
+      "default": 5
+    },
+    "compulsorySubjectIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Subject IDs student MUST pass regardless (e.g. Math, English)"
+    },
+    "compulsorySubjectNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "academicYear": {
+      "type": "string",
+      "description": "e.g. 2024-2025"
+    },
+    "termId": {
+      "type": "string"
+    },
+    "termName": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "fromClassId",
+    "minOverallAverage",
+    "minSubjectsPassed"
+  ]
+}
