@@ -267,22 +267,24 @@ function PWAInitializer() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SchoolAuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <DarkModeDetector />
-            <PWAInitializer />
-            <AuthenticatedApp />
-            <OfflineIndicator />
-            <InstallPrompt />
-            <UpdatePrompt />
-          </Router>
-          <Toaster />
-          <SonnerToaster position="top-right" richColors />
-        </QueryClientProvider>
-      </SchoolAuthProvider>
-    </AuthProvider>
+    <>
+      <DarkModeDetector />
+      <PWAInitializer />
+      <AuthProvider>
+        <SchoolAuthProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+              <OfflineIndicator />
+              <InstallPrompt />
+              <UpdatePrompt />
+            </Router>
+            <Toaster />
+            <SonnerToaster position="top-right" richColors />
+          </QueryClientProvider>
+        </SchoolAuthProvider>
+      </AuthProvider>
+    </>
   );
 }
 
