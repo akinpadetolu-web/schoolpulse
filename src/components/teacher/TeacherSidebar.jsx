@@ -1,25 +1,44 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
+import UserAvatar from '@/components/common/UserAvatar';
 
-const navItems = [
-  { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
-  { label: "My Timetable", path: "/teacher/timetable", icon: Calendar },
-  { label: "Assignments", path: "/teacher/assignments", icon: FileText },
-  { label: "Submissions", path: "/teacher/submissions", icon: Inbox },
-  { label: "Quizzes", path: "/teacher/quizzes", icon: Radio },
-  { label: "Grades", path: "/teacher/grades", icon: ClipboardList },
-  { label: "Materials", path: "/teacher/materials", icon: BookOpen },
-  { label: "Attendance", path: "/teacher/attendance", icon: UserCheck },
-  { label: "Lesson Plans", path: "/teacher/lesson-plans", icon: NotebookPen },
-  { label: "E-Class Sessions", path: "/teacher/e-class", icon: Video },
-  { label: "Announcements", path: "/teacher/announcements", icon: Megaphone },
-  { label: "Notifications", path: "/teacher/notifications", icon: Bell },
-  { label: "Student Progress", path: "/teacher/progress", icon: BarChart3 },
-  { label: "Exam Results", path: "/teacher/exam-results", icon: Award },
-  { label: "Calendar", path: "/teacher/calendar", icon: CalendarDays },
+const teacherNavGroups = [
+  {
+    label: 'MAIN',
+    items: [
+      { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
+      { label: "My Classes", path: "/teacher", icon: BookOpen },
+      { label: "My Students", path: "/teacher", icon: Users },
+    ]
+  },
+  {
+    label: 'ACADEMIC',
+    items: [
+      { label: "Timetable", path: "/teacher/timetable", icon: Calendar },
+      { label: "Assignments", path: "/teacher/assignments", icon: FileText },
+      { label: "Grades", path: "/teacher/grades", icon: ClipboardList },
+      { label: "Attendance", path: "/teacher/attendance", icon: UserCheck },
+      { label: "E-Class", path: "/teacher/e-class", icon: Video },
+    ]
+  },
+  {
+    label: 'COMMUNICATION',
+    items: [
+      { label: "Announcements", path: "/teacher/announcements", icon: Megaphone },
+      { label: "Notifications", path: "/teacher/notifications", icon: Bell },
+    ]
+  },
+  {
+    label: 'ACCOUNT',
+    items: [
+      { label: "Profile", path: "/teacher/profile", icon: GraduationCap },
+      { label: "Settings", path: "/teacher", icon: Settings },
+    ]
+  },
 ];
 
 export default function TeacherSidebar({ isOpen, onClose }) {
@@ -43,15 +62,19 @@ export default function TeacherSidebar({ isOpen, onClose }) {
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map(item => (
-            <Link key={item.path} to={item.path} onClick={onClose} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item.path) ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent'}`}>
-              <item.icon className="w-4 h-4" aria-hidden="true" />{item.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNavGroups 
+          groups={teacherNavGroups}
+          isActive={isActive}
+          onItemClick={onClose}
+        />
         <div className="p-3 border-t border-sidebar-border">
-          <div className="px-3 py-2 mb-2"><p className="text-sm font-medium truncate">{user?.fullName}</p><p className="text-xs text-sidebar-foreground/60">{user?.email}</p></div>
+          <div className="flex items-center gap-3 px-3 py-2 mb-2">
+            <UserAvatar user={user} size="md" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.fullName}</p>
+              <p className="text-xs text-sidebar-foreground/60">{user?.email}</p>
+            </div>
+          </div>
           <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out</button>
         </div>
       </aside>

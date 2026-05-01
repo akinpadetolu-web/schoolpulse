@@ -75,6 +75,7 @@ const TeacherSubmissions = lazy(() => import('./pages/teacher/TeacherSubmissions
 const TeacherNotifications = lazy(() => import('./pages/teacher/TeacherNotifications'));
 const TeacherProgressDashboard = lazy(() => import('./pages/teacher/TeacherProgressDashboard'));
 const TeacherExamResults = lazy(() => import('./pages/teacher/TeacherExamResults'));
+const TeacherProfile = lazy(() => import('./pages/teacher/TeacherProfile'));
 const SchoolCalendar = lazy(() => import('./pages/shared/SchoolCalendar'));
 const PerformanceDashboard = lazy(() => import('./pages/shared/PerformanceDashboard'));
 
@@ -87,6 +88,7 @@ const StudentMaterials = lazy(() => import('./pages/student/StudentMaterials'));
 const StudentLessonPlans = lazy(() => import('./pages/student/StudentLessonPlans'));
 const StudentAnnouncements = lazy(() => import('./pages/student/StudentAnnouncements'));
 const StudentQuizzes = lazy(() => import('./pages/student/StudentQuizzes'));
+const StudentProfile = lazy(() => import('./pages/student/StudentProfile'));
 
 // Parent
 const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
@@ -94,6 +96,7 @@ const ParentTimetable = lazy(() => import('./pages/parent/ParentTimetable'));
 const ParentAssignments = lazy(() => import('./pages/parent/ParentAssignments'));
 const ParentGrades = lazy(() => import('./pages/parent/ParentGrades'));
 const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncements'));
+const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 
 function PageLoader() {
   return (
@@ -191,6 +194,7 @@ const AuthenticatedApp = () => {
           <Route path="exam-results" element={<TeacherExamResults />} />
           <Route path="calendar" element={<SchoolCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />
+          <Route path="profile" element={<TeacherProfile />} />
         </Route>
 
         {/* Student */}
@@ -205,6 +209,7 @@ const AuthenticatedApp = () => {
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="e-class" element={<StudentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="profile" element={<StudentProfile />} />
         </Route>
 
         {/* Parent */}
@@ -216,6 +221,7 @@ const AuthenticatedApp = () => {
           <Route path="announcements" element={<ParentAnnouncements />} />
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="profile" element={<ParentProfile />} />
         </Route>
 
         <Route path="*" element={<PageNotFound />} />

@@ -91,6 +91,10 @@
       "maxLength": 1000,
       "description": "A brief description or profile summary for the user"
     },
+    "profilePictureUrl": {
+      "type": "string",
+      "description": "URL to user's profile picture"
+    },
     "mustChangePassword": {
       "type": "boolean",
       "default": true
@@ -104,40 +108,5 @@
     "fullName",
     "role"
   ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.schoolId": "{{user.data.schoolId}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+  "rls": {}
 }
