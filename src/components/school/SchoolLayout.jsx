@@ -15,6 +15,10 @@ export default function SchoolLayout() {
   const isRootScreen = location.pathname === '/school-admin';
 
   useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isLoadingSchoolAuth && (!user || user.role !== "admin")) navigate("/");
   }, [user, isLoadingSchoolAuth, navigate]);
 
@@ -38,17 +42,17 @@ export default function SchoolLayout() {
               <Menu className="w-5 h-5" />
             </Button>
           )}
-          <h2 className="text-sm font-medium text-muted-foreground">{user.schoolName || "School"} — Admin</h2>
+          <h2 className="text-sm font-medium text-muted-foreground md:block hidden">{user.schoolName || "School"} — Admin</h2>
         </header>
         <main className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ x: isRootScreen ? -16 : 16, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: isRootScreen ? 16 : -16, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeInOut' }}
-              className="absolute inset-0 overflow-y-auto overscroll-none p-4 md:p-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              className="absolute inset-0 overflow-y-auto p-4 md:p-6"
               style={{
                 paddingBottom: 'env(safe-area-inset-bottom)',
                 paddingLeft: 'env(safe-area-inset-left)',

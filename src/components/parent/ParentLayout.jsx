@@ -19,6 +19,10 @@ export default function ParentLayout() {
   const isRootScreen = ROOT_PATHS.includes(location.pathname);
 
   useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isLoadingSchoolAuth && (!user || user.role !== "parent")) navigate("/");
   }, [user, isLoadingSchoolAuth, navigate]);
 
@@ -43,7 +47,7 @@ export default function ParentLayout() {
                 <Menu className="w-5 h-5" />
               </Button>
             )}
-            <h2 className="text-sm font-medium text-muted-foreground">Parent Portal</h2>
+            <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Parent Portal</h2>
           </div>
           <NotificationCenter />
         </header>
@@ -51,11 +55,11 @@ export default function ParentLayout() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ x: isRootScreen ? -16 : 16, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: isRootScreen ? 16 : -16, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeInOut' }}
-              className="absolute inset-0 overflow-y-auto overscroll-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              className="absolute inset-0 overflow-y-auto"
               style={{
                 paddingBottom: 'calc(env(safe-area-inset-bottom) + 4rem)',
                 paddingLeft: 'env(safe-area-inset-left)',
