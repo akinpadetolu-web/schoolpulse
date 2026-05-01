@@ -13,7 +13,7 @@ const teacherNavGroups = [
     items: [
       { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
       { label: "My Classes", path: "/teacher", icon: BookOpen },
-      { label: "My Students", path: "/teacher", icon: Users },
+      { label: "My Students", path: "/teacher/students", icon: Users },
     ]
   },
   {

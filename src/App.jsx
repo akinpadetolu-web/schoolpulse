@@ -71,6 +71,7 @@ const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCam
 
 // Teacher
 const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+const TeacherStudents = lazy(() => import('./pages/teacher/TeacherStudents'));
 const TeacherTimetable = lazy(() => import('./pages/teacher/TeacherTimetable'));
 const TeacherAssignments = lazy(() => import('./pages/teacher/TeacherAssignments'));
 const TeacherGrades = lazy(() => import('./pages/teacher/TeacherGrades'));
@@ -195,6 +196,7 @@ const AuthenticatedApp = () => {
         {/* Teacher */}
         <Route path="/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
+          <Route path="students" element={<TeacherStudents />} />
           <Route path="timetable" element={<TeacherTimetable />} />
           <Route path="assignments" element={<TeacherAssignments />} />
           <Route path="grades" element={<TeacherGrades />} />
