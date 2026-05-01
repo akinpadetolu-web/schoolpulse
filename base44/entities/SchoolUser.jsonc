@@ -102,6 +102,25 @@
     "isArchived": {
       "type": "boolean",
       "default": false
+    },
+    "subjectAverages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string"
+          },
+          "average": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "subjectId",
+          "average"
+        ]
+      },
+      "description": "Array of objects storing student's average score per subject"
     }
   },
   "required": [

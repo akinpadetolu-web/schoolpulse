@@ -29,6 +29,22 @@ Deno.serve(async (req) => {
     const students = await base44.asServiceRole.entities.SchoolUser.filter({ id: studentId });
     const student = students?.[0];
 
+    // Update student's subject averages
+    if (student) {
+      const updatedAverages = [...(student.subjectAverages || [])];
+      const existingIndex = updatedAverages.findIndex(avg => avg.subjectId === subjectId);
+      
+      if (existingIndex >= 0) {
+        updatedAverages[existingIndex].average = avgScore;
+      } else {
+        updatedAverages.push({ subjectId, average: avgScore });
+      }
+      
+      await base44.asServiceRole.entities.SchoolUser.update(studentId, {
+        subjectAverages: updatedAverages
+      });
+    }
+
     // Get parent linked to this student
     const parents = await base44.asServiceRole.entities.SchoolUser.filter({
       schoolId,
