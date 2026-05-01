@@ -51,31 +51,44 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
       // Compress before uploading
       const compressedBlob = await compressImage(blob);
       
-      // Convert blob to File object
-      const file = new File([compressedBlob], 'profile-picture.jpg', { type: 'image/jpeg' });
+      // Upload to Base44 - pass blob directly as base64 string
+      const reader = new FileReader();
+      reader.readAsDataURL(compressedBlob);
       
-      // Upload to Base44
-      const uploadResult = await base44.integrations.Core.UploadFile({
-        file: file,
-      });
+      reader.onload = async () => {
+        try {
+          const base64String = reader.result;
+          const uploadResult = await base44.integrations.Core.UploadFile({
+            file: base64String,
+          });
 
-      if (!uploadResult?.file_url) {
-        throw new Error('Upload failed');
-      }
+          if (!uploadResult?.file_url) {
+            throw new Error('Upload failed');
+          }
 
-      // Update user profile with picture URL
-      const schoolUser = await base44.entities.SchoolUser.update(user.id, {
-        profilePictureUrl: uploadResult.file_url,
-      });
+          // Update user profile with picture URL
+          const schoolUser = await base44.entities.SchoolUser.update(user.id, {
+            profilePictureUrl: uploadResult.file_url,
+          });
 
-      toast.success('Profile picture updated');
-      setIsOpen(false);
-      setPreview(null);
-      onSuccess?.(schoolUser);
+          toast.success('Profile picture updated');
+          setIsOpen(false);
+          setPreview(null);
+          onSuccess?.(schoolUser);
+        } catch (error) {
+          toast.error('Failed to upload picture');
+          console.error(error);
+          setIsLoading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        toast.error('Failed to read file');
+        setIsLoading(false);
+      };
     } catch (error) {
       toast.error('Failed to upload picture');
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   };
