@@ -49,7 +49,7 @@ export default function StudentSidebar({ isOpen, onClose }) {
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:static md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:static md:relative md:translate-x-0 md:z-auto md:h-auto md:max-h-none ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
             <GraduationCap className="w-6 h-6 text-sidebar-primary" />
