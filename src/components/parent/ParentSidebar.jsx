@@ -28,18 +28,18 @@ export default function ParentSidebar({ isOpen, onClose }) {
             <Users className="w-6 h-6 text-sidebar-primary" />
             <div><span className="font-bold text-sm">Parent Portal</span><p className="text-xs text-sidebar-foreground/60">{user?.schoolName}</p></div>
           </div>
-          <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}><X className="w-5 h-5" /></Button>
+          <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {navItems.map(item => (
             <Link key={item.path} to={item.path} onClick={onClose} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item.path) ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent'}`}>
-              <item.icon className="w-4 h-4" />{item.label}
+              <item.icon className="w-4 h-4" aria-hidden="true" />{item.label}
             </Link>
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           <div className="px-3 py-2 mb-2"><p className="text-sm font-medium truncate">{user?.fullName}</p></div>
-          <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" /> Sign Out</button>
+          <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out</button>
         </div>
       </aside>
     </>

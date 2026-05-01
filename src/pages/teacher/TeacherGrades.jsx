@@ -153,24 +153,46 @@ export default function TeacherGrades() {
       comment: form.comment,
     };
 
+    // Optimistic update — apply immediately, rollback on error
+    const prevGrades = [...grades];
     if (editingGrade) {
-      await base44.entities.Grade.update(editingGrade.id, payload);
-      toast.success("Grade updated");
+      setGrades(prev => prev.map(g => g.id === editingGrade.id ? { ...g, ...payload } : g));
     } else {
-      await base44.entities.Grade.create(payload);
-      toast.success("Grade saved");
+      const tempId = `temp-${Date.now()}`;
+      setGrades(prev => [...prev, { ...payload, id: tempId }]);
     }
-
     setShowDialog(false);
-    loadData();
-    setSaving(false);
+
+    try {
+      if (editingGrade) {
+        await base44.entities.Grade.update(editingGrade.id, payload);
+        toast.success("Grade updated");
+      } else {
+        await base44.entities.Grade.create(payload);
+        toast.success("Grade saved");
+      }
+      loadData(); // sync with server
+    } catch {
+      setGrades(prevGrades); // rollback
+      toast.error("Failed to save grade. Please try again.");
+      setShowDialog(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleDelete(grade) {
     if (!window.confirm(`Delete grade for ${grade.studentName}?`)) return;
-    await base44.entities.Grade.delete(grade.id);
-    toast.success("Grade deleted");
-    loadData();
+    // Optimistic delete
+    const prevGrades = [...grades];
+    setGrades(prev => prev.filter(g => g.id !== grade.id));
+    try {
+      await base44.entities.Grade.delete(grade.id);
+      toast.success("Grade deleted");
+    } catch {
+      setGrades(prevGrades);
+      toast.error("Failed to delete grade.");
+    }
   }
 
   // Filtered view

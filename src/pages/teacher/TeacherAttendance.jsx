@@ -67,6 +67,7 @@ export default function TeacherAttendance() {
     setLoadingStudents(false);
   }
 
+  // Optimistic status toggle — updates UI immediately, syncs in background
   function setStatus(studentId, status) {
     setAttendance(prev => ({ ...prev, [studentId]: status }));
   }
@@ -74,6 +75,10 @@ export default function TeacherAttendance() {
   async function handleSave() {
     if (!selectedClassId || students.length === 0) return;
     setSaving(true);
+
+    // Snapshot for rollback
+    const prevAttendance = { ...attendance };
+
     const existingMap = {};
     existingRecords.forEach(r => { existingMap[r.studentId] = r; });
 
@@ -101,12 +106,18 @@ export default function TeacherAttendance() {
       }
     });
 
-    if (creates.length > 0) await base44.entities.Attendance.bulkCreate(creates);
-    await Promise.all(updates);
-
-    toast.success(`Attendance saved for ${students.length} students`);
-    await loadStudentsAndAttendance();
-    setSaving(false);
+    try {
+      if (creates.length > 0) await base44.entities.Attendance.bulkCreate(creates);
+      await Promise.all(updates);
+      toast.success(`Attendance saved for ${students.length} students`);
+      await loadStudentsAndAttendance();
+    } catch {
+      // Rollback optimistic state on failure
+      setAttendance(prevAttendance);
+      toast.error('Failed to save attendance. Changes reverted.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const selectedClass = classes.find(c => c.id === selectedClassId);

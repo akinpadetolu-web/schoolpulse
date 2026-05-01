@@ -55,7 +55,7 @@ export default function MobileBottomNav({ role }) {
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 select-none transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`}
             style={{ minHeight: '56px' }}
           >
-            <tab.icon className="w-5 h-5" />
+            <tab.icon className="w-5 h-5" aria-hidden="true" />
             <span className="text-[11px] font-medium leading-tight">{tab.label}</span>
           </button>
         );

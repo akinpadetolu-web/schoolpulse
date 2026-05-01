@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 
 export default function TeacherDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -66,6 +67,9 @@ export default function TeacherDashboard() {
         </div>
       )}
       <DashboardCalendar />
+      <div className="mt-8 pt-6 border-t">
+        <DeleteAccountDialog />
+      </div>
     </div>
     </PullToRefreshWrapper>
   );

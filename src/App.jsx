@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { queryClientInstance } from '@/lib/query-client';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
@@ -9,84 +9,94 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
-// Pages
-import SchoolPortal from './pages/SchoolPortal';
-import BackendLoginPage from './pages/BackendLogin';
-
-// Backend Layout + Pages
+// Eagerly loaded layouts (small, needed immediately)
 import BackendLayout from './components/backend/BackendLayout';
-import Overview from './pages/backend/Overview';
-import Schools from './pages/backend/Schools';
-import SchoolDetail from './pages/backend/SchoolDetail';
-import SchoolAdmins from './pages/backend/SchoolAdmins';
-import BackendTeachers from './pages/backend/Teachers';
-import BackendStudents from './pages/backend/Students';
-import BackendClasses from './pages/backend/Classes';
-import AuditLogs from './pages/backend/AuditLogs';
-import SupportTools from './pages/backend/SupportTools';
-import BackendSettings from './pages/backend/BackendSettings';
-
-// School Admin Layout + Pages
 import SchoolLayout from './components/school/SchoolLayout';
-import AdminDashboard from './pages/school-admin/AdminDashboard';
-import AdminTeachers from './pages/school-admin/AdminTeachers';
-import AdminStudents from './pages/school-admin/AdminStudents';
-import AdminClasses from './pages/school-admin/AdminClasses';
-import AdminCategories from './pages/school-admin/AdminCategories';
-import AdminSubjects from './pages/school-admin/AdminSubjects';
-import AdminTeacherAssignments from './pages/school-admin/AdminTeacherAssignments';
-import AdminBulkAssign from './pages/school-admin/AdminBulkAssign';
-import AdminTimetable from './pages/school-admin/AdminTimetable';
-import AdminTeacherWorkload from './pages/school-admin/AdminTeacherWorkload';
-import AdminAssignments from './pages/school-admin/AdminAssignments';
-import AdminAttendance from './pages/school-admin/AdminAttendance';
-import AdminStudentReports from './pages/school-admin/AdminStudentReports';
-import AdminAnnouncements from './pages/school-admin/AdminAnnouncements';
-import AdminGradeWeighting from './pages/school-admin/AdminGradeWeighting';
-import AdminReportCards from './pages/school-admin/AdminReportCards';
-import AdminSchoolReport from './pages/school-admin/AdminSchoolReport';
-import AdminAcademicTerms from './pages/school-admin/AdminAcademicTerms';
-import AdminSettings from './pages/school-admin/AdminSettings';
-import AdminGradingSystem from './pages/school-admin/AdminGradingSystem';
-import AdminPromotion from './pages/school-admin/AdminPromotion';
-import AdminHR from './pages/school-admin/AdminHR';
-
-// Teacher Layout + Pages
 import TeacherLayout from './components/teacher/TeacherLayout';
-import TeacherDashboard from './pages/teacher/TeacherDashboard';
-import TeacherTimetable from './pages/teacher/TeacherTimetable';
-import TeacherAssignments from './pages/teacher/TeacherAssignments';
-import TeacherGrades from './pages/teacher/TeacherGrades';
-import TeacherMaterials from './pages/teacher/TeacherMaterials';
-import TeacherAttendance from './pages/teacher/TeacherAttendance';
-import TeacherLessonPlans from './pages/teacher/TeacherLessonPlans';
-import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
-import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
-import TeacherSubmissions from './pages/teacher/TeacherSubmissions';
-import TeacherNotifications from './pages/teacher/TeacherNotifications';
-import TeacherProgressDashboard from './pages/teacher/TeacherProgressDashboard';
-import TeacherExamResults from './pages/teacher/TeacherExamResults';
-import SchoolCalendar from './pages/shared/SchoolCalendar';
-import PerformanceDashboard from './pages/shared/PerformanceDashboard';
-
-// Student Layout + Pages
 import StudentLayout from './components/student/StudentLayout';
-import StudentDashboard from './pages/student/StudentDashboard';
-import StudentTimetable from './pages/student/StudentTimetable';
-import StudentAssignments from './pages/student/StudentAssignments';
-import StudentGrades from './pages/student/StudentGrades';
-import StudentMaterials from './pages/student/StudentMaterials';
-import StudentLessonPlans from './pages/student/StudentLessonPlans';
-import StudentAnnouncements from './pages/student/StudentAnnouncements';
-import StudentQuizzes from './pages/student/StudentQuizzes';
-
-// Parent Layout + Pages
 import ParentLayout from './components/parent/ParentLayout';
-import ParentDashboard from './pages/parent/ParentDashboard';
-import ParentTimetable from './pages/parent/ParentTimetable';
-import ParentAssignments from './pages/parent/ParentAssignments';
-import ParentGrades from './pages/parent/ParentGrades';
-import ParentAnnouncements from './pages/parent/ParentAnnouncements';
+
+// Lazily loaded pages
+const SchoolPortal = lazy(() => import('./pages/SchoolPortal'));
+const BackendLoginPage = lazy(() => import('./pages/BackendLogin'));
+
+// Backend
+const Overview = lazy(() => import('./pages/backend/Overview'));
+const Schools = lazy(() => import('./pages/backend/Schools'));
+const SchoolDetail = lazy(() => import('./pages/backend/SchoolDetail'));
+const SchoolAdmins = lazy(() => import('./pages/backend/SchoolAdmins'));
+const BackendTeachers = lazy(() => import('./pages/backend/Teachers'));
+const BackendStudents = lazy(() => import('./pages/backend/Students'));
+const BackendClasses = lazy(() => import('./pages/backend/Classes'));
+const AuditLogs = lazy(() => import('./pages/backend/AuditLogs'));
+const SupportTools = lazy(() => import('./pages/backend/SupportTools'));
+const BackendSettings = lazy(() => import('./pages/backend/BackendSettings'));
+
+// School Admin
+const AdminDashboard = lazy(() => import('./pages/school-admin/AdminDashboard'));
+const AdminTeachers = lazy(() => import('./pages/school-admin/AdminTeachers'));
+const AdminStudents = lazy(() => import('./pages/school-admin/AdminStudents'));
+const AdminClasses = lazy(() => import('./pages/school-admin/AdminClasses'));
+const AdminCategories = lazy(() => import('./pages/school-admin/AdminCategories'));
+const AdminSubjects = lazy(() => import('./pages/school-admin/AdminSubjects'));
+const AdminTeacherAssignments = lazy(() => import('./pages/school-admin/AdminTeacherAssignments'));
+const AdminBulkAssign = lazy(() => import('./pages/school-admin/AdminBulkAssign'));
+const AdminTimetable = lazy(() => import('./pages/school-admin/AdminTimetable'));
+const AdminTeacherWorkload = lazy(() => import('./pages/school-admin/AdminTeacherWorkload'));
+const AdminAssignments = lazy(() => import('./pages/school-admin/AdminAssignments'));
+const AdminAttendance = lazy(() => import('./pages/school-admin/AdminAttendance'));
+const AdminStudentReports = lazy(() => import('./pages/school-admin/AdminStudentReports'));
+const AdminAnnouncements = lazy(() => import('./pages/school-admin/AdminAnnouncements'));
+const AdminGradeWeighting = lazy(() => import('./pages/school-admin/AdminGradeWeighting'));
+const AdminReportCards = lazy(() => import('./pages/school-admin/AdminReportCards'));
+const AdminSchoolReport = lazy(() => import('./pages/school-admin/AdminSchoolReport'));
+const AdminAcademicTerms = lazy(() => import('./pages/school-admin/AdminAcademicTerms'));
+const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
+const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
+const AdminPromotion = lazy(() => import('./pages/school-admin/AdminPromotion'));
+const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
+
+// Teacher
+const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+const TeacherTimetable = lazy(() => import('./pages/teacher/TeacherTimetable'));
+const TeacherAssignments = lazy(() => import('./pages/teacher/TeacherAssignments'));
+const TeacherGrades = lazy(() => import('./pages/teacher/TeacherGrades'));
+const TeacherMaterials = lazy(() => import('./pages/teacher/TeacherMaterials'));
+const TeacherAttendance = lazy(() => import('./pages/teacher/TeacherAttendance'));
+const TeacherLessonPlans = lazy(() => import('./pages/teacher/TeacherLessonPlans'));
+const TeacherAnnouncements = lazy(() => import('./pages/teacher/TeacherAnnouncements'));
+const TeacherQuizzes = lazy(() => import('./pages/teacher/TeacherQuizzes'));
+const TeacherSubmissions = lazy(() => import('./pages/teacher/TeacherSubmissions'));
+const TeacherNotifications = lazy(() => import('./pages/teacher/TeacherNotifications'));
+const TeacherProgressDashboard = lazy(() => import('./pages/teacher/TeacherProgressDashboard'));
+const TeacherExamResults = lazy(() => import('./pages/teacher/TeacherExamResults'));
+const SchoolCalendar = lazy(() => import('./pages/shared/SchoolCalendar'));
+const PerformanceDashboard = lazy(() => import('./pages/shared/PerformanceDashboard'));
+
+// Student
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const StudentTimetable = lazy(() => import('./pages/student/StudentTimetable'));
+const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments'));
+const StudentGrades = lazy(() => import('./pages/student/StudentGrades'));
+const StudentMaterials = lazy(() => import('./pages/student/StudentMaterials'));
+const StudentLessonPlans = lazy(() => import('./pages/student/StudentLessonPlans'));
+const StudentAnnouncements = lazy(() => import('./pages/student/StudentAnnouncements'));
+const StudentQuizzes = lazy(() => import('./pages/student/StudentQuizzes'));
+
+// Parent
+const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
+const ParentTimetable = lazy(() => import('./pages/parent/ParentTimetable'));
+const ParentAssignments = lazy(() => import('./pages/parent/ParentAssignments'));
+const ParentGrades = lazy(() => import('./pages/parent/ParentGrades'));
+const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncements'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full w-full py-20">
+      <div className="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin" />
+    </div>
+  );
+}
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -109,97 +119,99 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={<SchoolPortal />} />
-      <Route path="/sp-backend" element={<BackendLoginPage />} />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<SchoolPortal />} />
+        <Route path="/sp-backend" element={<BackendLoginPage />} />
 
-      {/* Backend Super Admin */}
-      <Route path="/backend" element={<BackendLayout />}>
-        <Route index element={<Overview />} />
-        <Route path="schools" element={<Schools />} />
-        <Route path="schools/:schoolId" element={<SchoolDetail />} />
-        <Route path="school-admins" element={<SchoolAdmins />} />
-        <Route path="teachers" element={<BackendTeachers />} />
-        <Route path="students" element={<BackendStudents />} />
-        <Route path="classes" element={<BackendClasses />} />
-        <Route path="audit-logs" element={<AuditLogs />} />
-        <Route path="support" element={<SupportTools />} />
-        <Route path="settings" element={<BackendSettings />} />
-      </Route>
+        {/* Backend Super Admin */}
+        <Route path="/backend" element={<BackendLayout />}>
+          <Route index element={<Overview />} />
+          <Route path="schools" element={<Schools />} />
+          <Route path="schools/:schoolId" element={<SchoolDetail />} />
+          <Route path="school-admins" element={<SchoolAdmins />} />
+          <Route path="teachers" element={<BackendTeachers />} />
+          <Route path="students" element={<BackendStudents />} />
+          <Route path="classes" element={<BackendClasses />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="support" element={<SupportTools />} />
+          <Route path="settings" element={<BackendSettings />} />
+        </Route>
 
-      {/* School Admin */}
-      <Route path="/school-admin" element={<SchoolLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="teachers" element={<AdminTeachers />} />
-        <Route path="students" element={<AdminStudents />} />
-        <Route path="classes" element={<AdminClasses />} />
-        <Route path="categories" element={<AdminCategories />} />
-        <Route path="subjects" element={<AdminSubjects />} />
-        <Route path="teacher-assignments" element={<AdminTeacherAssignments />} />
-        <Route path="bulk-assign" element={<AdminBulkAssign />} />
-        <Route path="timetable" element={<AdminTimetable />} />
-        <Route path="teacher-workload" element={<AdminTeacherWorkload />} />
-        <Route path="assignments" element={<AdminAssignments />} />
-        <Route path="attendance" element={<AdminAttendance />} />
-        <Route path="student-reports" element={<AdminStudentReports />} />
-        <Route path="announcements" element={<AdminAnnouncements />} />
-        <Route path="grade-weighting" element={<AdminGradeWeighting />} />
-        <Route path="report-cards" element={<AdminReportCards />} />
-        <Route path="school-report" element={<AdminSchoolReport />} />
-        <Route path="academic-terms" element={<AdminAcademicTerms />} />
-        <Route path="calendar" element={<SchoolCalendar />} />
-        <Route path="performance" element={<PerformanceDashboard />} />
-        <Route path="settings" element={<AdminSettings />} />
-        <Route path="grading-system" element={<AdminGradingSystem />} />
-        <Route path="promotion" element={<AdminPromotion />} />
-        <Route path="hr" element={<AdminHR />} />
-      </Route>
+        {/* School Admin */}
+        <Route path="/school-admin" element={<SchoolLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="teachers" element={<AdminTeachers />} />
+          <Route path="students" element={<AdminStudents />} />
+          <Route path="classes" element={<AdminClasses />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="subjects" element={<AdminSubjects />} />
+          <Route path="teacher-assignments" element={<AdminTeacherAssignments />} />
+          <Route path="bulk-assign" element={<AdminBulkAssign />} />
+          <Route path="timetable" element={<AdminTimetable />} />
+          <Route path="teacher-workload" element={<AdminTeacherWorkload />} />
+          <Route path="assignments" element={<AdminAssignments />} />
+          <Route path="attendance" element={<AdminAttendance />} />
+          <Route path="student-reports" element={<AdminStudentReports />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
+          <Route path="grade-weighting" element={<AdminGradeWeighting />} />
+          <Route path="report-cards" element={<AdminReportCards />} />
+          <Route path="school-report" element={<AdminSchoolReport />} />
+          <Route path="academic-terms" element={<AdminAcademicTerms />} />
+          <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="performance" element={<PerformanceDashboard />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="grading-system" element={<AdminGradingSystem />} />
+          <Route path="promotion" element={<AdminPromotion />} />
+          <Route path="hr" element={<AdminHR />} />
+        </Route>
 
-      {/* Teacher */}
-      <Route path="/teacher" element={<TeacherLayout />}>
-        <Route index element={<TeacherDashboard />} />
-        <Route path="timetable" element={<TeacherTimetable />} />
-        <Route path="assignments" element={<TeacherAssignments />} />
-        <Route path="grades" element={<TeacherGrades />} />
-        <Route path="materials" element={<TeacherMaterials />} />
-        <Route path="attendance" element={<TeacherAttendance />} />
-        <Route path="lesson-plans" element={<TeacherLessonPlans />} />
-        <Route path="quizzes" element={<TeacherQuizzes />} />
-        <Route path="submissions" element={<TeacherSubmissions />} />
-        <Route path="announcements" element={<TeacherAnnouncements />} />
-        <Route path="notifications" element={<TeacherNotifications />} />
-        <Route path="progress" element={<TeacherProgressDashboard />} />
-        <Route path="exam-results" element={<TeacherExamResults />} />
-        <Route path="calendar" element={<SchoolCalendar />} />
-        <Route path="performance" element={<PerformanceDashboard />} />
-      </Route>
+        {/* Teacher */}
+        <Route path="/teacher" element={<TeacherLayout />}>
+          <Route index element={<TeacherDashboard />} />
+          <Route path="timetable" element={<TeacherTimetable />} />
+          <Route path="assignments" element={<TeacherAssignments />} />
+          <Route path="grades" element={<TeacherGrades />} />
+          <Route path="materials" element={<TeacherMaterials />} />
+          <Route path="attendance" element={<TeacherAttendance />} />
+          <Route path="lesson-plans" element={<TeacherLessonPlans />} />
+          <Route path="quizzes" element={<TeacherQuizzes />} />
+          <Route path="submissions" element={<TeacherSubmissions />} />
+          <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="notifications" element={<TeacherNotifications />} />
+          <Route path="progress" element={<TeacherProgressDashboard />} />
+          <Route path="exam-results" element={<TeacherExamResults />} />
+          <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="performance" element={<PerformanceDashboard />} />
+        </Route>
 
-      {/* Student */}
-      <Route path="/student" element={<StudentLayout />}>
-        <Route index element={<StudentDashboard />} />
-        <Route path="timetable" element={<StudentTimetable />} />
-        <Route path="assignments" element={<StudentAssignments />} />
-        <Route path="grades" element={<StudentGrades />} />
-        <Route path="materials" element={<StudentMaterials />} />
-        <Route path="lesson-plans" element={<StudentLessonPlans />} />
-        <Route path="quizzes" element={<StudentQuizzes />} />
-        <Route path="announcements" element={<StudentAnnouncements />} />
-        <Route path="calendar" element={<SchoolCalendar />} />
-      </Route>
+        {/* Student */}
+        <Route path="/student" element={<StudentLayout />}>
+          <Route index element={<StudentDashboard />} />
+          <Route path="timetable" element={<StudentTimetable />} />
+          <Route path="assignments" element={<StudentAssignments />} />
+          <Route path="grades" element={<StudentGrades />} />
+          <Route path="materials" element={<StudentMaterials />} />
+          <Route path="lesson-plans" element={<StudentLessonPlans />} />
+          <Route path="quizzes" element={<StudentQuizzes />} />
+          <Route path="announcements" element={<StudentAnnouncements />} />
+          <Route path="calendar" element={<SchoolCalendar />} />
+        </Route>
 
-      {/* Parent */}
-      <Route path="/parent" element={<ParentLayout />}>
-        <Route index element={<ParentDashboard />} />
-        <Route path="timetable" element={<ParentTimetable />} />
-        <Route path="assignments" element={<ParentAssignments />} />
-        <Route path="grades" element={<ParentGrades />} />
-        <Route path="announcements" element={<ParentAnnouncements />} />
-        <Route path="calendar" element={<SchoolCalendar />} />
-      </Route>
+        {/* Parent */}
+        <Route path="/parent" element={<ParentLayout />}>
+          <Route index element={<ParentDashboard />} />
+          <Route path="timetable" element={<ParentTimetable />} />
+          <Route path="assignments" element={<ParentAssignments />} />
+          <Route path="grades" element={<ParentGrades />} />
+          <Route path="announcements" element={<ParentAnnouncements />} />
+          <Route path="calendar" element={<SchoolCalendar />} />
+        </Route>
 
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 

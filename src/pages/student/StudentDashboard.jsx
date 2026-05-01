@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
@@ -273,6 +274,9 @@ export default function StudentDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+      <div className="mt-8 pt-6 border-t">
+        <DeleteAccountDialog />
       </div>
     </div>
     </PullToRefreshWrapper>
