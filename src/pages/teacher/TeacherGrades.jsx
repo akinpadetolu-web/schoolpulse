@@ -417,11 +417,11 @@ export default function TeacherGrades() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Score *</Label>
-                <Input type="number" min="0" value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} required />
+                <Input type="number" min="0" step="0.01" value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label>Max Score</Label>
-                <Input type="number" min="1" value={form.maxScore} onChange={e => setForm({ ...form, maxScore: e.target.value })} />
+                <Input type="number" min="1" step="0.01" value={form.maxScore} onChange={e => setForm({ ...form, maxScore: e.target.value })} />
               </div>
             </div>
 

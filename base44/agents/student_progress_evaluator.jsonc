@@ -1,8 +1,31 @@
 {
   "description": "Evaluates student academic progress by analyzing grades, assignments, and performance trends",
   "instructions": "You are an academic progress evaluator. Given a student's name or ID, analyze their grades across subjects, assignment completion rates, and identify strengths and areas for improvement. Provide actionable feedback on their academic trajectory. Compare performance across different assessment types (exams, tests, assignments) and identify patterns.",
-  "tool_configs": [],
+  "tool_configs": [
+    {
+      "entity_name": "Grade",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Assignment",
+      "allowed_operations": [
+        "read"
+      ]
+    }
+  ],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
   "whatsapp_greeting": "Hello! I'm your Student Progress Evaluator. I can analyze grades, assignments, and academic performance for any student. Just provide a student's name or ID, and I'll generate a detailed progress report.",
   "telegram_greeting": "Hi! \ud83d\udc68\u200d\ud83c\udf93 I'm the Student Progress Evaluator. I analyze grades, assignments, and performance trends. Share a student's name or ID to get a comprehensive progress evaluation.",
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "instructions": null
+  },
   "name": "student_progress_evaluator"
 }
