@@ -32,9 +32,15 @@ export default function NotificationCenter() {
 
   async function loadNotifications() {
     try {
+      if (!user?.schoolId || !user?.role) {
+        setNotifications([]);
+        setUnreadCount(0);
+        setLoading(false);
+        return;
+      }
       let notifs = await base44.entities.Notification.filter({
-        schoolId: user?.schoolId,
-        targetRole: user?.role,
+        schoolId: user.schoolId,
+        targetRole: user.role,
       });
       notifs = (notifs || []).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 20);
       setNotifications(notifs);
@@ -47,19 +53,20 @@ export default function NotificationCenter() {
   }
 
   async function markAsRead(notification) {
-    if (notification.readBy?.includes(user?.email)) return;
+    if (!user?.email || notification.readBy?.includes(user.email)) return;
     const updated = {
-      readBy: [...(notification.readBy || []), user?.email],
+      readBy: [...(notification.readBy || []), user.email],
     };
     await base44.entities.Notification.update(notification.id, updated);
     await loadNotifications();
   }
 
   async function markAllAsRead() {
+    if (!user?.email) return;
     for (const notif of notifications) {
-      if (!notif.readBy?.includes(user?.email)) {
+      if (!notif.readBy?.includes(user.email)) {
         const updated = {
-          readBy: [...(notif.readBy || []), user?.email],
+          readBy: [...(notif.readBy || []), user.email],
         };
         await base44.entities.Notification.update(notif.id, updated);
       }
@@ -67,7 +74,7 @@ export default function NotificationCenter() {
     await loadNotifications();
   }
 
-  const unreadNotifs = notifications.filter(n => !(n.readBy || []).includes(user?.email));
+  const unreadNotifs = user?.email ? notifications.filter(n => !(n.readBy || []).includes(user.email)) : [];
 
   return (
     <div className="relative">

@@ -47,11 +47,6 @@ export default function SchoolPortal() {
   const [signupSuccess, setSignupSuccess] = useState(false);
 
   useEffect(() => {
-    loadSchools();
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-    
     // Load saved school from localStorage on mount
     const savedSchoolId = localStorage.getItem('lastSchoolId');
     const savedSchoolName = localStorage.getItem('lastSchoolName');
@@ -59,6 +54,11 @@ export default function SchoolPortal() {
       setSelectedSchool(savedSchoolId);
       setSearchQuery(savedSchoolName);
     }
+    
+    loadSchools();
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Auto-redirect already logged-in users
