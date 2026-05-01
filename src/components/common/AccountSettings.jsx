@@ -32,12 +32,20 @@ export default function AccountSettings() {
       setPasswordError('New password is required');
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters');
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters');
+      return;
+    }
+    if (!/\d/.test(newPassword)) {
+      setPasswordError('New password must contain at least one number');
+      return;
+    }
+    if (!/[a-zA-Z]/.test(newPassword)) {
+      setPasswordError('New password must contain at least one letter');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
+      setPasswordError('New passwords do not match');
       return;
     }
 
@@ -55,13 +63,18 @@ export default function AccountSettings() {
         return;
       }
 
-      toast.success('Password changed successfully');
+      toast.success('Password changed successfully - please log in again');
       setIsPasswordOpen(false);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      
+      // Clear session and logout
+      setTimeout(() => {
+        logout();
+      }, 1500);
     } catch (error) {
-      setPasswordError('Failed to change password');
+      setPasswordError(error.response?.data?.error || 'Failed to change password');
       console.error(error);
     } finally {
       setPasswordLoading(false);
@@ -155,7 +168,7 @@ export default function AccountSettings() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min. 6 characters)"
+                placeholder="Min. 8 chars, 1 number, 1 letter"
               />
             </div>
 
