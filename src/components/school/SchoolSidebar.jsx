@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
+import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 const adminNavGroups = [
   {
@@ -99,13 +100,18 @@ export default function SchoolSidebar({ isOpen, onClose }) {
           </Button>
         </div>
 
-        <SidebarNavGroups 
-          groups={adminNavGroups}
-          isActive={isActive}
-          onItemClick={onClose}
-        />
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNavGroups 
+            groups={adminNavGroups}
+            isActive={isActive}
+            onItemClick={onClose}
+          />
+          <div className="p-3">
+            <DashboardCalendar />
+          </div>
+        </div>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border shrink-0">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
             <UserAvatar user={user} size="md" />
             <div className="flex-1 min-w-0">

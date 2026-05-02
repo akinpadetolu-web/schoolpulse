@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
+import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 const teacherNavGroups = [
   {
@@ -69,12 +70,17 @@ export default function TeacherSidebar({ isOpen, onClose }) {
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
-        <SidebarNavGroups 
-          groups={teacherNavGroups}
-          isActive={isActive}
-          onItemClick={onClose}
-        />
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNavGroups 
+            groups={teacherNavGroups}
+            isActive={isActive}
+            onItemClick={onClose}
+          />
+          <div className="p-3">
+            <DashboardCalendar />
+          </div>
+        </div>
+        <div className="p-3 border-t border-sidebar-border shrink-0">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
             <UserAvatar user={user} size="md" />
             <div className="flex-1 min-w-0">
