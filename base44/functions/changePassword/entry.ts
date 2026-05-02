@@ -1,5 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import * as bcrypt from 'npm:bcryptjs@2.4.3';
+
+const SALT = "SP2024_";
+
+function hashPassword(password) {
+  const salted = SALT + password;
+  return btoa(unescape(encodeURIComponent(salted)));
+}
+
+function comparePassword(inputPassword, storedHash) {
+  if (!inputPassword || !storedHash) return false;
+  if (hashPassword(inputPassword) === storedHash) return true;
+  try {
+    return btoa(SALT + inputPassword) === storedHash;
+  } catch { return false; }
+}
 
 Deno.serve(async (req) => {
   try {
@@ -12,31 +26,31 @@ Deno.serve(async (req) => {
 
     const { currentPassword, newPassword, userId } = await req.json();
 
+    if (!userId || !currentPassword || !newPassword) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
     // Verify the user is changing their own password
     if (user.id !== userId) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (!currentPassword || !newPassword) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
     // Get the school user to verify current password
-    const schoolUser = await base44.asServiceRole.entities.SchoolUser.list();
-    const targetUser = (schoolUser || []).find(u => u.id === userId);
+    const schoolUsers = await base44.asServiceRole.entities.SchoolUser.list();
+    const targetUser = (schoolUsers || []).find(u => u.id === userId);
 
     if (!targetUser) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Verify current password
-    const isPasswordValid = bcrypt.compareSync(currentPassword, targetUser.passwordHash);
+    // Verify current password using the same method as login
+    const isPasswordValid = comparePassword(currentPassword, targetUser.passwordHash);
     if (!isPasswordValid) {
       return Response.json({ error: 'Current password is incorrect' }, { status: 401 });
     }
 
-    // Hash new password
-    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    // Hash new password using the same method as login
+    const hashedPassword = hashPassword(newPassword);
 
     // Update password
     await base44.asServiceRole.entities.SchoolUser.update(userId, {
@@ -45,7 +59,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('changePassword error:', error);
     return Response.json({ error: 'Failed to change password' }, { status: 500 });
   }
 });
