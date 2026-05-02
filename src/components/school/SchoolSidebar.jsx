@@ -8,7 +8,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
-import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 
 const adminNavGroups = [
   {
@@ -106,9 +105,6 @@ export default function SchoolSidebar({ isOpen, onClose }) {
             isActive={isActive}
             onItemClick={onClose}
           />
-          <div className="p-3">
-            <DashboardCalendar />
-          </div>
         </div>
 
         <div className="p-3 border-t border-sidebar-border shrink-0">
