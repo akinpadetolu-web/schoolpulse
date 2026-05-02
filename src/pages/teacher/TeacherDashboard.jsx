@@ -54,20 +54,7 @@ export default function TeacherDashboard() {
           </Card>
         ))}
       </div>
-      {assignments.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">My Teaching Assignments</h2>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {assignments.map((a, i) => (
-              <div key={i} className="flex items-center gap-2 bg-secondary/60 rounded-lg px-3 py-2 text-sm">
-                <span className="font-medium">{a.subjectName}</span>
-                <span className="text-muted-foreground">→</span>
-                <span>{a.className}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <TeacherClockInWidget />
         <TeacherLeaveRequestWidget />
