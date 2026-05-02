@@ -100,7 +100,6 @@ export default function StudentDashboard() {
   return (
     <PullToRefreshWrapper {...ptr}>
       <div className="space-y-6 p-4 md:p-6 pb-20 md:pb-6">
-        {/* Header */}
         <div className="mt-2">
           <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-muted-foreground">{user?.className || user?.schoolName}</p>
@@ -112,9 +111,7 @@ export default function StudentDashboard() {
             <TabsTrigger value="progress">My Progress</TabsTrigger>
           </TabsList>
 
-          {/* ── OVERVIEW TAB ── */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-fr">
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
@@ -174,12 +171,10 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
-            {/* Calendar */}
             <div className="overflow-x-hidden">
               <DashboardCalendar />
             </div>
 
-            {/* Charts + Pending list */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               <Card className="border-0 shadow-sm lg:col-span-2">
                 <CardHeader className="pb-2">
@@ -281,7 +276,6 @@ export default function StudentDashboard() {
             </div>
           </TabsContent>
 
-          {/* ── PROGRESS TAB ── */}
           <TabsContent value="progress">
             <TermProgressTab user={user} grades={grades} />
           </TabsContent>
