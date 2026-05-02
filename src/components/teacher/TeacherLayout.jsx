@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import TeacherSidebar from './TeacherSidebar';
@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const MemoTeacherSidebar = memo(TeacherSidebar);
+
 export default function TeacherLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { schoolUser: user, isLoadingSchoolAuth } = useSchoolAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const isRootScreen = location.pathname === '/teacher';
 
@@ -29,10 +33,10 @@ export default function TeacherLayout() {
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="hidden md:block">
-        <TeacherSidebar isOpen={true} onClose={() => {}} />
+        <MemoTeacherSidebar isOpen={true} onClose={() => {}} />
       </div>
       <div className="md:hidden">
-        <TeacherSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <MemoTeacherSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
@@ -45,7 +49,7 @@ export default function TeacherLayout() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
+              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={toggleSidebar}>
                 <Menu className="w-5 h-5" />
               </Button>
             )}

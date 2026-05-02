@@ -55,7 +55,7 @@ export default function TeacherSidebar({ isOpen, onClose }) {
     <>
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />}
       <aside className={cn(
-        "w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300",
+        "w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-150",
         isOpen ? "fixed top-0 left-0 h-screen z-50 translate-x-0" : "fixed top-0 left-0 h-screen z-50 -translate-x-full",
         "md:static md:w-64 md:flex-shrink-0 md:translate-x-0 md:flex"
       )}>
