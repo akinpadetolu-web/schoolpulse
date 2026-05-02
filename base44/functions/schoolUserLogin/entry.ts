@@ -9,7 +9,7 @@ function hashPasswordLegacy(password) {
   return btoa(unescape(encodeURIComponent(salted)));
 }
 
-// Verify password against both bcrypt (new) and SP2024_ salt (legacy)
+// Verify password against bcrypt (new), Base64 (old), and SP2024_ salt (legacy)
 async function verifyPassword(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) {
     console.log('Password verification: missing input or hash');
@@ -18,7 +18,26 @@ async function verifyPassword(inputPassword, storedHash) {
   
   let isValid = false;
   
-  // PRIORITY 1: Try new bcrypt method first
+  // Detect hash type: Base64 doesn't start with $2, bcrypt does
+  const isBase64Hash = !storedHash.startsWith('$2');
+  
+  console.log('Hash type detected:', isBase64Hash ? 'Base64' : 'bcrypt');
+  
+  // PRIORITY 1: Check if it's a Base64 encoded hash (original method)
+  if (isBase64Hash) {
+    try {
+      const base64Password = btoa(inputPassword);
+      isValid = base64Password === storedHash;
+      console.log('Base64 hash comparison result:', isValid);
+      if (isValid) {
+        return { isValid: true, needsUpgrade: true };
+      }
+    } catch (e) {
+      console.log('Base64 verification error:', e.message);
+    }
+  }
+  
+  // PRIORITY 2: Try new bcrypt method
   try {
     isValid = await bcrypt.compare(inputPassword, storedHash);
     console.log('Bcrypt verify result:', isValid);
@@ -26,10 +45,10 @@ async function verifyPassword(inputPassword, storedHash) {
       return { isValid: true, needsUpgrade: false };
     }
   } catch (e) {
-    console.log('Bcrypt verify error (expected for SP2024_ hashes):', e.message);
+    console.log('Bcrypt verify error:', e.message);
   }
   
-  // PRIORITY 2: Try SP2024_ legacy salt (most existing passwords)
+  // PRIORITY 3: Try SP2024_ legacy salt (most existing passwords)
   try {
     const legacyHash = hashPasswordLegacy(inputPassword);
     if (legacyHash === storedHash) {
@@ -40,7 +59,7 @@ async function verifyPassword(inputPassword, storedHash) {
     console.log('Legacy hash verification error:', e.message);
   }
   
-  // PRIORITY 3: Fallback for btoa variant encoding
+  // PRIORITY 4: Fallback for btoa variant encoding
   try {
     if (btoa(SALT + inputPassword) === storedHash) {
       console.log('Fallback btoa hash matched, marking for upgrade');
