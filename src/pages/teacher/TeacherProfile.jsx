@@ -12,24 +12,6 @@ export default function TeacherProfile() {
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
 
-  const handleProfileUpdate = async (updatedUser) => {
-    setUserData(updatedUser);
-    // Refresh auth context with updated user data
-    if (updatedUser?.id) {
-      try {
-        const freshUser = await base44.entities.SchoolUser.filter({ id: updatedUser.id });
-        if (freshUser?.length > 0) {
-          // Store updated user in auth context
-          const authData = JSON.parse(sessionStorage.getItem('schoolUserAuth') || '{}');
-          authData.user = freshUser[0];
-          sessionStorage.setItem('schoolUserAuth', JSON.stringify(authData));
-        }
-      } catch (error) {
-        console.error('Failed to refresh user data:', error);
-      }
-    }
-  };
-
   useEffect(() => {
     if (!user) return;
     async function loadData() {
@@ -82,7 +64,7 @@ export default function TeacherProfile() {
             <CardContent>
               <ProfilePictureUpload 
                 user={userData}
-                onSuccess={handleProfileUpdate}
+                onSuccess={setUserData}
               />
             </CardContent>
           </Card>

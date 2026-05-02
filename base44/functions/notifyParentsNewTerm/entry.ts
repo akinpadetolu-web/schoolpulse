@@ -25,13 +25,6 @@ Deno.serve(async (req) => {
       return Response.json({ sent: 0, message: 'No parents found for this school' });
     }
 
-    // Check if school has notification enabled
-    const school = await base44.asServiceRole.entities.School.filter({ id: schoolId });
-    const schoolData = school?.[0];
-    if (schoolData && schoolData.notifyGradeUpdates === false) {
-      return Response.json({ sent: 0, message: 'Email notifications disabled for this school' });
-    }
-
     // Format dates nicely
     const fmt = (dateStr) => {
       if (!dateStr) return dateStr;
@@ -42,33 +35,42 @@ Deno.serve(async (req) => {
     const formattedStart = fmt(startDate);
     const formattedEnd = fmt(endDate);
 
-    // Create in-app notification for all parents in the school
-    const notificationMessage = `New academic term "${name}" (${academicYear}) starts on ${formattedStart} and ends on ${formattedEnd}. Please ensure your child is prepared.`;
+    // Send email to each parent who has an email address
+    const parentsWithEmail = parents.filter(p => p.email);
+    let sent = 0;
 
-    try {
-      const notification = await base44.asServiceRole.entities.Notification.create({
-        schoolId,
-        schoolName,
-        type: 'announcement',
-        title: `New Academic Term: ${name} (${academicYear})`,
-        message: notificationMessage,
-        targetRole: 'parent',
-        targetUserIds: parents.map(p => p.id),
-        createdByUser: 'system',
+    for (const parent of parentsWithEmail) {
+      const subject = `New Academic Term Started: ${name} (${academicYear}) — ${schoolName}`;
+
+      const body_html = `
+Dear ${parent.fullName || 'Parent/Guardian'},
+
+We are pleased to inform you that a new academic term has officially begun at ${schoolName}.
+
+📚 Term Details:
+  • Term Name:     ${name}
+  • Academic Year: ${academicYear}
+  • Start Date:    ${formattedStart}
+  • End Date:      ${formattedEnd}
+
+Please ensure your child is prepared for the new term. If you have any questions or concerns, do not hesitate to reach out to the school administration.
+
+We wish your child a productive and successful term ahead.
+
+Warm regards,
+${schoolName} Administration
+      `.trim();
+
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: parent.email,
+        subject,
+        body: body_html,
       });
 
-      return Response.json({ 
-        notified: parents.length, 
-        message: `Notification sent to ${parents.length} parents`,
-        notificationId: notification?.id 
-      });
-    } catch (notificationError) {
-      console.error('Failed to create notification:', notificationError);
-      return Response.json({ 
-        error: 'Failed to notify parents',
-        details: notificationError?.message 
-      }, { status: 500 });
+      sent++;
     }
+
+    return Response.json({ sent, total: parentsWithEmail.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

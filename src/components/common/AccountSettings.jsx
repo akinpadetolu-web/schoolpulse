@@ -51,30 +51,18 @@ export default function AccountSettings() {
 
     setPasswordLoading(true);
     try {
-      console.log('[AccountSettings] Calling changePassword with userId:', user.id);
-      
       const response = await base44.functions.invoke('changePassword', {
         currentPassword,
         newPassword,
         userId: user.id,
       });
 
-      console.log('[AccountSettings] Response:', response);
-
       if (response.data?.error) {
-        console.error('[AccountSettings] Backend error:', response.data.error);
         setPasswordError(response.data.error);
         setPasswordLoading(false);
         return;
       }
 
-      if (!response.data?.success) {
-        setPasswordError('Password change failed. Please try again.');
-        setPasswordLoading(false);
-        return;
-      }
-
-      console.log('[AccountSettings] Password changed successfully');
       toast.success('Password changed successfully - please log in again');
       setIsPasswordOpen(false);
       setCurrentPassword('');
@@ -86,9 +74,8 @@ export default function AccountSettings() {
         logout();
       }, 1500);
     } catch (error) {
-      console.error('[AccountSettings] Exception:', error);
-      const errorMsg = error.response?.data?.error || error.message || 'Failed to change password';
-      setPasswordError(errorMsg);
+      setPasswordError(error.response?.data?.error || 'Failed to change password');
+      console.error(error);
     } finally {
       setPasswordLoading(false);
     }
