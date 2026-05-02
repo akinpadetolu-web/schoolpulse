@@ -180,21 +180,21 @@ export default function SchoolPortal() {
       const school = schools.find((s) => s.id === selectedSchool);
       if (!school) {setError("Invalid school selected");setLoading(false);return;}
 
-      const users = await base44.entities.SchoolUser.filter({ schoolId: school.id, role: role });
-      if (!users) {setError("Could not reach server. Please check your connection and try again.");setLoading(false);return;}
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Use backend function for dual password verification (legacy + new)
+      const response = await base44sdk.functions.invoke('schoolUserLogin', {
+        schoolId: school.id,
+        username: username.trim(),
+        password: password,
+        role: role
+      });
 
-      const trimmedUsername = username.trim();
-      const user = (users || []).find((u) =>
-        (u.username?.trim() === trimmedUsername || u.email?.trim() === trimmedUsername) && !u.isArchived
-      );
+      if (!response.data?.success) {
+        setError(response.data?.error || "Invalid username or password");
+        setLoading(false);
+        return;
+      }
 
-      if (!user) {setError("Invalid username or password");setLoading(false);return;}
-      if (!user.passwordHash) {setError("Account not set up. Contact your school administrator.");setLoading(false);return;}
-      
-      // Check password using async method (supports both old and new hash methods)
-      const { isValid } = await comparePasswordAsync(password, user.passwordHash);
-      if (!isValid) {setError("Invalid username or password");setLoading(false);return;}
+      const user = response.data.user;
 
       // Save school on successful login
       localStorage.setItem('lastSchoolId', school.id);

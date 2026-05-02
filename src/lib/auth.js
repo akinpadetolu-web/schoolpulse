@@ -8,12 +8,19 @@ export function hashPassword(password) {
 
 export function comparePassword(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) return false;
-  // Check new encoding-safe hash
-  if (hashPassword(inputPassword) === storedHash) return true;
-  // Fallback: check old plain btoa hash (for existing stored passwords)
+  // Check SP2024_ salt method (most common for existing passwords)
   try {
-    return btoa(SALT + inputPassword) === storedHash;
-  } catch { return false; }
+    if (btoa(SALT + inputPassword) === storedHash) return true;
+  } catch (e) {
+    console.warn('SP2024_ hash check failed:', e);
+  }
+  // Fallback: check alternative encoding
+  try {
+    if (hashPassword(inputPassword) === storedHash) return true;
+  } catch (e) {
+    console.warn('Alternative hash check failed:', e);
+  }
+  return false;
 }
 
 // Async password comparison supporting BOTH old SP2024_ salt system and future bcrypt
