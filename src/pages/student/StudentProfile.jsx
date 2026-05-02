@@ -1,16 +1,31 @@
 import React, { useState } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
 import AccountSettings from '@/components/common/AccountSettings';
 
 export default function StudentProfile() {
-  const { schoolUser: user } = useSchoolAuth();
+  const { schoolUser: user, logout, login } = useSchoolAuth();
   const [userData, setUserData] = useState(user);
 
-  const handleProfileUpdate = (updatedUser) => {
+  const handleProfileUpdate = async (updatedUser) => {
     setUserData(updatedUser);
+    // Refresh auth context with updated user data
+    if (updatedUser?.id) {
+      try {
+        const freshUser = await base44.entities.SchoolUser.filter({ id: updatedUser.id });
+        if (freshUser?.length > 0) {
+          // Store updated user in auth context
+          const authData = JSON.parse(sessionStorage.getItem('schoolUserAuth') || '{}');
+          authData.user = freshUser[0];
+          sessionStorage.setItem('schoolUserAuth', JSON.stringify(authData));
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+      }
+    }
   };
 
   if (!userData) {
