@@ -1,0 +1,49 @@
+{
+  "name": "Note",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "Note title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Rich text HTML content"
+    },
+    "drawingUrl": {
+      "type": "string",
+      "description": "URL of saved drawing PNG"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "text",
+        "drawing"
+      ],
+      "default": "text",
+      "description": "Whether this note is text or drawing type"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Optional subject tag"
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "title"
+  ]
+}
