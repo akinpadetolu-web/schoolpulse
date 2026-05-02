@@ -69,7 +69,7 @@ export default function DashboardCalendar() {
   if (loading) return <Card className="border-0 shadow-sm"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading calendar...</CardContent></Card>;
 
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="border-0 shadow-sm w-full overflow-hidden">
       <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between pb-3 gap-3">
         <CardTitle className="text-base md:text-lg flex items-center gap-2 whitespace-nowrap">
           <CalendarIcon className="w-5 h-5 flex-shrink-0" />
@@ -108,7 +108,7 @@ export default function DashboardCalendar() {
         </div>
 
         {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {paddedDays.map((day, idx) => {
             if (!day) {
               return <div key={`empty-${idx}`} className="aspect-square" />;
@@ -122,7 +122,7 @@ export default function DashboardCalendar() {
             return (
               <div
                 key={dateStr}
-                className={`aspect-square p-1 rounded-lg border text-center text-xs transition-colors ${
+                className={`aspect-square p-0.5 sm:p-1 rounded-lg border text-center text-xs transition-colors ${
                   isCurrentDay
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:bg-accent'

@@ -171,7 +171,7 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
-            <div className="overflow-x-hidden">
+            <div className="w-full">
               <DashboardCalendar />
             </div>
 
