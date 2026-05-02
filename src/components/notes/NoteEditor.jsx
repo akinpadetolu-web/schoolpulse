@@ -29,12 +29,8 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
     setSaveStatus('idle');
     autoSaveTimer.current = setTimeout(async () => {
       setSaveStatus('saving');
-      try {
-        await onAutoSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
-        setSaveStatus('saved');
-      } catch {
-        setSaveStatus('error');
-      }
+      await onAutoSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
+      setSaveStatus('saved');
     }, 1500);
   }, [onAutoSave]);
 
@@ -54,6 +50,7 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
     setSaveStatus('saving');
     await onSave({ title: title.trim(), content, mode: 'text' });
     setSaveStatus('saved');
+    clearTimeout(autoSaveTimer.current);
   };
 
   useEffect(() => () => clearTimeout(autoSaveTimer.current), []);

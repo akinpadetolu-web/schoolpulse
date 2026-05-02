@@ -63,14 +63,14 @@ export default function NoteDrawingCanvas({ onSave, onCancel }) {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 border rounded-lg overflow-hidden bg-white min-h-[300px]">
+      <div className="flex-1 border rounded-lg overflow-hidden bg-white" style={{ minHeight: 0 }}>
         <ReactSketchCanvas
           ref={canvasRef}
           strokeColor={tool === 'eraser' ? '#ffffff' : strokeColor}
           strokeWidth={tool === 'eraser' ? strokeWidth * 3 : strokeWidth}
           eraserWidth={strokeWidth * 3}
           canvasColor="white"
-          style={{ width: '100%', height: '100%', minHeight: '300px' }}
+          style={{ width: '100%', height: '100%' }}
           withTimestamp={false}
         />
       </div>

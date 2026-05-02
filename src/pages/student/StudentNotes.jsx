@@ -45,7 +45,7 @@ export default function StudentNotes() {
   // Auto-save for EXISTING notes (debounced from NoteEditor)
   const handleAutoSaveText = async ({ title, content, mode }) => {
     if (!editingNote?.id) return;
-    await base44.entities.Note.update(editingNote.id, { title, content, mode });
+    await base44.entities.Note.update(editingNote.id, { title, content });
     load();
   };
 
@@ -152,11 +152,11 @@ export default function StudentNotes() {
 
       {/* Drawing Dialog */}
       <Dialog open={dialogMode === 'drawing'} onOpenChange={open => !open && setDialogMode(null)}>
-        <DialogContent className="max-w-3xl max-h-[95vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl h-[95vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{editingNote ? 'Edit Drawing' : 'New Drawing'}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <NoteDrawingCanvas
               onSave={handleSaveDrawing}
               onCancel={() => { setDialogMode(null); setEditingNote(null); }}
