@@ -113,6 +113,7 @@ const ParentGrades = lazy(() => import('./pages/parent/ParentGrades'));
 const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncements'));
 const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
+const ParentReportCards = lazy(() => import('./pages/parent/ParentReportCards'));
 const AdminMessaging = lazy(() => import('./pages/school-admin/AdminMessaging'));
 
 function PageLoader() {
@@ -230,6 +231,7 @@ const AuthenticatedApp = () => {
           <Route path="grades" element={<ParentGrades />} />
           <Route path="announcements" element={<ParentAnnouncements />} />
           <Route path="messages" element={<ParentMessaging />} />
+          <Route path="report-cards" element={<ParentReportCards />} />
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
           <Route path="profile" element={<ParentProfile />} />
