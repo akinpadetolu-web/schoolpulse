@@ -27,12 +27,12 @@ export async function registerServiceWorker() {
       });
     });
 
-    // Periodically check for updates
+    // Periodically check for updates (every 30 minutes)
     setInterval(() => {
       registration.update().catch((err) => {
         console.log('[PWA] Update check failed:', err);
       });
-    }, 60000); // Check every minute
+    }, 30 * 60 * 1000);
 
     return registration;
   } catch (error) {

@@ -256,11 +256,11 @@ export default function SchoolPortal() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md flex-shrink-0">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <GraduationCap className="w-8 h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary/10 mb-4 shadow-sm">
+            <GraduationCap className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">SchoolPulse</h1>
           <p className="text-muted-foreground mt-1">School Management System</p>
@@ -540,7 +540,7 @@ export default function SchoolPortal() {
             </Tabs>
           </CardContent>
         </Card>
-        <p className="text-center text-xs text-muted-foreground mt-6">© {new Date().getFullYear()} SchoolPulse</p>
+        <p className="text-center text-xs text-muted-foreground mt-6 pb-safe">© {new Date().getFullYear()} SchoolPulse</p>
       </div>
     </div>);
 
