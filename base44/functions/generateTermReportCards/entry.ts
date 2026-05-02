@@ -24,6 +24,16 @@ function getLabelFromScale(score, gradeScale) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
+    }
+
+    if (user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden. Admin access required.' }, { status: 403 });
+    }
+
     const { schoolId, term } = await req.json();
 
     if (!schoolId || !term) {
