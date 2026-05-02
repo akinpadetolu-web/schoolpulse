@@ -43,7 +43,7 @@ export default function Students() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input className="pl-9" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} />
+      <UserTable users={filtered} onResetPassword={handleReset} onArchive={handleArchive} onRestore={handleRestore} onEdited={loadData} />
     </div>
   );
 }

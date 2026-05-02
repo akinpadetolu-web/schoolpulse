@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +24,8 @@ function getSubsetsForClass(cls) {
 }
 
 export default function StudentProfileDialog({ open, onOpenChange, student, classes, schoolId, onSaved }) {
+  const [fullName, setFullName] = useState(student?.fullName || "");
+  const [email, setEmail] = useState(student?.email || "");
   const [classId, setClassId] = useState(student?.classId || "");
   const [subsetName, setSubsetName] = useState(student?.subsetName || "");
   const [subjects, setSubjects] = useState([]);
@@ -36,6 +39,8 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
 
   // Sync state when student changes
   useEffect(() => {
+    setFullName(student?.fullName || "");
+    setEmail(student?.email || "");
     setClassId(student?.classId || "");
     setSubsetName(student?.subsetName || "");
     setAssignedSubjects(student?.assignedSubjects || []);
@@ -79,9 +84,12 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
   }
 
   async function handleSave() {
+    if (!fullName.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
     const cls = classes.find(c => c.id === classId);
     await base44.entities.SchoolUser.update(student.id, {
+      fullName: fullName.trim(),
+      email: email.trim(),
       classId: classId || "",
       className: cls?.className || "",
       baseLevel: cls?.baseLevel || "",
@@ -100,8 +108,8 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{student?.fullName}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{student?.email || student?.username}</p>
+          <DialogTitle>Edit Student</DialogTitle>
+          <p className="text-sm text-muted-foreground">{student?.username}</p>
         </DialogHeader>
 
         <Tabs defaultValue="profile">
@@ -112,6 +120,18 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-5 pt-2">
+            {/* Name & Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name <span className="text-destructive">*</span></Label>
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Student full name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@example.com" />
+              </div>
+            </div>
+
             {/* Class */}
             <div className="space-y-2">
               <Label>Class</Label>
