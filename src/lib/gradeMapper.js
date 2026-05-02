@@ -16,10 +16,9 @@ async function getGradingSystem(schoolId) {
 }
 
 /**
- * Map a percentage to a letter grade using the school's rubric
- * Falls back to a default rubric if no school rubric exists
+ * Get just the letter grade (string) from a percentage using school's rubric
  */
-export async function getGradeLabel(percentage, schoolId) {
+export async function getLetterGrade(percentage, schoolId) {
   const system = await getGradingSystem(schoolId);
   
   // Use school rubric if available
@@ -27,21 +26,29 @@ export async function getGradeLabel(percentage, schoolId) {
     const grade = system.grades.find(g => 
       percentage >= (g.minScore || 0) && percentage <= (g.maxScore || 100)
     );
-    if (grade) {
-      return {
-        label: grade.letter || grade.label || '?',
-        color: getGradeColor(grade.letter || grade.label),
-        bg: getGradeBg(grade.letter || grade.label),
-      };
-    }
+    if (grade) return grade.letter || grade.label || 'F';
   }
 
   // Default fallback rubric
-  if (percentage >= 90) return { label: 'A', color: 'text-emerald-600', bg: 'bg-emerald-50' };
-  if (percentage >= 80) return { label: 'B', color: 'text-blue-600', bg: 'bg-blue-50' };
-  if (percentage >= 70) return { label: 'C', color: 'text-amber-600', bg: 'bg-amber-50' };
-  if (percentage >= 60) return { label: 'D', color: 'text-orange-600', bg: 'bg-orange-50' };
-  return { label: 'F', color: 'text-red-600', bg: 'bg-red-50' };
+  if (percentage >= 90) return 'A';
+  if (percentage >= 80) return 'B';
+  if (percentage >= 70) return 'C';
+  if (percentage >= 60) return 'D';
+  return 'F';
+}
+
+/**
+ * Map a percentage to a letter grade with styling using the school's rubric
+ * Falls back to a default rubric if no school rubric exists
+ */
+export async function getGradeLabel(percentage, schoolId) {
+  const label = await getLetterGrade(percentage, schoolId);
+  
+  return {
+    label,
+    color: getGradeColor(label),
+    bg: getGradeBg(label),
+  };
 }
 
 /**
