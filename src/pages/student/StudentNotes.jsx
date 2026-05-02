@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -51,17 +51,22 @@ export default function StudentNotes() {
     load();
   };
 
-  const handleSaveDrawing = async (dataUrl) => {
+  // Stable ref so the drawing canvas callback doesn't go stale
+  const editingNoteRef = React.useRef(editingNote);
+  React.useEffect(() => { editingNoteRef.current = editingNote; }, [editingNote]);
+
+  const handleSaveDrawing = useCallback(async (dataUrl) => {
     // Upload the PNG data URL as a file
     const blob = await (await fetch(dataUrl)).blob();
     const file = new File([blob], 'drawing.png', { type: 'image/png' });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-    const title = editingNote?.title || `Drawing ${new Date().toLocaleDateString()}`;
-    if (editingNote?.id) {
-      await base44.entities.Note.update(editingNote.id, { drawingUrl: file_url, mode: 'drawing' });
+    const current = editingNoteRef.current;
+    const title = current?.title || `Drawing ${new Date().toLocaleDateString()}`;
+    if (current?.id) {
+      await base44.entities.Note.update(current.id, { drawingUrl: file_url, mode: 'drawing' });
     } else {
-      await base44.entities.Note.create({
+      const created = await base44.entities.Note.create({
         schoolId: user.schoolId,
         studentId: user.id,
         studentName: user.fullName,
@@ -69,11 +74,11 @@ export default function StudentNotes() {
         drawingUrl: file_url,
         mode: 'drawing',
       });
+      // Update ref so subsequent auto-saves update the same record
+      editingNoteRef.current = created;
     }
-    setDialogMode(null);
-    setEditingNote(null);
     load();
-  };
+  }, [user, load]);
 
   const handleEdit = (note) => {
     setEditingNote(note);

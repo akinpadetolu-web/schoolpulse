@@ -6,21 +6,31 @@ import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2 } from 'lucide-react
 
 const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#f59e0b', '#ec4899', '#14b8a6', '#64748b', '#ffffff'];
 
-export default function NoteDrawingCanvas({ onSave, onCancel }) {
+export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl }) {
   const canvasRef = useRef(null);
   const autoSaveTimer = useRef(null);
+  const isSavingRef = useRef(false);
   const [tool, setTool] = useState('pen');
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
-  const triggerAutoSave = useCallback(async () => {
+  const triggerAutoSave = useCallback(() => {
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
+      if (isSavingRef.current) return;
+      isSavingRef.current = true;
       setSaveStatus('saving');
-      const dataUrl = await canvasRef.current.exportImage('png');
-      await onSave(dataUrl);
-      setSaveStatus('saved');
+      try {
+        const dataUrl = await canvasRef.current.exportImage('png');
+        await onSave(dataUrl);
+        setSaveStatus('saved');
+      } catch (e) {
+        console.error('Drawing save failed:', e);
+        setSaveStatus('idle');
+      } finally {
+        isSavingRef.current = false;
+      }
     }, 2000);
   }, [onSave]);
 

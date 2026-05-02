@@ -25,20 +25,25 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
   const noteIdRef = useRef(note?.id || null);
 
   const triggerAutoSave = useCallback((newTitle, newContent) => {
-    if (!newTitle.trim()) return;
+    const trimmedTitle = newTitle.trim() || 'Untitled Note';
     clearTimeout(autoSaveTimer.current);
     setSaveStatus('idle');
     autoSaveTimer.current = setTimeout(async () => {
       setSaveStatus('saving');
-      if (noteIdRef.current) {
-        // Existing note — update in place
-        await onAutoSave({ id: noteIdRef.current, title: newTitle.trim(), content: newContent });
-      } else {
-        // New note — create it for the first time, then keep updating
-        const created = await onSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
-        if (created?.id) noteIdRef.current = created.id;
+      try {
+        if (noteIdRef.current) {
+          // Existing note — update in place
+          await onAutoSave({ id: noteIdRef.current, title: trimmedTitle, content: newContent });
+        } else {
+          // New note — create it for the first time, then keep updating
+          const created = await onSave({ title: trimmedTitle, content: newContent, mode: 'text' });
+          if (created?.id) noteIdRef.current = created.id;
+        }
+        setSaveStatus('saved');
+      } catch (e) {
+        console.error('Note save failed:', e);
+        setSaveStatus('error');
       }
-      setSaveStatus('saved');
     }, 1500);
   }, [onSave, onAutoSave]);
 
