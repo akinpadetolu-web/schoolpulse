@@ -117,15 +117,26 @@ export default function TeacherSubmissions() {
     e.preventDefault();
     setSaving(true);
     try {
+      const assignment = selectedAssignment;
+      const termValue = assignment.term || 'General';
+
       // Update submission
-      const updatedSubmission = await base44.entities.Submission.update(gradingSubmission.submission.id, {
+      await base44.entities.Submission.update(gradingSubmission.submission.id, {
         score: Number(score),
         feedback,
         isGraded: true,
       });
 
-      // Create grade record for student
-      const assignment = selectedAssignment;
+      // Check if a Grade record already exists for this student/subject/assignment (re-grading case)
+      const existingGrades = await base44.entities.Grade.filter({
+        schoolId: user.schoolId,
+        studentId: gradingSubmission.student.id,
+        subjectId: assignment.subjectId,
+        term: termValue,
+        description: `Assignment: ${assignment.id}`,
+      });
+
+      let gradeId;
       const gradeData = {
         schoolId: user.schoolId,
         studentId: gradingSubmission.student.id,
@@ -138,27 +149,32 @@ export default function TeacherSubmissions() {
         score: Number(score),
         maxScore: assignment.maxScore,
         comment: feedback,
-        term: 'current',
+        term: termValue,
+        description: `Assignment: ${assignment.id}`,
+        lastUpdatedAt: new Date().toISOString(),
+        syncStatus: 'synced',
       };
-      
-      const newGrade = await base44.entities.Grade.create(gradeData);
 
-      // Trigger notification to parents/students/admins
-      try {
-        await base44.functions.invoke('onGradeSubmitted', {
-          gradeId: newGrade?.id,
-          schoolId: user.schoolId,
-          studentId: gradingSubmission.student.id,
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-      } catch (notifyError) {
-        console.warn('Notification trigger failed (non-critical):', notifyError);
+      if (existingGrades.length > 0) {
+        await base44.entities.Grade.update(existingGrades[0].id, gradeData);
+        gradeId = existingGrades[0].id;
+      } else {
+        const newGrade = await base44.entities.Grade.create(gradeData);
+        gradeId = newGrade?.id;
       }
+
+      // Trigger weighted average recalculation + notifications via V2
+      await base44.functions.invoke('onGradeSubmittedV2', {
+        gradeId,
+        schoolId: user.schoolId,
+        studentId: gradingSubmission.student.id,
+        teacherId: user.id,
+        subjectId: assignment.subjectId,
+        term: termValue,
+      });
 
       setSaving(false);
       setGradingSubmission(null);
-      // Data will auto-refresh via subscription
     } catch (error) {
       console.error('Error grading submission:', error);
       setSaving(false);

@@ -37,6 +37,10 @@
       "type": "number",
       "default": 100
     },
+    "term": {
+      "type": "string",
+      "description": "Academic term this assignment belongs to (e.g. Term 1, Midterm 2026)"
+    },
     "isPublished": {
       "type": "boolean",
       "default": false

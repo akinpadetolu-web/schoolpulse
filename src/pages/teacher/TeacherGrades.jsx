@@ -187,12 +187,13 @@ export default function TeacherGrades() {
       // Trigger notification function
       if (gradeId) {
         try {
-          await base44.functions.invoke('onGradeSubmitted', {
+          await base44.functions.invoke('onGradeSubmittedV2', {
             gradeId,
             schoolId: user.schoolId,
             studentId: form.studentId,
             teacherId: user.id,
             subjectId: form.subjectId,
+            term: form.term,
           });
         } catch (notifError) {
           console.warn('Notification trigger failed (non-critical):', notifError);
