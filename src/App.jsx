@@ -128,8 +128,6 @@ function PageLoader() {
 const AuthenticatedApp = () => {
   return (
     <>
-      <DarkModeDetector />
-      <PWAInitializer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public */}
@@ -272,6 +270,8 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <SchoolAuthProvider>
         <Router>
+          <DarkModeDetector />
+          <PWAInitializer />
           <AuthenticatedApp />
           <OfflineIndicator />
           <InstallPrompt />
