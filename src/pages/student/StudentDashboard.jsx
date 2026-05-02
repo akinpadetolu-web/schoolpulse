@@ -99,7 +99,7 @@ export default function StudentDashboard() {
 
   return (
     <PullToRefreshWrapper {...ptr}>
-      <div className="space-y-6 p-4 md:p-6 pb-20 md:pb-6">
+      <div className="space-y-6 p-4 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
         <div className="mt-2">
           <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-muted-foreground">{user?.className || user?.schoolName}</p>

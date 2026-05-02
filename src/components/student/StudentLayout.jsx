@@ -27,7 +27,7 @@ export default function StudentLayout() {
   if (!user || user.role !== "student") return null;
 
   return (
-    <div className="h-screen bg-background flex flex-col md:flex-row">
+    <div className="h-screen bg-background flex flex-col md:flex-row overflow-hidden">
       <div className="hidden md:block">
         <StudentSidebar isOpen={true} onClose={() => {}} />
       </div>
@@ -53,7 +53,7 @@ export default function StudentLayout() {
           </div>
           <HeaderUserMenu />
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -61,12 +61,6 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="p-4 md:p-6"
-              style={{
-                paddingBottom: 'env(safe-area-inset-bottom)',
-                paddingLeft: 'env(safe-area-inset-left)',
-                paddingRight: 'env(safe-area-inset-right)',
-              }}
             >
               <Outlet />
             </motion.div>
