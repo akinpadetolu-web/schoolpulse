@@ -189,7 +189,9 @@ export default function SchoolPortal() {
       });
 
       if (!response.data?.success) {
-        setError(response.data?.error || "Invalid username or password");
+        const errorMsg = response.data?.error || "Invalid username or password";
+        console.log('Login failed:', errorMsg);
+        setError(errorMsg);
         setLoading(false);
         return;
       }
@@ -207,8 +209,9 @@ export default function SchoolPortal() {
       if (role === "student") navigate("/student");else
       if (role === "parent") navigate("/parent");
     } catch (err) {
-      console.error('Login error:', err);
-      setError("Sign in failed. Please check your connection and try again.");
+      console.error('Login error:', err.response?.data?.error || err.message);
+      const actualError = err.response?.data?.error || err.message;
+      setError(actualError || "Sign in failed. Please check your connection and try again.");
     }
     setLoading(false);
   }
