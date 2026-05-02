@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, X } from 'lucide-react';
+import { X, Cloud, CloudOff, Loader2 } from 'lucide-react';
 
 const QUILL_MODULES = {
   toolbar: [
@@ -15,41 +15,84 @@ const QUILL_MODULES = {
   ],
 };
 
-export default function NoteEditor({ note, onSave, onCancel }) {
+// Auto-save status: 'idle' | 'saving' | 'saved' | 'error'
+export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('idle');
+  const autoSaveTimer = useRef(null);
+  const isNewNote = !note?.id;
 
-  const handleSave = async () => {
+  const triggerAutoSave = useCallback((newTitle, newContent) => {
+    if (!newTitle.trim()) return;
+    clearTimeout(autoSaveTimer.current);
+    setSaveStatus('idle');
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        await onAutoSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
+        setSaveStatus('saved');
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 1500);
+  }, [onAutoSave]);
+
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+    if (!isNewNote) triggerAutoSave(e.target.value, content);
+  };
+
+  const handleContentChange = (val) => {
+    setContent(val);
+    if (!isNewNote) triggerAutoSave(title, val);
+  };
+
+  // Save new notes on close via the explicit Save button
+  const handleSaveNew = async () => {
     if (!title.trim()) return;
-    setSaving(true);
+    setSaveStatus('saving');
     await onSave({ title: title.trim(), content, mode: 'text' });
-    setSaving(false);
+    setSaveStatus('saved');
+  };
+
+  useEffect(() => () => clearTimeout(autoSaveTimer.current), []);
+
+  const StatusIcon = () => {
+    if (saveStatus === 'saving') return <span className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span>;
+    if (saveStatus === 'saved') return <span className="flex items-center gap-1 text-xs text-emerald-600"><Cloud className="w-3 h-3" /> Saved</span>;
+    if (saveStatus === 'error') return <span className="flex items-center gap-1 text-xs text-destructive"><CloudOff className="w-3 h-3" /> Save failed</span>;
+    return null;
   };
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <Input
-        placeholder="Note title..."
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        className="text-base font-medium"
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Note title..."
+          value={title}
+          onChange={handleTitleChange}
+          className="text-base font-medium flex-1"
+        />
+        <StatusIcon />
+      </div>
       <div className="flex-1 min-h-[300px]">
         <ReactQuill
           theme="snow"
           value={content}
-          onChange={setContent}
+          onChange={handleContentChange}
           modules={QUILL_MODULES}
           style={{ height: '100%', minHeight: '260px' }}
         />
       </div>
       <div className="flex justify-end gap-2 mt-8">
-        <Button variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" />Cancel</Button>
-        <Button onClick={handleSave} disabled={saving || !title.trim()}>
-          <Save className="w-4 h-4 mr-1" />
-          {saving ? 'Saving...' : 'Save Note'}
-        </Button>
+        <Button variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" />Close</Button>
+        {isNewNote && (
+          <Button onClick={handleSaveNew} disabled={saveStatus === 'saving' || !title.trim()}>
+            {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+            Create Note
+          </Button>
+        )}
       </div>
     </div>
   );

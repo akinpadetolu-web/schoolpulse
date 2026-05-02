@@ -28,21 +28,24 @@ export default function StudentNotes() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Called when user explicitly saves a NEW note
   const handleSaveText = async ({ title, content, mode }) => {
-    if (editingNote?.id) {
-      await base44.entities.Note.update(editingNote.id, { title, content, mode });
-    } else {
-      await base44.entities.Note.create({
-        schoolId: user.schoolId,
-        studentId: user.id,
-        studentName: user.fullName,
-        title,
-        content,
-        mode: 'text',
-      });
-    }
-    setDialogMode(null);
-    setEditingNote(null);
+    const created = await base44.entities.Note.create({
+      schoolId: user.schoolId,
+      studentId: user.id,
+      studentName: user.fullName,
+      title,
+      content,
+      mode: 'text',
+    });
+    setEditingNote(created);
+    load();
+  };
+
+  // Auto-save for EXISTING notes (debounced from NoteEditor)
+  const handleAutoSaveText = async ({ title, content, mode }) => {
+    if (!editingNote?.id) return;
+    await base44.entities.Note.update(editingNote.id, { title, content, mode });
     load();
   };
 
@@ -141,7 +144,8 @@ export default function StudentNotes() {
           <NoteEditor
             note={editingNote}
             onSave={handleSaveText}
-            onCancel={() => { setDialogMode(null); setEditingNote(null); }}
+            onAutoSave={handleAutoSaveText}
+            onCancel={() => { setDialogMode(null); setEditingNote(null); load(); }}
           />
         </DialogContent>
       </Dialog>
