@@ -24,12 +24,12 @@ export default function HeaderUserMenu() {
 
   const handleProfile = () => {
     setOpen(false);
-    navigate(`${window.location.pathname.split('/')[1]}/profile`);
+    navigate(`/${user?.role}/profile`);
   };
 
   const handleSettings = () => {
     setOpen(false);
-    navigate(`${window.location.pathname.split('/')[1]}/settings`);
+    navigate(`/${user?.role}/settings`);
   };
 
   return (
