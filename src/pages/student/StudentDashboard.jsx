@@ -90,48 +90,35 @@ export default function StudentDashboard() {
 
   return (
     <PullToRefreshWrapper {...ptr}>
-      <div className="space-y-6 p-4 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
-        <div className="mt-2">
-          <h1 className="text-2xl font-bold">Welcome, {user?.fullName}</h1>
-          <p className="text-muted-foreground">{user?.className || user?.schoolName}</p>
+      <div className="space-y-3 p-3 md:space-y-6 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
+        <div className="mt-1 md:mt-2">
+          <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.fullName}</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">{user?.className || user?.schoolName}</p>
         </div>
 
         <Tabs defaultValue="overview">
-          <TabsList className="mb-4">
+          <TabsList className="mb-2 md:mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">My Progress</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-fr">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 auto-rows-fr">
+               <Card className="border-0 shadow-sm">
+                 <CardContent className="p-2 md:p-5 flex flex-col items-start justify-between h-full min-h-[100px] md:min-h-[160px]">
                   <div className="w-full">
-                    <p className="text-sm text-muted-foreground">Overall Average</p>
-                    {overallAvg != null ? (
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <p className="text-2xl md:text-3xl font-bold">{overallAvg}%</p>
-                        <span className={`text-base md:text-lg font-bold ${letterGrade?.color}`}>{letterGrade?.label}</span>
+                     <p className="text-xs md:text-sm text-muted-foreground">Overall Average</p>
+                     {overallAvg != null ? (
+                       <div className="flex items-baseline gap-1 md:gap-2 mt-1">
+                         <p className="text-lg md:text-3xl font-bold">{overallAvg}%</p>
+                         <span className={`text-xs md:text-lg font-bold ${letterGrade?.color}`}>{letterGrade?.label}</span>
                       </div>
                     ) : (
-                      <p className="text-2xl font-bold mt-2 text-muted-foreground">N/A</p>
-                    )}
-                  </div>
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-2">
-                    <Award className="w-5 h-5" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
-                  <div className="w-full">
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl md:text-3xl font-bold mt-2">{completedCount}</p>
-                    <p className="text-xs text-muted-foreground">of {assignments.length}</p>
-                  </div>
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-2">
-                    <CheckCircle2 className="w-5 h-5" />
+                      <p className="text-lg md:text-2xl font-bold mt-1 text-muted-foreground">N/A</p>
+                      )}
+                      </div>
+                      <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-1 md:mt-2">
+                      <Award className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
@@ -139,12 +126,12 @@ export default function StudentDashboard() {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
-                    <p className="text-sm text-muted-foreground">Pending</p>
-                    <p className="text-2xl md:text-3xl font-bold mt-2">{pendingCount}</p>
-                    {overdueCount > 0 && <p className="text-xs text-red-500 font-medium">{overdueCount} overdue</p>}
-                  </div>
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600 mt-2">
-                    <Clock className="w-5 h-5" />
+                     <p className="text-xs md:text-sm text-muted-foreground">Completed</p>
+                     <p className="text-lg md:text-3xl font-bold mt-1">{completedCount}</p>
+                     <p className="text-xs text-muted-foreground">of {assignments.length}</p>
+                   </div>
+                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-1 md:mt-2">
+                     <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
@@ -152,19 +139,32 @@ export default function StudentDashboard() {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
-                    <p className="text-sm text-muted-foreground">Timetable Slots</p>
-                    <p className="text-2xl md:text-3xl font-bold mt-2">{timetableCount}</p>
+                     <p className="text-xs md:text-sm text-muted-foreground">Pending</p>
+                     <p className="text-lg md:text-3xl font-bold mt-1">{pendingCount}</p>
+                     {overdueCount > 0 && <p className="text-xs text-red-500 font-medium">{overdueCount} overdue</p>}
+                   </div>
+                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600 mt-1 md:mt-2">
+                     <Clock className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
-                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-2">
-                    <Calendar className="w-5 h-5" />
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
+                  <div className="w-full">
+                     <p className="text-xs md:text-sm text-muted-foreground">Timetable Slots</p>
+                     <p className="text-lg md:text-3xl font-bold mt-1">{timetableCount}</p>
+                   </div>
+                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-1 md:mt-2">
+                     <Calendar className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="w-full">
-              <DashboardCalendar />
-            </div>
+            <div className="w-full hidden md:block">
+               <DashboardCalendar />
+             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               <Card className="border-0 shadow-sm lg:col-span-2">
@@ -262,9 +262,9 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
-            <div className="mt-8 pt-6 border-t">
-              <DeleteAccountDialog />
-            </div>
+            <div className="mt-4 md:mt-8 pt-4 md:pt-6 border-t hidden md:block">
+               <DeleteAccountDialog />
+             </div>
           </TabsContent>
 
           <TabsContent value="progress">
