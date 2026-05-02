@@ -5,7 +5,11 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
+    }
+
+    if (user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden. Admin access only.' }, { status: 403 });
     }
 
     const { schoolId, prompt, targetClassIds } = await req.json();
