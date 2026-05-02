@@ -1,9 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Password hashing using SP2024_ salt
-const SALT = "SP2024_";
+// Password hashing using PASSWORD_SALT environment variable
+const SALT = Deno.env.get("PASSWORD_SALT");
 
 function hashPassword(password) {
+  if (!SALT) throw new Error("PASSWORD_SALT environment variable is not set");
   const salted = SALT + password;
   return btoa(unescape(encodeURIComponent(salted)));
 }

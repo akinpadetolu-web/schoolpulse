@@ -1,8 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const SALT = Deno.env.get("PASSWORD_SALT") || "SP2024_";
+const SALT = Deno.env.get("PASSWORD_SALT");
 
 function hashPassword(password) {
+  if (!SALT) throw new Error("PASSWORD_SALT environment variable is not set");
   const salted = SALT + password;
   return btoa(unescape(encodeURIComponent(salted)));
 }

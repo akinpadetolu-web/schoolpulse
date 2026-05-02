@@ -1,13 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const SALT = "SP2024_";
+const SALT = Deno.env.get("PASSWORD_SALT");
 
-// Check if a hash is using the old SP2024_ method
+// Check if a hash is using the configured SALT method
 function isOldHashFormat(hash) {
-  if (!hash) return false;
+  if (!hash || !SALT) return false;
   try {
-    // Old format: btoa of "SP2024_" + password
-    // We can't directly identify it, but we can check if it decodes properly
     const decoded = atob(hash);
     return decoded.startsWith(SALT);
   } catch {
