@@ -84,10 +84,14 @@ export async function registerBackgroundSync() {
 
   try {
     const registration = await navigator.serviceWorker.ready;
-    await registration.sync.register('schoolpulse-sync');
-    console.log('[PWA] Background Sync registered');
+    // Only register sync from within a service worker context or user gesture
+    if (registration.sync) {
+      await registration.sync.register('schoolpulse-sync');
+      console.log('[PWA] Background Sync registered');
+    }
   } catch (error) {
-    console.error('[PWA] Background Sync registration failed:', error);
+    // Background Sync registration can fail in non-SW contexts — silently ignore
+    console.log('[PWA] Background Sync not available in this context');
   }
 }
 
@@ -169,9 +173,15 @@ export async function requestNotificationPermission() {
   return false;
 }
 
-export async function subscribeToPushNotifications() {
+export async function subscribeToPushNotifications(vapidPublicKey = null) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('[PWA] Push Notifications not supported');
+    return null;
+  }
+
+  // A valid VAPID public key is required for push subscriptions
+  if (!vapidPublicKey) {
+    console.log('[PWA] Push Notifications skipped: no VAPID public key configured');
     return null;
   }
 
@@ -187,9 +197,7 @@ export async function subscribeToPushNotifications() {
     // Subscribe to push notifications
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        'BAGjzPQkL7L5Nq9N8L5L7L8L8L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L9L='
-      )
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
     });
 
     console.log('[PWA] Push subscription successful');
