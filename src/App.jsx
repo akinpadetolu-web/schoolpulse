@@ -6,9 +6,9 @@ import React from 'react';
 import { queryClientInstance } from '@/lib/query-client';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
+
 import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import UpdatePrompt from '@/components/pwa/UpdatePrompt';
@@ -122,24 +122,6 @@ function PageLoader() {
 }
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    }
-    // For auth_required and other errors, fall through and let SchoolPortal handle auth
-    // Do NOT call navigateToLogin() — this app uses its own custom school auth at "/"
-  }
-
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -278,8 +260,7 @@ function App() {
     <>
       <DarkModeDetector />
       <PWAInitializer />
-      <AuthProvider>
-        <SchoolAuthProvider>
+      <SchoolAuthProvider>
           <QueryClientProvider client={queryClientInstance}>
             <Router>
               <AuthenticatedApp />
@@ -291,7 +272,6 @@ function App() {
             <SonnerToaster position="top-right" richColors />
           </QueryClientProvider>
         </SchoolAuthProvider>
-      </AuthProvider>
     </>
   );
 }
