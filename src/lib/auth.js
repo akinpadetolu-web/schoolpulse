@@ -16,6 +16,33 @@ export function comparePassword(inputPassword, storedHash) {
   } catch { return false; }
 }
 
+// Async password comparison supporting BOTH old and new methods
+// Returns { isValid: boolean, needsUpgrade: boolean }
+export async function comparePasswordAsync(inputPassword, storedHash) {
+  if (!inputPassword || !storedHash) return { isValid: false, needsUpgrade: false };
+  
+  try {
+    // First try the old SP2024_ method (for existing passwords)
+    const oldHashMethod = hashPassword(inputPassword);
+    if (oldHashMethod === storedHash) {
+      return { isValid: true, needsUpgrade: true };
+    }
+  } catch (e) {
+    console.warn('Old hash check failed:', e);
+  }
+  
+  // If old method fails, try other fallback
+  try {
+    if (btoa(SALT + inputPassword) === storedHash) {
+      return { isValid: true, needsUpgrade: true };
+    }
+  } catch (e) {
+    console.warn('Fallback hash check failed:', e);
+  }
+  
+  return { isValid: false, needsUpgrade: false };
+}
+
 export function generateTemporaryPassword() {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
   let pwd = "";

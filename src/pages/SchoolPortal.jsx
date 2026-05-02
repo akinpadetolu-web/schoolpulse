@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePassword } from '@/lib/auth';
+import { comparePassword, comparePasswordAsync, hashPassword } from '@/lib/auth';
 import { base44 as base44sdk } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -191,7 +191,22 @@ export default function SchoolPortal() {
 
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
       if (!user.passwordHash) {setError("Account not set up. Contact your school administrator.");setLoading(false);return;}
-      if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
+      
+      // Check password using async method (supports both old and new hash methods)
+      const { isValid, needsUpgrade } = await comparePasswordAsync(password, user.passwordHash);
+      if (!isValid) {setError("Invalid username or password");setLoading(false);return;}
+
+      // If password matches but uses old method, auto-upgrade to new hash
+      if (needsUpgrade) {
+        const newHash = hashPassword(password);
+        try {
+          await base44.asServiceRole.entities.SchoolUser.update(user.id, { passwordHash: newHash });
+          console.log('Password hash upgraded for user:', user.id);
+        } catch (upgradeErr) {
+          console.warn('Failed to upgrade password hash:', upgradeErr);
+          // Don't fail login, just log the warning
+        }
+      }
 
       // Save school on successful login
       localStorage.setItem('lastSchoolId', school.id);
