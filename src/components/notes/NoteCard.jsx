@@ -1,12 +1,71 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, ImageIcon, Pencil, Trash2, Share2, Users } from 'lucide-react';
+import { FileText, ImageIcon, Pencil, Trash2, Share2, Users, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { jsPDF } from 'jspdf';
+
+async function downloadTextAsPdf(note) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  const maxW = pageW - margin * 2;
+
+  // Title
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(note.title || 'Note', margin, 60);
+
+  // Date
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120);
+  const dateStr = note.updated_date ? format(new Date(note.updated_date), 'MMM d, yyyy') : '';
+  doc.text(dateStr, margin, 78);
+  doc.setTextColor(0);
+
+  // Strip HTML tags for plain text body
+  const plainText = (note.content || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+
+  doc.setFontSize(11);
+  const lines = doc.splitTextToSize(plainText, maxW);
+  doc.text(lines, margin, 100);
+
+  doc.save(`${note.title || 'note'}.pdf`);
+}
+
+function downloadDrawingAsPng(note) {
+  const a = document.createElement('a');
+  a.href = note.drawingUrl;
+  a.download = `${note.title || 'drawing'}.png`;
+  a.target = '_blank';
+  a.click();
+}
 
 export default function NoteCard({ note, onEdit, onDelete, onShare }) {
   const isDrawing = note.mode === 'drawing';
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload(e) {
+    e.stopPropagation();
+    if (isDrawing) {
+      downloadDrawingAsPng(note);
+    } else {
+      setDownloading(true);
+      await downloadTextAsPdf(note);
+      setDownloading(false);
+    }
+  }
 
   return (
     <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
@@ -48,6 +107,9 @@ export default function NoteCard({ note, onEdit, onDelete, onShare }) {
                 <Share2 className="w-3 h-3" />
               </Button>
             )}
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" title={isDrawing ? 'Download PNG' : 'Download PDF'} onClick={handleDownload} disabled={downloading}>
+              {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(note)}>
               <Pencil className="w-3 h-3" />
             </Button>
