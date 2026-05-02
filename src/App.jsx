@@ -126,11 +126,14 @@ function PageLoader() {
 
 const AuthenticatedApp = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<SchoolPortal />} />
-        <Route path="/sp-backend" element={<BackendLoginPage />} />
+    <>
+      <DarkModeDetector />
+      <PWAInitializer />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<SchoolPortal />} />
+          <Route path="/sp-backend" element={<BackendLoginPage />} />
 
         {/* Backend Super Admin */}
         <Route path="/backend" element={<BackendLayout />}>
@@ -238,8 +241,9 @@ const AuthenticatedApp = () => {
         </Route>
 
         <Route path="*" element={<PageNotFound />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </>
   );
 };
 
@@ -266,8 +270,6 @@ function App() {
     <SchoolAuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <DarkModeDetector />
-          <PWAInitializer />
           <AuthenticatedApp />
           <OfflineIndicator />
           <InstallPrompt />
