@@ -2,10 +2,10 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, ImageIcon, Pencil, Trash2 } from 'lucide-react';
+import { FileText, ImageIcon, Pencil, Trash2, Share2, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function NoteCard({ note, onEdit, onDelete }) {
+export default function NoteCard({ note, onEdit, onDelete, onShare }) {
   const isDrawing = note.mode === 'drawing';
 
   return (
@@ -18,7 +18,16 @@ export default function NoteCard({ note, onEdit, onDelete }) {
             </div>
             <div className="min-w-0">
               <p className="font-medium truncate">{note.title}</p>
-              {note.subject && <Badge variant="outline" className="text-xs mt-1">{note.subject}</Badge>}
+              <div className="flex items-center gap-1 flex-wrap mt-1">
+                {note.subject && <Badge variant="outline" className="text-xs">{note.subject}</Badge>}
+                {note.isShared && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <Users className="w-3 h-3" />
+                    Shared {note.sharedWith?.length > 0 ? `(${note.sharedWith.length})` : ''}
+                    {note.feedbackRequested && ' · Feedback'}
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {note.updated_date ? format(new Date(note.updated_date), 'MMM d, yyyy') : ''}
               </p>
@@ -34,6 +43,11 @@ export default function NoteCard({ note, onEdit, onDelete }) {
             </div>
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            {onShare && (
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" title="Share" onClick={e => { e.stopPropagation(); onShare(note); }}>
+                <Share2 className="w-3 h-3" />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(note)}>
               <Pencil className="w-3 h-3" />
             </Button>

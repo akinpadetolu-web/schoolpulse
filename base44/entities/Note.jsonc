@@ -39,6 +39,30 @@
     "isArchived": {
       "type": "boolean",
       "default": false
+    },
+    "isShared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this note has been shared"
+    },
+    "sharedWith": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of SchoolUser IDs this note is shared with"
+    },
+    "sharedWithNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of people shared with"
+    },
+    "feedbackRequested": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether feedback was requested"
     }
   },
   "required": [

@@ -8,6 +8,7 @@ import { Plus, Search, FileText, ImageIcon, Loader2 } from 'lucide-react';
 import NoteCard from '@/components/notes/NoteCard';
 import NoteEditor from '@/components/notes/NoteEditor';
 import NoteDrawingCanvas from '@/components/notes/NoteDrawingCanvas';
+import NoteShareDialog from '@/components/notes/NoteShareDialog';
 
 export default function StudentNotes() {
   const { schoolUser: user } = useSchoolAuth();
@@ -18,6 +19,7 @@ export default function StudentNotes() {
   // Dialog state
   const [dialogMode, setDialogMode] = useState(null); // null | 'text' | 'drawing'
   const [editingNote, setEditingNote] = useState(null);
+  const [sharingNote, setSharingNote] = useState(null);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -130,7 +132,7 @@ export default function StudentNotes() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(note => (
-            <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} />
+            <NoteCard key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} onShare={setSharingNote} />
           ))}
         </div>
       )}
@@ -149,6 +151,15 @@ export default function StudentNotes() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Share Dialog */}
+      <NoteShareDialog
+        note={sharingNote}
+        open={!!sharingNote}
+        onClose={() => { setSharingNote(null); load(); }}
+        currentUserId={user?.id}
+        schoolId={user?.schoolId}
+      />
 
       {/* Drawing Dialog */}
       <Dialog open={dialogMode === 'drawing'} onOpenChange={open => !open && setDialogMode(null)}>
