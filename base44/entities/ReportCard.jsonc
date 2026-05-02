@@ -49,8 +49,7 @@
             "type": "string"
           },
           "weightedAverage": {
-            "type": "number",
-            "description": "Final calculated grade for subject"
+            "type": "number"
           },
           "letterGrade": {
             "type": "string"
@@ -93,6 +92,27 @@
     "teacherComment": {
       "type": "string"
     },
+    "behaviorSummary": {
+      "type": "string",
+      "description": "Teacher's summary of student behavior during the term"
+    },
+    "lessonProgressSummary": {
+      "type": "string",
+      "description": "Overview of student's progress and engagement in lessons"
+    },
+    "principalComment": {
+      "type": "string",
+      "description": "Optional comment from the school principal"
+    },
+    "promotionRecommendation": {
+      "type": "string",
+      "enum": [
+        "promote",
+        "repeat",
+        "review"
+      ],
+      "description": "Recommendation for student's academic progression"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -114,8 +134,7 @@
     },
     "description": {
       "type": "string",
-      "maxLength": 1000,
-      "description": "A brief description or summary of this report card"
+      "maxLength": 1000
     }
   },
   "required": [

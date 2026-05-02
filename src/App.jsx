@@ -68,6 +68,8 @@ const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
 const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
 const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
+const AdminReportCardTemplates = lazy(() => import('./pages/school-admin/AdminReportCardTemplates'));
+const StudentReportCards = lazy(() => import('./pages/student/StudentReportCards'));
 
 // Teacher
 const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
@@ -177,6 +179,7 @@ const AuthenticatedApp = () => {
           <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="grade-weighting" element={<AdminGradeWeighting />} />
           <Route path="report-cards" element={<AdminReportCards />} />
+          <Route path="report-card-templates" element={<AdminReportCardTemplates />} />
           <Route path="school-report" element={<AdminSchoolReport />} />
           <Route path="approvals" element={<AdminApprovals />} />
           <Route path="academic-terms" element={<AdminAcademicTerms />} />
@@ -229,6 +232,7 @@ const AuthenticatedApp = () => {
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="e-class" element={<StudentEClass />} />
           <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="report-cards" element={<StudentReportCards />} />
           <Route path="profile" element={<StudentProfile />} />
         </Route>
 

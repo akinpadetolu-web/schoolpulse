@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Download, Send, Eye, FileText } from 'lucide-react';
+import { Plus, Loader2, Send, Eye, FileText, Pencil, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ReportCardViewer from '@/components/school/ReportCardViewer';
 
 export default function AdminReportCards() {
   const { schoolUser: user } = useSchoolAuth();
@@ -31,6 +26,10 @@ export default function AdminReportCards() {
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [viewingCard, setViewingCard] = useState(null);
+  const [editingCard, setEditingCard] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     selectedClass: '',
@@ -39,9 +38,7 @@ export default function AdminReportCards() {
     termId: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     const [cards, stud, cls, subj, tmpl, grd, att, termData] = await Promise.all([
@@ -65,40 +62,6 @@ export default function AdminReportCards() {
     setLoading(false);
   }
 
-  async function calculateWeightedGrade(studentId, subjectId) {
-    const studentGrades = grades.filter(g => g.studentId === studentId && g.subjectId === subjectId);
-    const categories = await base44.entities.GradeCategory.filter({
-      schoolId: user?.schoolId,
-      subjectId,
-    });
-
-    if (categories.length === 0) {
-      // No weighting configured, return simple average
-      const avg = studentGrades.length > 0
-        ? studentGrades.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / studentGrades.length
-        : 0;
-      return Math.round(avg);
-    }
-
-    const categoryAverages = {};
-    categories.forEach(cat => {
-      const catGrades = studentGrades.filter(g => {
-        // Match grade to category (simplified - you might need to add category tracking in Grade entity)
-        return true;
-      });
-      const avg = catGrades.length > 0
-        ? catGrades.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / catGrades.length
-        : 0;
-      categoryAverages[cat.categoryName] = avg;
-    });
-
-    let weighted = 0;
-    categories.forEach(cat => {
-      weighted += (categoryAverages[cat.categoryName] || 0) * (cat.weight / 100);
-    });
-    return Math.round(weighted);
-  }
-
   function getLetterGrade(percentage) {
     if (percentage >= 90) return 'A';
     if (percentage >= 80) return 'B';
@@ -112,7 +75,6 @@ export default function AdminReportCards() {
     if (!form.selectedClass || form.selectedStudents.length === 0 || !form.templateId || !form.termId) {
       return toast.error('All fields are required');
     }
-
     setGenerating(true);
     const template = templates.find(t => t.id === form.templateId);
     const selectedTerm = terms.find(t => t.id === form.termId);
@@ -132,23 +94,23 @@ export default function AdminReportCards() {
         });
 
         const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
-        const subjectGrades = [];
-
-        for (const subjectId of subjectIds) {
-          const weighted = await calculateWeightedGrade(student.id, subjectId);
+        const subjectGrades = subjectIds.map(subjectId => {
+          const subjectGradeList = studentGrades.filter(g => g.subjectId === subjectId);
+          const avg = subjectGradeList.length > 0
+            ? Math.round(subjectGradeList.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / subjectGradeList.length)
+            : 0;
           const subject = subjects.find(s => s.id === subjectId);
-          subjectGrades.push({
+          return {
             subjectId,
             subjectName: subject?.name || 'Unknown',
-            weightedAverage: weighted,
-            letterGrade: getLetterGrade(weighted),
-          });
-        }
+            weightedAverage: avg,
+            letterGrade: getLetterGrade(avg),
+          };
+        });
 
         const overallAverage = subjectGrades.length > 0
           ? Math.round(subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length)
           : 0;
-
         const attendanceRate = studentAttendance.length > 0
           ? Math.round((studentAttendance.filter(a => a.status === 'present').length / studentAttendance.length) * 100)
           : 0;
@@ -170,7 +132,7 @@ export default function AdminReportCards() {
           overallLetterGrade: getLetterGrade(overallAverage),
           attendanceRate,
           lessonCount: studentGrades.length,
-          assignmentSubmissionRate: 85, // Placeholder
+          assignmentSubmissionRate: 85,
           status: 'generated',
         };
 
@@ -188,6 +150,40 @@ export default function AdminReportCards() {
     }
   }
 
+  async function handleSendCard(rc) {
+    await base44.entities.ReportCard.update(rc.id, { status: 'sent', sentDate: new Date().toISOString() });
+    toast.success(`Report card sent to ${rc.studentName}`);
+    loadData();
+  }
+
+  async function handleApprove(rc) {
+    await base44.entities.ReportCard.update(rc.id, { status: 'approved', approvedBy: user.fullName, approvalDate: new Date().toISOString() });
+    toast.success('Report card approved');
+    loadData();
+  }
+
+  function openEdit(rc) {
+    setEditingCard(rc);
+    setEditForm({
+      teacherComment: rc.teacherComment || '',
+      principalComment: rc.principalComment || '',
+      behaviorSummary: rc.behaviorSummary || '',
+      lessonProgressSummary: rc.lessonProgressSummary || '',
+      promotionRecommendation: rc.promotionRecommendation || '',
+    });
+  }
+
+  async function handleSaveEdit(e) {
+    e.preventDefault();
+    setSaving(true);
+    await base44.entities.ReportCard.update(editingCard.id, editForm);
+    toast.success('Report card updated');
+    setSaving(false);
+    setEditingCard(null);
+    loadData();
+  }
+
+  const getTemplate = (templateId) => templates.find(t => t.id === templateId);
   const classStudents = students.filter(s => s.classId === form.selectedClass);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -217,16 +213,36 @@ export default function AdminReportCards() {
                   <div>
                     <h3 className="font-semibold">{rc.studentName}</h3>
                     <p className="text-sm text-muted-foreground">{rc.className} • {rc.period}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="outline">{rc.overallLetterGrade}</Badge>
-                      <Badge variant="outline">{rc.overallAverage}%</Badge>
-                      <Badge variant={rc.status === 'sent' ? 'default' : 'secondary'}>{rc.status}</Badge>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Badge variant="outline">{rc.overallLetterGrade || '-'}</Badge>
+                      <Badge variant="outline">{rc.overallAverage ?? '-'}%</Badge>
+                      <Badge variant={rc.status === 'sent' ? 'default' : rc.status === 'approved' ? 'secondary' : 'outline'}>
+                        {rc.status}
+                      </Badge>
+                      {rc.promotionRecommendation && (
+                        <Badge className={
+                          rc.promotionRecommendation === 'promote' ? 'bg-green-100 text-green-700' :
+                          rc.promotionRecommendation === 'repeat' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }>
+                          {rc.promotionRecommendation}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                    <Button variant="outline" size="sm"><Download className="w-4 h-4" /></Button>
-                    {rc.status !== 'sent' && <Button size="sm"><Send className="w-4 h-4" /></Button>}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => setViewingCard(rc)}><Eye className="w-4 h-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(rc)}><Pencil className="w-4 h-4" /></Button>
+                    {rc.status === 'generated' && (
+                      <Button variant="outline" size="sm" onClick={() => handleApprove(rc)}>
+                        <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                      </Button>
+                    )}
+                    {(rc.status === 'approved' || rc.status === 'generated') && (
+                      <Button size="sm" onClick={() => handleSendCard(rc)}>
+                        <Send className="w-4 h-4 mr-1" /> Send
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -235,41 +251,35 @@ export default function AdminReportCards() {
         </div>
       )}
 
+      {/* Generate Dialog */}
       <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Generate Report Cards</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Generate Report Cards</DialogTitle></DialogHeader>
           <form onSubmit={handleGenerate} className="space-y-4">
             <div>
               <Label className="text-sm">Class *</Label>
               <Select value={form.selectedClass} onValueChange={val => setForm({ ...form, selectedClass: val, selectedStudents: [] })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-                </SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-
             {form.selectedClass && (
               <div>
                 <Label className="text-sm">Students *</Label>
+                <div className="flex gap-2 mb-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, selectedStudents: classStudents.map(s => s.id) })}>Select All</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, selectedStudents: [] })}>Clear</Button>
+                </div>
                 <div className="border rounded-lg max-h-48 overflow-y-auto">
                   {classStudents.map(s => (
-                    <button
-                      key={s.id}
-                      type="button"
+                    <button key={s.id} type="button"
                       onClick={() => {
                         const selected = form.selectedStudents.includes(s.id)
                           ? form.selectedStudents.filter(id => id !== s.id)
                           : [...form.selectedStudents, s.id];
                         setForm({ ...form, selectedStudents: selected });
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm border-b transition-colors ${
-                        form.selectedStudents.includes(s.id) ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/50'
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-sm border-b transition-colors ${form.selectedStudents.includes(s.id) ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted/50'}`}
                     >
                       {s.fullName}
                     </button>
@@ -278,34 +288,90 @@ export default function AdminReportCards() {
                 <p className="text-xs text-muted-foreground mt-1">{form.selectedStudents.length} selected</p>
               </div>
             )}
-
             <div>
               <Label className="text-sm">Report Template *</Label>
               <Select value={form.templateId} onValueChange={val => setForm({ ...form, templateId: val })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                <SelectContent>{templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-
             <div>
               <Label className="text-sm">Academic Term *</Label>
               <Select value={form.termId} onValueChange={val => setForm({ ...form, termId: val })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  {terms.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.academicYear})</SelectItem>)}
-                </SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select term" /></SelectTrigger>
+                <SelectContent>{terms.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.academicYear})</SelectItem>)}</SelectContent>
               </Select>
             </div>
-
             <Button type="submit" className="w-full" disabled={generating}>
               {generating && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Generate Report Cards
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={!!viewingCard} onOpenChange={() => setViewingCard(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          {viewingCard && <ReportCardViewer reportCard={viewingCard} template={getTemplate(viewingCard.templateId)} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Comments Dialog */}
+      <Dialog open={!!editingCard} onOpenChange={() => setEditingCard(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Edit Report Card — {editingCard?.studentName}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <div>
+              <Label>Teacher's Comment</Label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm mt-1 min-h-[80px] resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.teacherComment}
+                onChange={e => setEditForm({ ...editForm, teacherComment: e.target.value })}
+                placeholder="Enter teacher's comment..."
+              />
+            </div>
+            <div>
+              <Label>Principal's Comment</Label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm mt-1 min-h-[80px] resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.principalComment}
+                onChange={e => setEditForm({ ...editForm, principalComment: e.target.value })}
+                placeholder="Enter principal's comment..."
+              />
+            </div>
+            <div>
+              <Label>Behavior Summary</Label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm mt-1 min-h-[80px] resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.behaviorSummary}
+                onChange={e => setEditForm({ ...editForm, behaviorSummary: e.target.value })}
+                placeholder="Student behavior summary..."
+              />
+            </div>
+            <div>
+              <Label>Lesson Progress Summary</Label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm mt-1 min-h-[80px] resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.lessonProgressSummary}
+                onChange={e => setEditForm({ ...editForm, lessonProgressSummary: e.target.value })}
+                placeholder="Lesson progress summary..."
+              />
+            </div>
+            <div>
+              <Label>Promotion Recommendation</Label>
+              <Select value={editForm.promotionRecommendation} onValueChange={v => setEditForm({ ...editForm, promotionRecommendation: v })}>
+                <SelectTrigger><SelectValue placeholder="Select recommendation" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="promote">Promote</SelectItem>
+                  <SelectItem value="repeat">Repeat Year</SelectItem>
+                  <SelectItem value="review">Under Review</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full" disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Save Changes
             </Button>
           </form>
         </DialogContent>

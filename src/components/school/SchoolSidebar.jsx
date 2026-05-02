@@ -28,6 +28,8 @@ const adminNavGroups = [
       { label: "Grades", path: "/school-admin/grade-weighting", icon: Award },
       { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },
       { label: "Examinations", path: "/school-admin/school-report", icon: PieChart },
+      { label: "Report Cards", path: "/school-admin/report-cards", icon: FileText },
+      { label: "RC Templates", path: "/school-admin/report-card-templates", icon: ClipboardList },
     ]
   },
   {

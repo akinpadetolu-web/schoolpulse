@@ -41,14 +41,30 @@
       "type": "boolean",
       "default": true
     },
+    "includeAssignmentRate": {
+      "type": "boolean",
+      "default": true
+    },
+    "includePrincipalComment": {
+      "type": "boolean",
+      "default": false
+    },
+    "includePromotionRecommendation": {
+      "type": "boolean",
+      "default": false
+    },
+    "includeCategoryBreakdown": {
+      "type": "boolean",
+      "default": false
+    },
     "gradeScale": {
       "type": "string",
       "enum": [
         "percentage",
         "letter",
-        "gpa"
+        "both"
       ],
-      "default": "percentage"
+      "default": "both"
     },
     "schoolLogo": {
       "type": "string",
@@ -65,13 +81,16 @@
         }
       }
     },
+    "footerText": {
+      "type": "string",
+      "description": "Custom footer text on the report card"
+    },
     "createdBy": {
       "type": "string"
     },
     "description": {
       "type": "string",
-      "maxLength": 1000,
-      "description": "A description of this report card template's purpose or structure"
+      "maxLength": 1000
     }
   },
   "required": [
