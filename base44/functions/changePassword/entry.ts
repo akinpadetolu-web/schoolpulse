@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const SALT = "SP2024_";
+const SALT = Deno.env.get("PASSWORD_SALT") || "SP2024_";
 
 function hashPassword(password) {
   const salted = SALT + password;

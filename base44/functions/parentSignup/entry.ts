@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // Simple password hashing — same logic as lib/auth.js
 function hashPassword(password) {
-  const SALT = "SP2024_";
+  const SALT = Deno.env.get("PASSWORD_SALT") || "SP2024_";
   const salted = SALT + password;
   // Use btoa with encoding-safe method
   return btoa(unescape(encodeURIComponent(salted)));
