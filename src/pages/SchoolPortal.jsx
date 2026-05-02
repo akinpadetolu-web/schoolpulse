@@ -190,7 +190,6 @@ export default function SchoolPortal() {
       );
 
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
-      if (!user.passwordHash) {setError("Account not set up. Contact your school administrator.");setLoading(false);return;}
       if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
       // Save school on successful login
