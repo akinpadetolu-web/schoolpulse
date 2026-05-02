@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Send, Eye, FileText, Pencil, CheckCircle } from 'lucide-react';
+import { Plus, Loader2, Send, Eye, FileText, Pencil, CheckCircle, Download, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +30,7 @@ export default function AdminReportCards() {
   const [editingCard, setEditingCard] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(null);
 
   const [form, setForm] = useState({
     selectedClass: '',
@@ -183,6 +184,30 @@ export default function AdminReportCards() {
     loadData();
   }
 
+  async function handleDownload(cardId) {
+    try {
+      setDownloading(cardId);
+      const response = await base44.functions.invoke('downloadReportCard', { reportCardId: cardId });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-card-${cardId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Report card downloaded');
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to download report card');
+    } finally {
+      setDownloading(null);
+    }
+  }
+
   const getTemplate = (templateId) => templates.find(t => t.id === templateId);
   const classStudents = students.filter(s => s.classId === form.selectedClass);
 
@@ -233,6 +258,13 @@ export default function AdminReportCards() {
                   <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => setViewingCard(rc)}><Eye className="w-4 h-4" /></Button>
                     <Button variant="outline" size="sm" onClick={() => openEdit(rc)}><Pencil className="w-4 h-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(rc.id)} disabled={downloading === rc.id}>
+                      {downloading === rc.id ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </Button>
                     {rc.status === 'generated' && (
                       <Button variant="outline" size="sm" onClick={() => handleApprove(rc)}>
                         <CheckCircle className="w-4 h-4 mr-1" /> Approve
