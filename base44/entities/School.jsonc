@@ -34,6 +34,41 @@
     "isArchived": {
       "type": "boolean",
       "default": false
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA timezone identifier, e.g., America/Winnipeg"
+    },
+    "schoolLogoUrl": {
+      "type": "string",
+      "description": "URL to the school logo image"
+    },
+    "primaryColor": {
+      "type": "string",
+      "description": "Primary brand color (hex code)"
+    },
+    "secondaryColor": {
+      "type": "string",
+      "description": "Secondary brand color (hex code)"
+    },
+    "defaultSenderEmail": {
+      "type": "string",
+      "description": "Default sender email for notifications"
+    },
+    "notifyGradeUpdates": {
+      "type": "boolean",
+      "default": true,
+      "description": "Send notifications when grades are updated"
+    },
+    "notifyAssignmentPosted": {
+      "type": "boolean",
+      "default": true,
+      "description": "Send notifications when assignments are posted"
+    },
+    "notifyAttendance": {
+      "type": "boolean",
+      "default": true,
+      "description": "Send notifications for attendance events"
     }
   },
   "required": [
