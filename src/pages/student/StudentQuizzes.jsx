@@ -107,6 +107,23 @@ export default function StudentQuizzes() {
       isGraded: q.questions?.every(qq => qq.type !== "short_answer"),
     });
 
+    // Sync quiz score to Grade entity so it reflects in the student's grade section
+    await base44.entities.Grade.create({
+      schoolId: user.schoolId,
+      studentId: user.id,
+      studentName: user.fullName,
+      classId: user.classId,
+      subjectId: q.subjectId || "",
+      subjectName: q.subjectName || "",
+      teacherId: q.teacherId || "",
+      assessmentType: "quiz",
+      score,
+      maxScore,
+      term: q.term || "",
+      comment: `Quiz: ${q.title}`,
+      lastUpdatedAt: new Date().toISOString(),
+    });
+
     toast.success(`Quiz submitted! Score: ${score}/${maxScore}`);
     setSubmitting(false);
     setActiveQuiz(null);
