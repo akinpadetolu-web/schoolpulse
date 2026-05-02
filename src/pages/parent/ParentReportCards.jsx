@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Download } from 'lucide-react';
+import { Loader2, FileText, Download, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ParentReportCards() {
@@ -12,6 +12,7 @@ export default function ParentReportCards() {
   const [reportCards, setReportCards] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -53,6 +54,31 @@ export default function ParentReportCards() {
   const getStudentName = (studentId) => {
     return students.find(s => s.id === studentId)?.fullName || 'Unknown Student';
   };
+
+  async function handleDownload(cardId) {
+    try {
+      setDownloading(cardId);
+      const response = await base44.functions.invoke('downloadReportCard', { reportCardId: cardId });
+      
+      // Create blob from response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-card-${cardId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Report card downloaded');
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to download report card');
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   const statusColor = {
     draft: 'bg-slate-100 text-slate-700',
@@ -149,10 +175,25 @@ export default function ParentReportCards() {
                 </div>
               )}
 
-              {/* Dates */}
+              {/* Dates and Actions */}
               <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                <span>Generated: {new Date(card.generatedDate).toLocaleDateString()}</span>
-                {card.sentDate && <span>Sent: {new Date(card.sentDate).toLocaleDateString()}</span>}
+                <div>
+                  <span>Generated: {new Date(card.generatedDate).toLocaleDateString()}</span>
+                  {card.sentDate && <span className="ml-3">Sent: {new Date(card.sentDate).toLocaleDateString()}</span>}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDownload(card.id)}
+                  disabled={downloading === card.id}
+                >
+                  {downloading === card.id ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1" />
+                  )}
+                  PDF
+                </Button>
               </div>
             </CardContent>
           </Card>
