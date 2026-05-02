@@ -3,26 +3,24 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const body = await req.json();
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
-    }
-
-    if (user.role !== 'teacher' && user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden. Teacher or admin access required.' }, { status: 403 });
-    }
-
-    const { gradeId, schoolId, studentId, teacherId, subjectId } = await req.json();
+    // Support both direct API calls and entity automation payloads
+    const gradeData = body.data || body;
+    const gradeId = gradeData.id;
+    const { schoolId, studentId, teacherId, subjectId } = gradeData;
 
     if (!gradeId || !schoolId || !studentId || !subjectId) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Fetch the grade
-    const grades = await base44.asServiceRole.entities.Grade.filter({ id: gradeId });
-    const grade = grades?.[0];
-    if (!grade) return Response.json({ error: 'Grade not found' }, { status: 404 });
+    // Use the grade data directly from automation payload, or fetch if needed
+    const grade = gradeData.score !== undefined ? gradeData : null;
+    if (!grade) {
+      const grades = await base44.asServiceRole.entities.Grade.filter({ id: gradeId });
+      const fetchedGrade = grades?.[0];
+      if (!fetchedGrade) return Response.json({ error: 'Grade not found' }, { status: 404 });
+    }
 
     // Calculate subject average for the student
     const allGradesForSubject = await base44.asServiceRole.entities.Grade.filter({
