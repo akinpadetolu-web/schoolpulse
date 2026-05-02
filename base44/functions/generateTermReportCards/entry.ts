@@ -1,5 +1,26 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+function getLetterGradeFromScale(score, gradeScale) {
+  if (!gradeScale || gradeScale.length === 0) {
+    // Fallback to default scale if no custom rubric
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 70) return 'C';
+    if (score >= 60) return 'D';
+    return 'F';
+  }
+  const grade = gradeScale.find(g => score >= g.minScore && score <= g.maxScore);
+  return grade?.letter || 'F';
+}
+
+function getLabelFromScale(score, gradeScale) {
+  if (!gradeScale || gradeScale.length === 0) {
+    return 'Incomplete';
+  }
+  const grade = gradeScale.find(g => score >= g.minScore && score <= g.maxScore);
+  return grade?.label || 'Incomplete';
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -16,23 +37,14 @@ Deno.serve(async (req) => {
       isArchived: false
     });
 
-    // Get grading system for letter grade mapping
-    const gradingSystems = await base44.asServiceRole.entities.GradingSystem.filter({ schoolId });
+    // Get grading system for letter grade mapping (use the school's default grading system)
+    const gradingSystems = await base44.asServiceRole.entities.GradingSystem.filter({ 
+      schoolId,
+      isDefault: true 
+    });
     const gradingSystem = gradingSystems?.[0];
 
     const gradeScale = gradingSystem?.grades || [];
-
-    // Helper function to get letter grade
-    const getLetterGrade = (score) => {
-      const grade = gradeScale.find(g => score >= g.minScore && score <= g.maxScore);
-      return grade?.letter || 'F';
-    };
-
-    // Helper function to get label
-    const getLabel = (score) => {
-      const grade = gradeScale.find(g => score >= g.minScore && score <= g.maxScore);
-      return grade?.label || 'Incomplete';
-    };
 
     // Get all subjects for the school
     const subjects = await base44.asServiceRole.entities.Subject.filter({ schoolId });
@@ -53,40 +65,40 @@ Deno.serve(async (req) => {
         continue; // No grades for this term
       }
 
-      // Build subject breakdown
-      const subjectGrades = termGrades.map(tg => {
-        const subject = subjects.find(s => s.id === tg.subjectId);
-        const weightedAverage = tg.weightedAverage || 0;
-        return {
-          subjectId: tg.subjectId,
-          subjectName: subject?.name || 'Unknown Subject',
-          weightedAverage,
-          letterGrade: getLetterGrade(weightedAverage),
-          label: getLabel(weightedAverage)
-        };
-      });
+      // Build subject breakdown using the custom grading rubric
+       const subjectGrades = termGrades.map(tg => {
+         const subject = subjects.find(s => s.id === tg.subjectId);
+         const weightedAverage = tg.weightedAverage || 0;
+         return {
+           subjectId: tg.subjectId,
+           subjectName: subject?.name || 'Unknown Subject',
+           weightedAverage,
+           letterGrade: getLetterGradeFromScale(weightedAverage, gradeScale),
+           label: getLabelFromScale(weightedAverage, gradeScale)
+         };
+       });
 
       // Calculate overall average
-      const overallAverage = Math.round(
-        subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length
-      );
+       const overallAverage = Math.round(
+         subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length
+       );
 
-      // Create report card
-      const reportCard = {
-        schoolId,
-        schoolName: student.schoolName,
-        studentId: student.id,
-        studentName: student.fullName,
-        studentEmail: student.email,
-        classId: student.classId,
-        className: student.className,
-        period: term,
-        generatedDate: new Date().toISOString().split('T')[0],
-        subjectGrades,
-        overallAverage,
-        overallLetterGrade: getLetterGrade(overallAverage),
-        status: 'generated'
-      };
+       // Create report card with custom grading rubric applied
+       const reportCard = {
+         schoolId,
+         schoolName: student.schoolName,
+         studentId: student.id,
+         studentName: student.fullName,
+         studentEmail: student.email,
+         classId: student.classId,
+         className: student.className,
+         period: term,
+         generatedDate: new Date().toISOString().split('T')[0],
+         subjectGrades,
+         overallAverage,
+         overallLetterGrade: getLetterGradeFromScale(overallAverage, gradeScale),
+         status: 'generated'
+       };
 
       reportCardsToCreate.push(reportCard);
     }

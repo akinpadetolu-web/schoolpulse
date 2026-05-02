@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReportCardViewer from '@/components/school/ReportCardViewer';
+import { getLetterGrade } from '@/lib/gradeMapper';
 
 export default function AdminReportCards() {
   const { schoolUser: user } = useSchoolAuth();
@@ -63,13 +64,7 @@ export default function AdminReportCards() {
     setLoading(false);
   }
 
-  function getLetterGrade(percentage) {
-    if (percentage >= 90) return 'A';
-    if (percentage >= 80) return 'B';
-    if (percentage >= 70) return 'C';
-    if (percentage >= 60) return 'D';
-    return 'F';
-  }
+
 
   async function handleGenerate(e) {
     e.preventDefault();
@@ -127,7 +122,7 @@ export default function AdminReportCards() {
             subjectId,
             subjectName: subject?.name || 'Unknown',
             weightedAverage: avg,
-            letterGrade: getLetterGrade(avg),
+            letterGrade: getLetterGrade(avg, user?.schoolId),
           };
         });
 
@@ -156,7 +151,7 @@ export default function AdminReportCards() {
           generatedDate: new Date().toISOString().split('T')[0],
           subjectGrades,
           overallAverage,
-          overallLetterGrade: getLetterGrade(overallAverage),
+          overallLetterGrade: getLetterGrade(overallAverage, user?.schoolId),
           attendanceRate,
           lessonCount: studentGrades.length,
           assignmentSubmissionRate: 85,
