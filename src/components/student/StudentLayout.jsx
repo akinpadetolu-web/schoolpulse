@@ -27,14 +27,14 @@ export default function StudentLayout() {
   if (!user || user.role !== "student") return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
+    <div className="h-screen bg-background flex flex-col md:flex-row">
       <div className="hidden md:block">
         <StudentSidebar isOpen={true} onClose={() => {}} />
       </div>
       <div className="md:hidden">
         <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </div>
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
