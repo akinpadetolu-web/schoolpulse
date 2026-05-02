@@ -16,30 +16,33 @@ export function comparePassword(inputPassword, storedHash) {
   } catch { return false; }
 }
 
-// Async password comparison supporting BOTH old and new methods
+// Async password comparison supporting BOTH old SP2024_ salt system and future bcrypt
 // Returns { isValid: boolean, needsUpgrade: boolean }
+// Migration path: Old passwords validate first, marking needsUpgrade=true for future migration
 export async function comparePasswordAsync(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) return { isValid: false, needsUpgrade: false };
   
+  // PRIORITY 1: Check against old SP2024_ salt system (existing user database)
   try {
-    // First try the old SP2024_ method (for existing passwords)
     const oldHashMethod = hashPassword(inputPassword);
     if (oldHashMethod === storedHash) {
+      // Password is valid but uses OLD salt system - mark for migration to bcrypt
       return { isValid: true, needsUpgrade: true };
     }
   } catch (e) {
-    console.warn('Old hash check failed:', e);
+    console.warn('Old salt hash verification failed:', e);
   }
   
-  // If old method fails, try other fallback
+  // PRIORITY 2: Fallback for variant encoding of old salt
   try {
     if (btoa(SALT + inputPassword) === storedHash) {
       return { isValid: true, needsUpgrade: true };
     }
   } catch (e) {
-    console.warn('Fallback hash check failed:', e);
+    console.warn('Old salt fallback verification failed:', e);
   }
   
+  // No match on any method - password is invalid
   return { isValid: false, needsUpgrade: false };
 }
 
