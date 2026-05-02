@@ -21,7 +21,8 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
   const [content, setContent] = useState(note?.content || '');
   const [saveStatus, setSaveStatus] = useState('idle');
   const autoSaveTimer = useRef(null);
-  const isNewNote = !note?.id;
+  // Track the created note id for new notes after first save
+  const noteIdRef = useRef(note?.id || null);
 
   const triggerAutoSave = useCallback((newTitle, newContent) => {
     if (!newTitle.trim()) return;
@@ -29,28 +30,26 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
     setSaveStatus('idle');
     autoSaveTimer.current = setTimeout(async () => {
       setSaveStatus('saving');
-      await onAutoSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
+      if (noteIdRef.current) {
+        // Existing note — update in place
+        await onAutoSave({ id: noteIdRef.current, title: newTitle.trim(), content: newContent });
+      } else {
+        // New note — create it for the first time, then keep updating
+        const created = await onSave({ title: newTitle.trim(), content: newContent, mode: 'text' });
+        if (created?.id) noteIdRef.current = created.id;
+      }
       setSaveStatus('saved');
     }, 1500);
-  }, [onAutoSave]);
+  }, [onSave, onAutoSave]);
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
-    if (!isNewNote) triggerAutoSave(e.target.value, content);
+    triggerAutoSave(e.target.value, content);
   };
 
   const handleContentChange = (val) => {
     setContent(val);
-    if (!isNewNote) triggerAutoSave(title, val);
-  };
-
-  // Save new notes on close via the explicit Save button
-  const handleSaveNew = async () => {
-    if (!title.trim()) return;
-    setSaveStatus('saving');
-    await onSave({ title: title.trim(), content, mode: 'text' });
-    setSaveStatus('saved');
-    clearTimeout(autoSaveTimer.current);
+    triggerAutoSave(title, val);
   };
 
   useEffect(() => () => clearTimeout(autoSaveTimer.current), []);
@@ -84,12 +83,6 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
       </div>
       <div className="flex justify-end gap-2 mt-8">
         <Button variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" />Close</Button>
-        {isNewNote && (
-          <Button onClick={handleSaveNew} disabled={saveStatus === 'saving' || !title.trim()}>
-            {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
-            Create Note
-          </Button>
-        )}
       </div>
     </div>
   );

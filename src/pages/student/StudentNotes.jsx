@@ -28,7 +28,7 @@ export default function StudentNotes() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Called when user explicitly saves a NEW note
+  // Create a new note (called by NoteEditor on first auto-save of a new note)
   const handleSaveText = async ({ title, content, mode }) => {
     const created = await base44.entities.Note.create({
       schoolId: user.schoolId,
@@ -38,14 +38,14 @@ export default function StudentNotes() {
       content,
       mode: 'text',
     });
-    setEditingNote(created);
     load();
+    return created; // Return so NoteEditor can track the id
   };
 
   // Auto-save for EXISTING notes (debounced from NoteEditor)
-  const handleAutoSaveText = async ({ title, content, mode }) => {
-    if (!editingNote?.id) return;
-    await base44.entities.Note.update(editingNote.id, { title, content });
+  const handleAutoSaveText = async ({ id, title, content }) => {
+    if (!id) return;
+    await base44.entities.Note.update(id, { title, content });
     load();
   };
 

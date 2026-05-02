@@ -1,32 +1,43 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { ReactSketchCanvas } from 'react-sketch-canvas';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Pencil, Eraser, Trash2, Save, Undo, Redo, Cloud, Loader2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2 } from 'lucide-react';
 
 const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#ffffff'];
 
 export default function NoteDrawingCanvas({ onSave, onCancel }) {
   const canvasRef = useRef(null);
+  const autoSaveTimer = useRef(null);
   const [tool, setTool] = useState('pen');
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaved(false);
-    const dataUrl = await canvasRef.current.exportImage('png');
-    await onSave(dataUrl);
-    setSaving(false);
-    setSaved(true);
+  const triggerAutoSave = useCallback(async () => {
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaveStatus('saving');
+      const dataUrl = await canvasRef.current.exportImage('png');
+      await onSave(dataUrl);
+      setSaveStatus('saved');
+    }, 2000);
+  }, [onSave]);
+
+  const handleStrokeEnd = () => {
+    triggerAutoSave();
+  };
+
+  const handleClear = () => {
+    canvasRef.current?.clearCanvas();
+    setSaveStatus('idle');
+    triggerAutoSave();
   };
 
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded-lg">
+      <div className="flex flex-wrap items-center gap-2 p-2 bg-muted rounded-lg shrink-0">
         <Button size="sm" variant={tool === 'pen' ? 'default' : 'outline'} onClick={() => setTool('pen')}>
           <Pencil className="w-4 h-4" />
         </Button>
@@ -55,11 +66,17 @@ export default function NoteDrawingCanvas({ onSave, onCancel }) {
           />
         </div>
 
-        <Button size="sm" variant="ghost" onClick={() => canvasRef.current?.undo()}><Undo className="w-4 h-4" /></Button>
-        <Button size="sm" variant="ghost" onClick={() => canvasRef.current?.redo()}><Redo className="w-4 h-4" /></Button>
-        <Button size="sm" variant="ghost" onClick={() => { canvasRef.current?.clearCanvas(); setSaved(false); }}>
+        <Button size="sm" variant="ghost" onClick={() => { canvasRef.current?.undo(); triggerAutoSave(); }}><Undo className="w-4 h-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={() => { canvasRef.current?.redo(); triggerAutoSave(); }}><Redo className="w-4 h-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={handleClear}>
           <Trash2 className="w-4 h-4 text-destructive" />
         </Button>
+
+        {/* Save status */}
+        <div className="ml-auto">
+          {saveStatus === 'saving' && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span>}
+          {saveStatus === 'saved' && <span className="flex items-center gap-1 text-xs text-emerald-600"><Cloud className="w-3 h-3" /> Saved</span>}
+        </div>
       </div>
 
       {/* Canvas */}
@@ -72,21 +89,13 @@ export default function NoteDrawingCanvas({ onSave, onCancel }) {
           canvasColor="white"
           style={{ width: '100%', height: '100%' }}
           withTimestamp={false}
+          onStroke={handleStrokeEnd}
         />
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3">
-        {saved && (
-          <span className="flex items-center gap-1 text-xs text-emerald-600">
-            <Cloud className="w-3 h-3" /> Saved to your account
-          </span>
-        )}
+      <div className="flex items-center justify-end gap-3 shrink-0">
         <Button variant="outline" onClick={onCancel}>Close</Button>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-          {saving ? 'Saving…' : 'Save Drawing'}
-        </Button>
       </div>
     </div>
   );
