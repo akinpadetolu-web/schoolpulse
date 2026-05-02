@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2 } from 'lucide-react';
 
-const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#ffffff'];
+const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#f59e0b', '#ec4899', '#14b8a6', '#64748b', '#ffffff'];
 
 export default function NoteDrawingCanvas({ onSave, onCancel }) {
   const canvasRef = useRef(null);
@@ -45,7 +45,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel }) {
           <Eraser className="w-4 h-4" />
         </Button>
 
-        <div className="flex items-center gap-1 ml-1">
+        <div className="flex items-center gap-1 ml-1 flex-wrap">
           {COLORS.map(c => (
             <button
               key={c}
@@ -54,6 +54,22 @@ export default function NoteDrawingCanvas({ onSave, onCancel }) {
               style={{ background: c, borderColor: strokeColor === c ? '#6366f1' : '#cbd5e1' }}
             />
           ))}
+          {/* Color picker for full spectrum */}
+          <label
+            title="Custom color"
+            className="w-6 h-6 rounded-full border-2 cursor-pointer overflow-hidden flex items-center justify-center transition-transform hover:scale-110"
+            style={{
+              background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
+              borderColor: !COLORS.includes(strokeColor) ? '#6366f1' : '#cbd5e1'
+            }}
+          >
+            <input
+              type="color"
+              value={strokeColor}
+              onChange={e => { setStrokeColor(e.target.value); setTool('pen'); }}
+              className="opacity-0 absolute w-0 h-0"
+            />
+          </label>
         </div>
 
         <div className="flex items-center gap-2 ml-2 flex-1 min-w-[100px] max-w-[160px]">
