@@ -8,16 +8,12 @@ export function hashPassword(password) {
 
 export function comparePassword(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) return false;
+  // Check new encoding-safe hash
+  if (hashPassword(inputPassword) === storedHash) return true;
+  // Fallback: check old plain btoa hash (for existing stored passwords)
   try {
-    if (hashPassword(inputPassword) === storedHash) return true;
-  } catch (e) {
-    console.warn('Hash check failed:', e);
-  }
-  return false;
-}
-
-export async function comparePasswordAsync(inputPassword, storedHash) {
-  return comparePassword(inputPassword, storedHash) ? { isValid: true, needsUpgrade: false } : { isValid: false, needsUpgrade: false };
+    return btoa(SALT + inputPassword) === storedHash;
+  } catch { return false; }
 }
 
 export function generateTemporaryPassword() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePasswordAsync, setCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
+import { comparePassword, setCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
 import { ensureSuperAdminExists } from '@/lib/superAdminInit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,11 +37,7 @@ export default function BackendLogin() {
       const user = (users || []).find(u => u.email === email && !u.isArchived);
 
       if (!user) { setError("Invalid credentials"); setLoading(false); return; }
-      if (!user.passwordHash) { setError("Account not configured"); setLoading(false); return; }
-      
-      // Use dual password verification for legacy + new hashes
-      const { isValid } = await comparePasswordAsync(password, user.passwordHash);
-      if (!isValid) { setError("Invalid credentials"); setLoading(false); return; }
+      if (!comparePassword(password, user.passwordHash)) { setError("Invalid credentials"); setLoading(false); return; }
 
       setCurrentSuperAdmin(user);
       navigate("/backend");

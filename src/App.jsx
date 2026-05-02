@@ -7,7 +7,7 @@ import { queryClientInstance } from '@/lib/query-client';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 
-import SchoolAuthProvider from '@/lib/SchoolAuthContext';
+import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
 
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
@@ -128,6 +128,8 @@ function PageLoader() {
 const AuthenticatedApp = () => {
   return (
     <>
+      <DarkModeDetector />
+      <PWAInitializer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public */}
@@ -270,8 +272,6 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <SchoolAuthProvider>
         <Router>
-          <DarkModeDetector />
-          <PWAInitializer />
           <AuthenticatedApp />
           <OfflineIndicator />
           <InstallPrompt />

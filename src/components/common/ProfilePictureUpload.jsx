@@ -19,13 +19,13 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
 
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Please upload a JPG, PNG or WEBP image');
+      toast.error('Only JPG, PNG, and WEBP formats are allowed');
       return;
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB');
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be under 10MB');
       return;
     }
 
@@ -51,35 +51,44 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
       // Compress before uploading
       const compressedBlob = await compressImage(blob);
       
-      // Convert blob to base64 and upload
-      const base64String = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedBlob);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-      });
+      // Upload to Base44 - pass blob directly as base64 string
+      const reader = new FileReader();
+      reader.readAsDataURL(compressedBlob);
+      
+      reader.onload = async () => {
+        try {
+          const base64String = reader.result;
+          const uploadResult = await base44.integrations.Core.UploadFile({
+            file: base64String,
+          });
 
-      const uploadResult = await base44.integrations.Core.UploadFile({
-        file: base64String,
-      });
+          if (!uploadResult?.file_url) {
+            throw new Error('Upload failed');
+          }
 
-      if (!uploadResult?.file_url) {
-        throw new Error('No file URL returned from upload');
-      }
+          // Update user profile with picture URL
+          const schoolUser = await base44.entities.SchoolUser.update(user.id, {
+            profilePictureUrl: uploadResult.file_url,
+          });
 
-      // Update user profile with picture URL
-      const updatedUser = await base44.entities.SchoolUser.update(user.id, {
-        profilePictureUrl: uploadResult.file_url,
-      });
+          toast.success('Profile picture updated');
+          setIsOpen(false);
+          setPreview(null);
+          onSuccess?.(schoolUser);
+        } catch (error) {
+          toast.error('Failed to upload picture');
+          console.error(error);
+          setIsLoading(false);
+        }
+      };
 
-      toast.success('Profile picture updated successfully');
-      setIsOpen(false);
-      setPreview(null);
-      onSuccess?.(updatedUser);
+      reader.onerror = () => {
+        toast.error('Failed to read file');
+        setIsLoading(false);
+      };
     } catch (error) {
-      toast.error('Failed to upload image. Please try again.');
-      console.error('Upload error:', error);
-    } finally {
+      toast.error('Failed to upload picture');
+      console.error(error);
       setIsLoading(false);
     }
   };
@@ -140,7 +149,7 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="font-medium">Click to upload or drag and drop</p>
               <p className="text-sm text-muted-foreground">
-                JPG, PNG, or WEBP (max 5MB)
+                JPG, PNG, or WEBP (max 10MB)
               </p>
               <input
                 ref={fileInputRef}

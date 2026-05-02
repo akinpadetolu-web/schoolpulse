@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
-const SchoolAuthContext = createContext();
+const SchoolAuthContext = createContext(null);
 
 const SESSION_KEY = 'schoolpulse_session_v2';
 
@@ -28,9 +28,9 @@ function clearStoredSession() {
   try { sessionStorage.removeItem('schoolpulse_session'); } catch {}
 }
 
-export default function SchoolAuthProvider({ children }) {
-   const [schoolUser, setSchoolUser] = useState(null);
-   const [isLoadingSchoolAuth, setIsLoadingSchoolAuth] = useState(true);
+export function SchoolAuthProvider({ children }) {
+  const [schoolUser, setSchoolUser] = useState(null);
+  const [isLoadingSchoolAuth, setIsLoadingSchoolAuth] = useState(true);
 
   // On mount, restore session from DB using stored session data
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function SchoolAuthProvider({ children }) {
       {children}
     </SchoolAuthContext.Provider>
   );
-  }
+}
 
 export const useSchoolAuth = () => {
   const ctx = useContext(SchoolAuthContext);

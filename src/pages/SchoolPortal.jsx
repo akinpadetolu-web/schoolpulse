@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePasswordAsync } from '@/lib/auth';
+import { comparePassword } from '@/lib/auth';
 import { base44 as base44sdk } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -180,23 +180,17 @@ export default function SchoolPortal() {
       const school = schools.find((s) => s.id === selectedSchool);
       if (!school) {setError("Invalid school selected");setLoading(false);return;}
 
-      // Use backend function for dual password verification (legacy + new)
-      const response = await base44sdk.functions.invoke('schoolUserLogin', {
-        schoolId: school.id,
-        username: username.trim(),
-        password: password,
-        role: role
-      });
+      const users = await base44.entities.SchoolUser.filter({ schoolId: school.id, role: role });
+      if (!users) {setError("Could not reach server. Please check your connection and try again.");setLoading(false);return;}
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      if (!response.data?.success) {
-        const errorMsg = response.data?.error || "Invalid username or password";
-        console.log('Login failed:', errorMsg);
-        setError(errorMsg);
-        setLoading(false);
-        return;
-      }
+      const trimmedUsername = username.trim();
+      const user = (users || []).find((u) =>
+        (u.username?.trim() === trimmedUsername || u.email?.trim() === trimmedUsername) && !u.isArchived
+      );
 
-      const user = response.data.user;
+      if (!user) {setError("Invalid username or password");setLoading(false);return;}
+      if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
       // Save school on successful login
       localStorage.setItem('lastSchoolId', school.id);
@@ -209,9 +203,8 @@ export default function SchoolPortal() {
       if (role === "student") navigate("/student");else
       if (role === "parent") navigate("/parent");
     } catch (err) {
-      console.error('Login error:', err.response?.data?.error || err.message);
-      const actualError = err.response?.data?.error || err.message;
-      setError(actualError || "Sign in failed. Please check your connection and try again.");
+      console.error('Login error:', err);
+      setError("Sign in failed. Please check your connection and try again.");
     }
     setLoading(false);
   }
