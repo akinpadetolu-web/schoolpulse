@@ -8,60 +8,16 @@ export function hashPassword(password) {
 
 export function comparePassword(inputPassword, storedHash) {
   if (!inputPassword || !storedHash) return false;
-  // Check SP2024_ salt method (most common for existing passwords)
-  try {
-    if (btoa(SALT + inputPassword) === storedHash) return true;
-  } catch (e) {
-    console.warn('SP2024_ hash check failed:', e);
-  }
-  // Fallback: check alternative encoding
   try {
     if (hashPassword(inputPassword) === storedHash) return true;
   } catch (e) {
-    console.warn('Alternative hash check failed:', e);
+    console.warn('Hash check failed:', e);
   }
   return false;
 }
 
-// Async password comparison supporting Base64 (original), SP2024_ salt, and bcrypt
-// Returns { isValid: boolean, needsUpgrade: boolean }
-// Migration path: Old passwords validate first, marking needsUpgrade=true for future migration
 export async function comparePasswordAsync(inputPassword, storedHash) {
-  if (!inputPassword || !storedHash) return { isValid: false, needsUpgrade: false };
-  
-  // PRIORITY 1: Check if it's Base64 encoded (original method - no prefix)
-  if (!storedHash.startsWith('$2')) {
-    try {
-      const base64Password = btoa(inputPassword);
-      if (base64Password === storedHash) {
-        return { isValid: true, needsUpgrade: true };
-      }
-    } catch (e) {
-      console.warn('Base64 hash verification failed:', e);
-    }
-  }
-  
-  // PRIORITY 2: Check against old SP2024_ salt system
-  try {
-    const oldHashMethod = hashPassword(inputPassword);
-    if (oldHashMethod === storedHash) {
-      return { isValid: true, needsUpgrade: true };
-    }
-  } catch (e) {
-    console.warn('Old salt hash verification failed:', e);
-  }
-  
-  // PRIORITY 3: Fallback for variant encoding of old salt
-  try {
-    if (btoa(SALT + inputPassword) === storedHash) {
-      return { isValid: true, needsUpgrade: true };
-    }
-  } catch (e) {
-    console.warn('Old salt fallback verification failed:', e);
-  }
-  
-  // No match on any method - password is invalid
-  return { isValid: false, needsUpgrade: false };
+  return comparePassword(inputPassword, storedHash) ? { isValid: true, needsUpgrade: false } : { isValid: false, needsUpgrade: false };
 }
 
 export function generateTemporaryPassword() {

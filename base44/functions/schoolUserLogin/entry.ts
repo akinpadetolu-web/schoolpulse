@@ -1,76 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import bcrypt from 'npm:bcryptjs@2.4.3';
 
-// Password hashing using SP2024_ salt (legacy system)
+// Password hashing using SP2024_ salt
 const SALT = "SP2024_";
 
-function hashPasswordLegacy(password) {
+function hashPassword(password) {
   const salted = SALT + password;
   return btoa(unescape(encodeURIComponent(salted)));
 }
 
-// Verify password against bcrypt (new), Base64 (old), and SP2024_ salt (legacy)
-async function verifyPassword(inputPassword, storedHash) {
-  if (!inputPassword || !storedHash) {
-    console.log('Password verification: missing input or hash');
-    return { isValid: false, needsUpgrade: false };
-  }
-  
-  let isValid = false;
-  
-  // Detect hash type: Base64 doesn't start with $2, bcrypt does
-  const isBase64Hash = !storedHash.startsWith('$2');
-  
-  console.log('Hash type detected:', isBase64Hash ? 'Base64' : 'bcrypt');
-  
-  // PRIORITY 1: Check if it's a Base64 encoded hash (original method)
-  if (isBase64Hash) {
-    try {
-      const base64Password = btoa(inputPassword);
-      isValid = base64Password === storedHash;
-      console.log('Base64 hash comparison result:', isValid);
-      if (isValid) {
-        return { isValid: true, needsUpgrade: true };
-      }
-    } catch (e) {
-      console.log('Base64 verification error:', e.message);
-    }
-  }
-  
-  // PRIORITY 2: Try new bcrypt method
+function verifyPassword(inputPassword, storedHash) {
+  if (!inputPassword || !storedHash) return false;
   try {
-    isValid = await bcrypt.compare(inputPassword, storedHash);
-    console.log('Bcrypt verify result:', isValid);
-    if (isValid) {
-      return { isValid: true, needsUpgrade: false };
-    }
+    return hashPassword(inputPassword) === storedHash;
   } catch (e) {
-    console.log('Bcrypt verify error:', e.message);
+    console.warn('Password verification error:', e.message);
+    return false;
   }
-  
-  // PRIORITY 3: Try SP2024_ legacy salt (most existing passwords)
-  try {
-    const legacyHash = hashPasswordLegacy(inputPassword);
-    if (legacyHash === storedHash) {
-      console.log('Legacy SP2024_ hash matched, marking for upgrade');
-      return { isValid: true, needsUpgrade: true };
-    }
-  } catch (e) {
-    console.log('Legacy hash verification error:', e.message);
-  }
-  
-  // PRIORITY 4: Fallback for btoa variant encoding
-  try {
-    if (btoa(SALT + inputPassword) === storedHash) {
-      console.log('Fallback btoa hash matched, marking for upgrade');
-      return { isValid: true, needsUpgrade: true };
-    }
-  } catch (e) {
-    console.log('Fallback hash verification error:', e.message);
-  }
-  
-  console.log('All password verification methods failed');
-  return { isValid: false, needsUpgrade: false };
 }
 
 Deno.serve(async (req) => {
@@ -117,29 +62,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Account not properly configured' }, { status: 400 });
     }
     
-    // Verify password with dual support (legacy + new)
-    const { isValid, needsUpgrade } = await verifyPassword(password, user.passwordHash);
+    // Verify password using SP2024_ salt
+    const isValid = verifyPassword(password, user.passwordHash);
     
     console.log('Password verification result:', isValid);
-    console.log('Needs hash upgrade:', needsUpgrade);
     
     if (!isValid) {
       console.log('ERROR: Password verification failed');
       return Response.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-    
-    // If password is valid but uses old hash format, upgrade to bcrypt
-    if (needsUpgrade) {
-      try {
-        const saltRounds = parseInt(Deno.env.get('BCRYPT_SALT_ROUNDS') || '12');
-        const newHash = await bcrypt.hash(password, saltRounds);
-        await base44.asServiceRole.entities.SchoolUser.update(user.id, {
-          passwordHash: newHash
-        });
-        console.log('Hash upgraded to bcrypt');
-      } catch (upgradeError) {
-        console.warn('Hash upgrade failed (non-critical):', upgradeError.message);
-      }
     }
     
     // Return user data (excluding sensitive info)
@@ -149,8 +79,7 @@ Deno.serve(async (req) => {
     console.log('Login successful for user:', user.id);
     return Response.json({ 
       success: true, 
-      user: safeUser,
-      needsUpgrade 
+      user: safeUser
     });
     
   } catch (error) {
