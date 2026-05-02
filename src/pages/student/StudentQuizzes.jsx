@@ -49,9 +49,14 @@ export default function StudentQuizzes() {
   const [timeLeft, setTimeLeft] = useState(null);
   const timerRef = useRef(null);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (user?.id) {
+      loadData();
+    }
+  }, [user?.id]);
 
   async function loadData() {
+    if (!user?.id) return;
     const [q, s] = await Promise.all([
       base44.entities.Quiz.filter({ schoolId: user.schoolId, classId: user.classId, isArchived: false }),
       base44.entities.QuizSubmission.filter({ schoolId: user.schoolId, studentId: user.id }),
@@ -135,7 +140,7 @@ export default function StudentQuizzes() {
 
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  if (loading || !user?.id) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
     <div>
