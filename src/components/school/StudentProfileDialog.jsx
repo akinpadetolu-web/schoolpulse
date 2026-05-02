@@ -26,6 +26,7 @@ function getSubsetsForClass(cls) {
 export default function StudentProfileDialog({ open, onOpenChange, student, classes, schoolId, onSaved }) {
   const [fullName, setFullName] = useState(student?.fullName || "");
   const [email, setEmail] = useState(student?.email || "");
+  const [phone, setPhone] = useState(student?.phone || "");
   const [classId, setClassId] = useState(student?.classId || "");
   const [subsetName, setSubsetName] = useState(student?.subsetName || "");
   const [subjects, setSubjects] = useState([]);
@@ -41,6 +42,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
   useEffect(() => {
     setFullName(student?.fullName || "");
     setEmail(student?.email || "");
+    setPhone(student?.phone || "");
     setClassId(student?.classId || "");
     setSubsetName(student?.subsetName || "");
     setAssignedSubjects(student?.assignedSubjects || []);
@@ -90,6 +92,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     await base44.entities.SchoolUser.update(student.id, {
       fullName: fullName.trim(),
       email: email.trim(),
+      phone: phone.trim(),
       classId: classId || "",
       className: cls?.className || "",
       baseLevel: cls?.baseLevel || "",
@@ -130,6 +133,12 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
                 <Label>Email</Label>
                 <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="student@example.com" />
               </div>
+            </div>
+            
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
             </div>
 
             {/* Class */}

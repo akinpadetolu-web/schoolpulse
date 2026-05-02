@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, BookOpen, School } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TeacherProfileDialog({ open, onOpenChange, teacher, schoolId, onSaved }) {
+  const [fullName, setFullName] = useState(teacher?.fullName || "");
+  const [email, setEmail] = useState(teacher?.email || "");
+  const [phone, setPhone] = useState(teacher?.phone || "");
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [assignments, setAssignments] = useState(teacher?.teachingAssignments || []);
@@ -16,6 +21,9 @@ export default function TeacherProfileDialog({ open, onOpenChange, teacher, scho
 
   useEffect(() => {
     if (!open) return;
+    setFullName(teacher?.fullName || "");
+    setEmail(teacher?.email || "");
+    setPhone(teacher?.phone || "");
     setAssignments(teacher?.teachingAssignments || []);
     Promise.all([
       base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
@@ -40,16 +48,20 @@ export default function TeacherProfileDialog({ open, onOpenChange, teacher, scho
   }
 
   async function handleSave() {
+    if (!fullName.trim()) { toast.error("Name is required"); return; }
     setSaving(true);
     // Derive flat arrays for assignedClasses and assignedSubjects from teachingAssignments
     const assignedClasses = [...new Set(assignments.map(a => a.classId))];
     const assignedSubjects = [...new Set(assignments.map(a => a.subjectId))];
     await base44.entities.SchoolUser.update(teacher.id, {
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
       teachingAssignments: assignments,
       assignedClasses,
       assignedSubjects,
     });
-    toast.success("Teacher assignments updated");
+    toast.success("Teacher profile updated");
     setSaving(false);
     if (onSaved) onSaved();
     onOpenChange(false);
@@ -67,15 +79,46 @@ export default function TeacherProfileDialog({ open, onOpenChange, teacher, scho
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <School className="w-5 h-5 text-primary" />
-            {teacher?.fullName}
+            {fullName || teacher?.fullName}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">{teacher?.email || teacher?.username}</p>
+          <p className="text-sm text-muted-foreground">{teacher?.username}</p>
         </DialogHeader>
 
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
-          <div className="space-y-5 pt-1">
+          <Tabs defaultValue="profile">
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="profile" className="flex-1">Profile Info</TabsTrigger>
+              <TabsTrigger value="assignments" className="flex-1">Assignments</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Full Name <span className="text-destructive">*</span></Label>
+                  <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Teacher full name" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="teacher@example.com" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Phone Number</Label>
+                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button className="flex-1" onClick={handleSave} disabled={saving}>
+                  {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  Save Profile
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="assignments" className="space-y-5">
+              <div className="space-y-5 pt-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
               <BookOpen className="w-4 h-4" />
               Click a subject under a class to assign/unassign the teacher to that subject for that class.
@@ -126,14 +169,16 @@ export default function TeacherProfileDialog({ open, onOpenChange, teacher, scho
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Save Assignments
-              </Button>
-            </div>
-          </div>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button className="flex-1" onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Save Assignments
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>
