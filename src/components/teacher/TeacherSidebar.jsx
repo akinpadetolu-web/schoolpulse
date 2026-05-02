@@ -12,7 +12,6 @@ const teacherNavGroups = [
     label: 'MAIN',
     items: [
       { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
-      { label: "My Classes", path: "/teacher", icon: BookOpen },
       { label: "My Students", path: "/teacher/students", icon: Users },
     ]
   },
