@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
-import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import TermProgressTab from '@/components/student/TermProgressTab';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
 import {
@@ -262,9 +261,7 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
-            <div className="mt-4 md:mt-8 pt-4 md:pt-6 border-t hidden md:block">
-               <DeleteAccountDialog />
-             </div>
+
           </TabsContent>
 
           <TabsContent value="progress">

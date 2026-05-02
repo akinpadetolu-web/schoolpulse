@@ -8,7 +8,6 @@ import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import TeacherClockInWidget from '@/components/teacher/TeacherClockInWidget';
 import TeacherLeaveRequestWidget from '@/components/teacher/TeacherLeaveRequestWidget';
-import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 
 export default function TeacherDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -60,9 +59,6 @@ export default function TeacherDashboard() {
         <TeacherLeaveRequestWidget />
       </div>
       <DashboardCalendar />
-      <div className="mt-8 pt-6 border-t">
-        <DeleteAccountDialog />
-      </div>
     </div>
     </PullToRefreshWrapper>
   );

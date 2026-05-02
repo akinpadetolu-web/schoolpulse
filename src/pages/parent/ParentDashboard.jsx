@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -424,10 +423,6 @@ export default function ParentDashboard() {
             })}
           </div>
         )}
-      </div>
-
-      <div className="mt-4 pt-6 border-t">
-        <DeleteAccountDialog />
       </div>
 
       {/* Add Child Dialog */}
