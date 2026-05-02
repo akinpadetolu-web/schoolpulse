@@ -10,24 +10,10 @@ import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, C
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import TermProgressTab from '@/components/student/TermProgressTab';
+import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-
-function getLetterGrade(pct) {
-  if (pct >= 90) return { label: 'A', color: 'text-emerald-600' };
-  if (pct >= 80) return { label: 'B', color: 'text-blue-600' };
-  if (pct >= 70) return { label: 'C', color: 'text-amber-600' };
-  if (pct >= 60) return { label: 'D', color: 'text-orange-600' };
-  return { label: 'F', color: 'text-red-600' };
-}
-
-function getBarColor(pct) {
-  if (pct >= 80) return '#22c55e';
-  if (pct >= 60) return '#3b82f6';
-  if (pct >= 40) return '#f59e0b';
-  return '#ef4444';
-}
 
 export default function StudentDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -36,6 +22,7 @@ export default function StudentDashboard() {
   const [submissions, setSubmissions] = useState([]);
   const [timetableCount, setTimetableCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [letterGrade, setLetterGrade] = useState(null);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -64,6 +51,12 @@ export default function StudentDashboard() {
     return Math.round(total / valid.length);
   }, [grades]);
 
+  useEffect(() => {
+    if (overallAvg != null && user?.schoolId) {
+      getGradeLabel(overallAvg, user.schoolId).then(setLetterGrade);
+    }
+  }, [overallAvg, user?.schoolId]);
+
   const subjectData = useMemo(() => {
     const map = {};
     grades.filter(g => g.subjectName && g.score != null && g.maxScore > 0).forEach(g => {
@@ -88,8 +81,6 @@ export default function StudentDashboard() {
     .filter(a => !submittedIds.has(a.id))
     .sort((a, b) => (a.dueDate || '9999') < (b.dueDate || '9999') ? -1 : 1)
     .slice(0, 5);
-
-  const letterGrade = overallAvg != null ? getLetterGrade(overallAvg) : null;
 
   if (loading) return (
     <div className="flex justify-center py-20">

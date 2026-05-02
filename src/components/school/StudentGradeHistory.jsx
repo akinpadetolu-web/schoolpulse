@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, TrendingUp, Award, BookOpen } from 'lucide-react';
+import { getGradeLabel } from '@/lib/gradeMapper';
 
 const TERMS = ["First Term", "Second Term", "Third Term"];
 
@@ -19,24 +20,27 @@ function pct(score, max) {
   return Math.round((score / max) * 100);
 }
 
-function gradeLabel(p) {
-  if (p >= 70) return { label: "A", color: "text-emerald-600", bg: "bg-emerald-50" };
-  if (p >= 60) return { label: "B", color: "text-blue-600", bg: "bg-blue-50" };
-  if (p >= 50) return { label: "C", color: "text-amber-600", bg: "bg-amber-50" };
-  if (p >= 40) return { label: "D", color: "text-orange-600", bg: "bg-orange-50" };
-  return { label: "F", color: "text-red-600", bg: "bg-red-50" };
-}
-
 export default function StudentGradeHistory({ studentId, schoolId }) {
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTerm, setFilterTerm] = useState("all");
   const [filterSubject, setFilterSubject] = useState("all");
+  const [gradeLabels, setGradeLabels] = useState({});
 
   useEffect(() => {
     if (!studentId || !schoolId) { setLoading(false); return; }
-    base44.entities.Grade.filter({ schoolId, studentId }).then(g => {
+    base44.entities.Grade.filter({ schoolId, studentId }).then(async (g) => {
       setGrades(g || []);
+      
+      // Pre-compute grade labels using school rubric
+      const labels = {};
+      for (const grade of (g || [])) {
+        const p = pct(grade.score, grade.maxScore);
+        if (!labels[p]) {
+          labels[p] = await getGradeLabel(p, schoolId);
+        }
+      }
+      setGradeLabels(labels);
       setLoading(false);
     });
   }, [studentId, schoolId]);
@@ -79,7 +83,7 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
     })
     .filter(s => s.grades.length > 0);
 
-  const { label: ovLabel, color: ovColor } = overall !== null ? gradeLabel(overall) : { label: "—", color: "text-muted-foreground" };
+  const { label: ovLabel, color: ovColor } = gradeLabels[overall] || { label: "—", color: "text-muted-foreground" };
 
   return (
     <div className="space-y-4">
@@ -126,7 +130,7 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
       {/* Subject breakdown */}
       <div className="space-y-4">
         {bySubject.map(s => {
-          const { label: sLabel, color: sColor, bg: sBg } = s.avg !== null ? gradeLabel(s.avg) : { label: "—", color: "text-muted-foreground", bg: "" };
+          const { label: sLabel, color: sColor, bg: sBg } = gradeLabels[s.avg] || { label: "—", color: "text-muted-foreground", bg: "" };
           return (
             <div key={s.id} className="border rounded-xl overflow-hidden">
               {/* Subject header */}
@@ -146,9 +150,9 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
               {/* Grade rows */}
               <div className="divide-y">
                 {s.grades.map(g => {
-                  const p = pct(g.score, g.maxScore);
-                  const { label, color } = gradeLabel(p);
-                  return (
+                   const p = pct(g.score, g.maxScore);
+                   const { label, color } = gradeLabels[p] || { label: "—", color: "text-muted-foreground" };
+                   return (
                     <div key={g.id} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/20 transition-colors">
                       <span className="text-xs text-muted-foreground w-24 flex-shrink-0">{g.term || "—"}</span>
                       <Badge className={`${TYPE_COLORS[g.assessmentType] || ""} border-0 capitalize text-[11px] flex-shrink-0`}>
