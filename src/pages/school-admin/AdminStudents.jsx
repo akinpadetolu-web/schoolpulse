@@ -13,6 +13,7 @@ import StudentGridCard from '@/components/school/StudentGridCard';
 
 import { toast } from 'sonner';
 
+// Admin Students Page
 export default function AdminStudents() {
   const { schoolUser: user } = useSchoolAuth();
   const [students, setStudents] = useState([]);
