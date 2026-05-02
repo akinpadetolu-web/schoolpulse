@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,10 +27,13 @@ export default function AdminAcademicTerms() {
   });
 
   useEffect(() => {
-    loadTerms();
-  }, []);
+    if (user?.schoolId) {
+      loadTerms();
+    }
+  }, [user?.schoolId]);
 
   async function loadTerms() {
+    setLoading(true);
     const data = await getTerms(user?.schoolId);
     setTerms(data);
     setLoading(false);
@@ -62,7 +65,6 @@ export default function AdminAcademicTerms() {
       return toast.error('Start date must be before end date');
     }
 
-    // Check for overlaps
     const hasOverlap = await checkTermOverlap(
       user?.schoolId,
       form.startDate,
@@ -89,7 +91,7 @@ export default function AdminAcademicTerms() {
         toast.success('Term created');
       }
       setShowDialog(false);
-      loadTerms();
+      await loadTerms();
     } catch (err) {
       toast.error('Failed to save term');
     }
@@ -105,7 +107,6 @@ export default function AdminAcademicTerms() {
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
-  // Group by academic year
   const grouped = {};
   terms.forEach(t => {
     if (!grouped[t.academicYear]) grouped[t.academicYear] = [];
@@ -156,18 +157,10 @@ export default function AdminAcademicTerms() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditDialog(term)}
-                            >
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(term)}>
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDelete(term.id)}
-                            >
+                            <Button size="sm" variant="outline" onClick={() => handleDelete(term.id)}>
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
