@@ -41,7 +41,7 @@ export default function ReportCardViewer({ reportCard, template }) {
 
       {/* Student Info */}
       <div style={{ backgroundColor: secondaryColor }} className="px-8 py-4 border-b">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
           <div>
             <p className="text-gray-500 font-medium uppercase text-xs">Student</p>
             <p className="font-semibold">{reportCard.studentName}</p>
@@ -49,6 +49,10 @@ export default function ReportCardViewer({ reportCard, template }) {
           <div>
             <p className="text-gray-500 font-medium uppercase text-xs">Class</p>
             <p className="font-semibold">{reportCard.className}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 font-medium uppercase text-xs">Position</p>
+            <p className="font-semibold">{reportCard.classPosition ? `#${reportCard.classPosition}` : '-'}</p>
           </div>
           <div>
             <p className="text-gray-500 font-medium uppercase text-xs">Period</p>

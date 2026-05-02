@@ -82,6 +82,28 @@ export default function AdminReportCards() {
     const selectedStudentObjects = students.filter(s => form.selectedStudents.includes(s.id));
 
     try {
+      // Calculate class position for all students in the class
+      const classStudentsData = selectedStudentObjects.map(student => {
+        const studentGrades = grades.filter(g => {
+          const gradeDate = new Date(g.created_date);
+          return g.studentId === student.id && gradeDate >= new Date(selectedTerm.startDate) && gradeDate <= new Date(selectedTerm.endDate);
+        });
+        const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
+        const subjectGrades = subjectIds.map(subjectId => {
+          const subjectGradeList = studentGrades.filter(g => g.subjectId === subjectId);
+          return subjectGradeList.length > 0
+            ? Math.round(subjectGradeList.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / subjectGradeList.length)
+            : 0;
+        });
+        const overallAverage = subjectGrades.length > 0
+          ? Math.round(subjectGrades.reduce((sum, sg) => sum + sg, 0) / subjectGrades.length)
+          : 0;
+        return { id: student.id, overallAverage };
+      });
+
+      // Sort by overall average to determine positions
+      const sorted = [...classStudentsData].sort((a, b) => b.overallAverage - a.overallAverage);
+
       for (const student of selectedStudentObjects) {
         const termStart = new Date(selectedTerm.startDate);
         const termEnd = new Date(selectedTerm.endDate);
@@ -116,6 +138,8 @@ export default function AdminReportCards() {
           ? Math.round((studentAttendance.filter(a => a.status === 'present').length / studentAttendance.length) * 100)
           : 0;
 
+        const classPosition = sorted.findIndex(s => s.id === student.id) + 1;
+
         const reportCard = {
           schoolId: user.schoolId,
           schoolName: user.schoolName,
@@ -124,6 +148,8 @@ export default function AdminReportCards() {
           studentEmail: student.email,
           classId: form.selectedClass,
           className: classes.find(c => c.id === form.selectedClass)?.className || '',
+          classPosition,
+          totalStudentsInClass: selectedStudentObjects.length,
           templateId: form.templateId,
           templateName: template.name,
           period: selectedTerm.name,
@@ -241,6 +267,7 @@ export default function AdminReportCards() {
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge variant="outline">{rc.overallLetterGrade || '-'}</Badge>
                       <Badge variant="outline">{rc.overallAverage ?? '-'}%</Badge>
+                      {rc.classPosition && <Badge variant="outline" className="font-semibold">#{rc.classPosition}</Badge>}
                       <Badge variant={rc.status === 'sent' ? 'default' : rc.status === 'approved' ? 'secondary' : 'outline'}>
                         {rc.status}
                       </Badge>
