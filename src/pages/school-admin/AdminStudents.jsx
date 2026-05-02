@@ -5,7 +5,8 @@ import { hashPassword, generateTemporaryPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Search, Loader2, ChevronDown, ChevronRight, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
 import StudentProfileDialog from '@/components/school/StudentProfileDialog';
@@ -94,7 +95,12 @@ export default function AdminStudents() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Students</h1>
-        <Button onClick={() => setShowCreate(true)}><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
+        <div className="flex gap-2">
+          <Link to="/school-admin/bulk-import-students">
+            <Button variant="outline"><Upload className="w-4 h-4 mr-2" /> Bulk Import</Button>
+          </Link>
+          <Button onClick={() => setShowCreate(true)}><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
+        </div>
       </div>
 
       {/* Search and Filter */}

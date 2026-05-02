@@ -41,6 +41,7 @@ const BackendSettings = lazy(() => import('./pages/backend/BackendSettings'));
 const AdminDashboard = lazy(() => import('./pages/school-admin/AdminDashboard'));
 const AdminTeachers = lazy(() => import('./pages/school-admin/AdminTeachers'));
 const AdminStudents = lazy(() => import('./pages/school-admin/AdminStudents'));
+const AdminBulkStudentImport = lazy(() => import('./pages/school-admin/AdminBulkStudentImport'));
 const AdminClasses = lazy(() => import('./pages/school-admin/AdminClasses'));
 const AdminCategories = lazy(() => import('./pages/school-admin/AdminCategories'));
 const AdminSubjects = lazy(() => import('./pages/school-admin/AdminSubjects'));
@@ -154,6 +155,7 @@ const AuthenticatedApp = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="teachers" element={<AdminTeachers />} />
           <Route path="students" element={<AdminStudents />} />
+          <Route path="bulk-import-students" element={<AdminBulkStudentImport />} />
           <Route path="classes" element={<AdminClasses />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="subjects" element={<AdminSubjects />} />
