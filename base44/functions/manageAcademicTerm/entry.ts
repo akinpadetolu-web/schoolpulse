@@ -4,9 +4,13 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { action, termId, payload } = body;
+    const { action, termId, payload, schoolId } = body;
 
-    // action: "create" | "update" | "delete"
+    if (action === 'list') {
+      const terms = await base44.asServiceRole.entities.AcademicTerm.filter({ schoolId });
+      return Response.json({ terms: terms || [] });
+    }
+
     if (action === 'create') {
       const term = await base44.asServiceRole.entities.AcademicTerm.create(payload);
       return Response.json({ term });
