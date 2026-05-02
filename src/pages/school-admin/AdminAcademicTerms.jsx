@@ -82,10 +82,10 @@ export default function AdminAcademicTerms() {
 
     try {
       if (editing) {
-        await base44.entities.AcademicTerm.update(editing.id, payload);
+        await base44.functions.invoke('manageAcademicTerm', { action: 'update', termId: editing.id, payload });
         toast.success('Term updated');
       } else {
-        await base44.entities.AcademicTerm.create(payload);
+        await base44.functions.invoke('manageAcademicTerm', { action: 'create', payload });
         toast.success('Term created');
       }
       setShowDialog(false);
@@ -98,7 +98,7 @@ export default function AdminAcademicTerms() {
 
   async function handleDelete(id) {
     if (!confirm('Delete this term?')) return;
-    await base44.entities.AcademicTerm.delete(id);
+    await base44.functions.invoke('manageAcademicTerm', { action: 'delete', termId: id });
     toast.success('Term deleted');
     loadTerms();
   }
