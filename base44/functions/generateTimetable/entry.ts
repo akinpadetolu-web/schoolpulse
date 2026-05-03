@@ -12,10 +12,15 @@ const TIME_SLOTS = [
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+function getSlotsForDay(day) {
+  if (day === 'Friday') return TIME_SLOTS.slice(0, 6);
+  return TIME_SLOTS;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { schoolId, targetClassIds, prompt } = await req.json();
+    const { schoolId, targetClassIds, startTime, periodDuration, periodsPerDay, prompt } = await req.json();
 
     if (!schoolId || !targetClassIds || targetClassIds.length === 0) {
       return Response.json({ error: 'Missing required fields: schoolId, targetClassIds' }, { status: 400 });
@@ -35,141 +40,200 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No valid classes found for the given IDs' }, { status: 400 });
     }
 
-    // Build context data for LLM
-    const classesData = targetClasses.map(c => ({
-      id: c.id,
-      name: c.className,
-      baseLevel: c.baseLevel,
-      educationLevel: c.educationLevel,
-    }));
-
-    const subjectsData = (allSubjects || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      applicableClasses: s.applicableClasses || [],
-    }));
-
-    const teachersData = (allTeachers || []).map(t => ({
-      id: t.id,
-      name: t.fullName,
-      teachingAssignments: t.teachingAssignments || [],
-      assignedSubjects: t.assignedSubjects || [],
-    }));
-
-    const existingData = (existingEntries || []).map(e => ({
-      classId: e.classId,
-      className: e.className,
-      day: e.dayOfWeek,
-      startTime: e.startTime,
-      endTime: e.endTime,
-      subject: e.subjectName,
-      teacher: e.teacherName,
-    }));
-
-    const timeSlotsList = TIME_SLOTS.map(t => `${t.start}–${t.end}`).join(', ');
-
-    const aiPrompt = `You are an expert school timetable scheduler. Generate a weekly timetable for a school.
-
-CONSTRAINTS (MUST BE FOLLOWED):
-- Days: Monday, Tuesday, Wednesday, Thursday, Friday
-- Time slots: ${timeSlotsList}
-- Friday has no 14:30–15:15 slot (ends at 14:30)
-- No class can have two different subjects at the same time
-- No teacher can teach two classes at the same time
-- Spread subjects across different days when possible
-- Priority subjects (Math, English, Science): 4–5 periods/week
-- Other subjects: 2–3 periods/week
-
-CLASSES TO SCHEDULE:
-${JSON.stringify(classesData, null, 2)}
-
-AVAILABLE SUBJECTS:
-${JSON.stringify(subjectsData, null, 2)}
-
-AVAILABLE TEACHERS:
-${JSON.stringify(teachersData, null, 2)}
-
-EXISTING TIMETABLE ENTRIES (DO NOT MODIFY):
-${JSON.stringify(existingData, null, 2)}
-
-USER PREFERENCES:
-${prompt || 'None specified'}
-
-OUTPUT FORMAT - Return ONLY a valid JSON object with this structure:
-{
-  "slots": [
-    {
-      "classId": "class_id",
-      "className": "class_name",
-      "subjectId": "subject_id",
-      "subjectName": "subject_name",
-      "teacherId": "teacher_id",
-      "teacherName": "teacher_name",
-      "dayOfWeek": "Monday|Tuesday|Wednesday|Thursday|Friday",
-      "startTime": "HH:MM",
-      "endTime": "HH:MM"
+    function getSubjectsForClass(classId) {
+      return (allSubjects || []).filter(s => {
+        if (!s.isArchived) {
+          const applicable = s.applicableClasses || [];
+          return applicable.length === 0 || applicable.includes(classId);
+        }
+        return false;
+      });
     }
-  ],
-  "warnings": ["warning message 1", "warning message 2"]
-}`;
 
-    console.log('[generateTimetable] Calling Gemini Pro...');
-    const llmResponse = await base44.integrations.Core.InvokeLLM({
-      prompt: aiPrompt,
-      model: 'gemini_3_1_pro',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          slots: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                classId: { type: 'string' },
-                className: { type: 'string' },
-                subjectId: { type: 'string' },
-                subjectName: { type: 'string' },
-                teacherId: { type: 'string' },
-                teacherName: { type: 'string' },
-                dayOfWeek: { type: 'string' },
-                startTime: { type: 'string' },
-                endTime: { type: 'string' },
-              },
-            },
-          },
-          warnings: {
-            type: 'array',
-            items: { type: 'string' },
-          },
-        },
-      },
+    function getTeacherForSubjectClass(subjectId, classId) {
+      const assigned = (allTeachers || []).find(t =>
+        !t.isArchived &&
+        (t.teachingAssignments || []).some(a => a.subjectId === subjectId && a.classId === classId)
+      );
+      if (assigned) return assigned;
+
+      const subjectOnly = (allTeachers || []).find(t =>
+        !t.isArchived &&
+        (t.teachingAssignments || []).some(a => a.subjectId === subjectId)
+      );
+      if (subjectOnly) return subjectOnly;
+
+      const byAssignedSubjects = (allTeachers || []).find(t =>
+        !t.isArchived &&
+        (t.assignedSubjects || []).includes(subjectId)
+      );
+      return byAssignedSubjects || null;
+    }
+
+    const teacherBusy = {};
+    const classBusy = {};
+
+    (existingEntries || []).forEach(e => {
+      if (!targetClassIds.includes(e.classId)) {
+        if (e.teacherId && e.dayOfWeek && e.startTime) {
+          const slotIdx = TIME_SLOTS.findIndex(s => s.start === e.startTime);
+          if (slotIdx >= 0) {
+            if (!teacherBusy[e.teacherId]) teacherBusy[e.teacherId] = {};
+            if (!teacherBusy[e.teacherId][e.dayOfWeek]) teacherBusy[e.teacherId][e.dayOfWeek] = {};
+            teacherBusy[e.teacherId][e.dayOfWeek][slotIdx] = true;
+          }
+        }
+      }
     });
 
-    const slots = llmResponse.slots || [];
-    const warnings = llmResponse.warnings || [];
+    function canAssign(teacherId, classId, day, slotIdx) {
+      if (teacherId) {
+        if (teacherBusy[teacherId]?.[day]?.[slotIdx]) return false;
+      }
+      if (classBusy[classId]?.[day]?.[slotIdx]) return false;
+      return true;
+    }
 
-    console.log(`[generateTimetable] LLM generated ${slots.length} slots`);
+    function markBusy(teacherId, classId, day, slotIdx) {
+      if (teacherId) {
+        if (!teacherBusy[teacherId]) teacherBusy[teacherId] = {};
+        if (!teacherBusy[teacherId][day]) teacherBusy[teacherId][day] = {};
+        teacherBusy[teacherId][day][slotIdx] = true;
+      }
+      if (!classBusy[classId]) classBusy[classId] = {};
+      if (!classBusy[classId][day]) classBusy[classId][day] = {};
+      classBusy[classId][day][slotIdx] = true;
+    }
 
-    // Validate and add schoolId to each slot
-    const validSlots = slots.map(s => ({
-      ...s,
-      schoolId,
-    }));
+    const slots = [];
+    const warnings = [];
 
-    if (validSlots.length > 0) {
-      await base44.asServiceRole.entities.TimetableEntry.bulkCreate(validSlots);
-      console.log(`[generateTimetable] Saved ${validSlots.length} entries`);
+    const allSlotPairs = [];
+    DAYS.forEach(day => {
+      getSlotsForDay(day).forEach((slot, idx) => {
+        allSlotPairs.push({ day, slotIdx: idx, start: slot.start, end: slot.end });
+      });
+    });
+
+    for (const cls of targetClasses) {
+      const classSubjects = getSubjectsForClass(cls.id);
+      if (classSubjects.length === 0) {
+        warnings.push(`No subjects found for class ${cls.className} — skipping`);
+        continue;
+      }
+
+      const totalSlots = allSlotPairs.length;
+      const periodsPerSubject = Math.max(1, Math.min(5, Math.floor(totalSlots / classSubjects.length)));
+
+      const priorityNames = ['mathematics', 'math', 'english', 'science', 'physics', 'chemistry', 'biology'];
+
+      const scheduleRequests = classSubjects.map(subj => {
+        const isPriority = priorityNames.some(p => subj.name.toLowerCase().includes(p));
+        return { subject: subj, periodsNeeded: isPriority ? Math.min(periodsPerSubject + 1, 5) : periodsPerSubject };
+      });
+
+      scheduleRequests.sort((a, b) => b.periodsNeeded - a.periodsNeeded);
+
+      for (const { subject, periodsNeeded } of scheduleRequests) {
+        const teacher = getTeacherForSubjectClass(subject.id, cls.id);
+        let assigned = 0;
+        const daysUsed = new Set();
+
+        for (const { day, slotIdx, start, end } of allSlotPairs) {
+          if (assigned >= periodsNeeded) break;
+          if (daysUsed.has(day) && assigned < periodsNeeded && daysUsed.size < DAYS.length) continue;
+
+          if (canAssign(teacher?.id || null, cls.id, day, slotIdx)) {
+            markBusy(teacher?.id || null, cls.id, day, slotIdx);
+            slots.push({
+              classId: cls.id,
+              className: cls.className,
+              subjectId: subject.id,
+              subjectName: subject.name,
+              teacherId: teacher?.id || '',
+              teacherName: teacher?.fullName || '',
+              dayOfWeek: day,
+              startTime: start,
+              endTime: end,
+            });
+            daysUsed.add(day);
+            assigned++;
+          }
+        }
+
+        if (assigned < periodsNeeded) {
+          for (const { day, slotIdx, start, end } of allSlotPairs) {
+            if (assigned >= periodsNeeded) break;
+            if (canAssign(teacher?.id || null, cls.id, day, slotIdx)) {
+              markBusy(teacher?.id || null, cls.id, day, slotIdx);
+              slots.push({
+                classId: cls.id,
+                className: cls.className,
+                subjectId: subject.id,
+                subjectName: subject.name,
+                teacherId: teacher?.id || '',
+                teacherName: teacher?.fullName || '',
+                dayOfWeek: day,
+                startTime: start,
+                endTime: end,
+              });
+              assigned++;
+            }
+          }
+        }
+
+        if (assigned === 0) {
+          warnings.push(`Could not schedule ${subject.name} for ${cls.className} — no available slots`);
+        } else if (assigned < periodsNeeded) {
+          warnings.push(`Only scheduled ${assigned}/${periodsNeeded} periods for ${subject.name} in ${cls.className}`);
+        }
+
+        if (!teacher) {
+          warnings.push(`No teacher found for ${subject.name} in ${cls.className}`);
+        }
+      }
+    }
+
+    const clashCheck = {};
+    let clashCount = 0;
+    for (const slot of slots) {
+      const key = `${slot.classId}|${slot.dayOfWeek}|${slot.startTime}`;
+      if (clashCheck[key]) {
+        clashCount++;
+        warnings.push(`CLASS CLASH: ${slot.className} on ${slot.dayOfWeek} at ${slot.startTime}`);
+      } else {
+        clashCheck[key] = true;
+      }
+    }
+
+    const teacherClashCheck = {};
+    for (const slot of slots) {
+      if (!slot.teacherId) continue;
+      const key = `${slot.teacherId}|${slot.dayOfWeek}|${slot.startTime}`;
+      if (teacherClashCheck[key]) {
+        clashCount++;
+        warnings.push(`TEACHER CLASH: ${slot.teacherName} on ${slot.dayOfWeek} at ${slot.startTime}`);
+      } else {
+        teacherClashCheck[key] = true;
+      }
+    }
+
+    if (slots.length > 0) {
+      await base44.asServiceRole.entities.TimetableEntry.bulkCreate(
+        slots.map(s => ({ ...s, schoolId }))
+      );
     }
 
     return Response.json({
-      slots: validSlots,
+      slots,
       warnings,
       stats: {
         classes: targetClasses.length,
-        subjects: subjectsData.length,
-        teachers: teachersData.length,
-        slots: validSlots.length,
-      },
+        subjects: (allSubjects || []).length,
+        teachers: (allTeachers || []).length,
+        slots: slots.length,
+        clashes: clashCount,
+      }
     });
 
   } catch (error) {
