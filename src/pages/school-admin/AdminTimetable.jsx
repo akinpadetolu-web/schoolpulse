@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { getSubjectsForClass, autoLinkTeachersToTimetable } from '@/lib/schoolData';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { autoLinkTeachersToTimetable } from '@/lib/schoolData';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, Trash2, RefreshCw, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Zap, Download } from 'lucide-react';
+import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download } from 'lucide-react';
+
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
+import TimetableGenerator from '@/components/timetable/TimetableGenerator.jsx';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
@@ -63,14 +63,6 @@ function detectClashes(candidate, existingEntries) {
   return clashes;
 }
 
-/**
- * Detect clashes within a list itself (for AI preview).
- * Returns map: index -> [clash strings]
- */
-function detectInternalClashes(slots, existingEntries = []) {
-  const all = [...existingEntries, ...slots.map((s, i) => ({ ...s, _idx: i }))];
-  return slots.map((slot, i) => detectClashes(slot, all.filter((_, j) => j !== (existingEntries.length + i))));
-}
 
 export default function AdminTimetable() {
   const { schoolUser: user } = useSchoolAuth();
@@ -88,12 +80,7 @@ export default function AdminTimetable() {
   const [manualClashes, setManualClashes] = useState([]);
 
   // AI state
-
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiPreview, setAiPreview] = useState([]);
-  const [aiClashMap, setAiClashMap] = useState({}); // index -> [clashes]
-  const [aiError, setAiError] = useState("");
-  const [aiLog, setAiLog] = useState(""); // reasoning from AI
+  const [activeTab, setActiveTab] = useState("view");
 
   const [manualForm, setManualForm] = useState({
     classId: "", subjectId: "", teacherId: "", dayOfWeek: "", startTime: "", endTime: ""
@@ -203,89 +190,7 @@ export default function AdminTimetable() {
     }
   }
 
-  // ── AI Generator ─────────────────────────────────────────────────────────
-  const [aiTargetClasses, setAiTargetClasses] = useState([]);
-  const [aiProgress, setAiProgress] = useState(0);
 
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiStatus, setAiStatus] = useState("");
-
-  async function handleAiGenerate() {
-    setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({}); setAiProgress(0); setAiStatus("");
-
-    const targetIds = aiTargetClasses.length > 0 ? aiTargetClasses : classes.map(c => c.id);
-    if (targetIds.length === 0) return setAiError("No classes available to generate timetable for");
-
-    setAiGenerating(true);
-    setAiProgress(10);
-    setAiStatus("Fetching school data...");
-
-    try {
-      setAiProgress(30);
-      setAiStatus("Generating timetable...");
-
-      const result = await base44.functions.invoke('generateTimetable', {
-        schoolId,
-        targetClassIds: targetIds,
-        prompt: aiPrompt.trim(),
-      });
-
-      setAiProgress(80);
-      setAiStatus("Running clash detection...");
-
-      const slots = (result?.data?.slots || []);
-
-      if (slots.length === 0) {
-        setAiError("No entries were generated. Please check that subjects and classes are set up correctly in your school data.");
-        setAiProgress(0);
-        setAiStatus("");
-        setAiGenerating(false);
-        return;
-      }
-
-      // Run client-side clash detection for preview display
-      const clashMap = {};
-      slots.forEach((slot, i) => {
-        const otherPreview = slots.filter((_, j) => j !== i);
-        const clashes = detectClashes(slot, [...entries, ...otherPreview]);
-        if (clashes.length > 0) clashMap[i] = clashes;
-      });
-
-      setAiProgress(90);
-      setAiStatus("Saving timetable...");
-
-      setAiPreview(slots);
-      setAiClashMap(clashMap);
-      if (result?.data?.reasoning) setAiLog(result.data.reasoning);
-
-      if (result?.data?.warnings?.length > 0) {
-        result.data.warnings.forEach(w => toast.warning(w, { duration: 6000 }));
-      }
-
-      const stats = result?.data?.stats;
-      const clashCount = result?.data?.stats?.clashes || 0;
-
-      setAiProgress(100);
-      setAiStatus("Timetable generated successfully!");
-
-      if (clashCount > 0) {
-        toast.warning(`Generated ${slots.length} entries with ${clashCount} clash(es) — review warnings`);
-      } else {
-        toast.success(`${slots.length} entries generated with no clashes`);
-      }
-
-      // Data was already saved by backend — reload
-      loadData();
-
-    } catch (error) {
-      setAiError(`Generation failed: ${error.message}`);
-      setAiStatus("");
-      console.error('Timetable generation error:', error);
-    } finally {
-      setTimeout(() => { setAiProgress(0); setAiStatus(""); }, 3000);
-      setAiGenerating(false);
-    }
-  }
 
   // ── PDF Export ───────────────────────────────────────────────────────────
   function handleExportPDF() {
@@ -461,11 +366,11 @@ export default function AdminTimetable() {
         </div>
       )}
 
-      <Tabs defaultValue="view">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="view">Weekly Grid</TabsTrigger>
           <TabsTrigger value="ai">
-            <Wand2 className="w-4 h-4 mr-1.5" /> AI Generator
+            <Wand2 className="w-4 h-4 mr-1.5" /> Generator
           </TabsTrigger>
         </TabsList>
 
@@ -539,165 +444,15 @@ export default function AdminTimetable() {
           )}
         </TabsContent>
 
-        {/* ── AI Generator ── */}
+        {/* ── Generator ── */}
         <TabsContent value="ai">
-          <Card className="border-0 shadow-sm mb-4">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Wand2 className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Intelligent AI Timetable Generator</h3>
-                  <p className="text-sm text-muted-foreground">Understands complex instructions, respects teacher assignments, detects clashes automatically. Uses your school's actual subjects and class data.</p>
-                </div>
-              </div>
-
-              <div className="bg-secondary/40 rounded-lg p-3 mb-4 text-xs text-muted-foreground space-y-1">
-                <p className="font-semibold text-foreground text-sm mb-1">💡 Example prompts you can use:</p>
-                <p>• "Generate timetable for JS1A with double periods for Maths on Monday and Wednesday"</p>
-                <p>• "Create SS2 Science B timetable — give Physics and Chemistry 3 periods each per week, no classes after 2pm on Fridays"</p>
-                <p>• "Build a full week timetable for JS3C, prioritise English and Mathematics, avoid scheduling Science on Mondays"</p>
-                <p>• "Schedule SS1 Commerce with double period Economics on Tuesdays and Thursdays"</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label>Target classes (leave blank to generate for all classes)</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {classes.map(c => (
-                      <label key={c.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-secondary/50">
-                        <input
-                          type="checkbox"
-                          checked={aiTargetClasses.includes(c.id)}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setAiTargetClasses([...aiTargetClasses, c.id]);
-                            } else {
-                              setAiTargetClasses(aiTargetClasses.filter(id => id !== c.id));
-                            }
-                          }}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm">{c.className}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Additional instructions (optional)</Label>
-                  <Textarea
-                    className="mt-1"
-                    rows={3}
-                    placeholder="e.g. Double periods for Maths on Monday/Wednesday, avoid Friday afternoon classes..."
-                    value={aiPrompt}
-                    onChange={e => setAiPrompt(e.target.value)}
-                  />
-                </div>
-
-                {aiError && (
-                  <div className="flex items-start gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />{aiError}
-                  </div>
-                )}
-
-                {(aiGenerating || aiStatus) && aiProgress > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{aiStatus || "Working..."}</span>
-                      <span className="font-semibold text-primary">{aiProgress}%</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                      <div className="bg-primary h-full transition-all duration-300" style={{ width: `${aiProgress}%` }} />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button onClick={handleAiGenerate} disabled={aiGenerating} className="flex-1">
-                    {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                    {aiGenerating ? aiStatus || "Generating..." : "Generate Timetable"}
-                  </Button>
-                  {aiPreview.length > 0 && (
-                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); setAiStatus(""); setAiPrompt(""); }}>
-                      <RefreshCw className="w-4 h-4 mr-1" /> Clear Preview
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* AI Reasoning Log */}
-          {aiLog && (
-            <Card className="border-0 shadow-sm mb-4 border-l-4 border-l-primary">
-              <CardContent className="p-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">AI Reasoning</p>
-                <p className="text-sm text-foreground">{aiLog}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* AI Preview */}
-          {aiPreview.length > 0 && (
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <div>
-                    <h3 className="font-semibold flex items-center gap-2">
-                      {Object.keys(aiClashMap).length > 0
-                        ? <AlertTriangle className="w-4 h-4 text-amber-500" />
-                        : <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                      Generated Preview
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {aiPreview.length} entries saved
-                      {Object.keys(aiClashMap).length > 0
-                        ? <span className="text-amber-600 ml-2">• {Object.keys(aiClashMap).length} clash(es) found</span>
-                        : <span className="text-emerald-600 ml-2">• No clashes</span>}
-                    </p>
-                  </div>
-                  <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); }}>
-                    Dismiss Preview
-                  </Button>
-                </div>
-
-                <div className="grid gap-3">
-                  {DAYS.map(day => {
-                    const items = aiPreview
-                      .map((e, i) => ({ ...e, _idx: i }))
-                      .filter(e => e.dayOfWeek === day)
-                      .sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
-                    if (!items.length) return null;
-                    return (
-                      <div key={day}>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1.5">{day}</p>
-                        <div className="space-y-1.5">
-                          {items.map((item) => {
-                            const clashes = aiClashMap[item._idx] || [];
-                            return (
-                              <div key={item._idx} className={`flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 rounded-lg px-3 py-2 text-xs ${clashes.length > 0 ? 'bg-red-50 border border-red-200' : 'bg-primary/5'}`}>
-                                <span className="font-mono text-muted-foreground w-28 flex-shrink-0">{item.startTime}–{item.endTime}</span>
-                                <span className="font-medium flex-1">{item.subjectName}</span>
-                                {item.teacherName && <span className="text-muted-foreground">{item.teacherName}</span>}
-                                {clashes.length > 0 && (
-                                  <div className="flex items-start gap-1 text-red-600 mt-1 sm:mt-0">
-                                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                                    <span>{clashes[0]}</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <TimetableGenerator
+            schoolId={schoolId}
+            classes={classes}
+            subjects={subjects}
+            teachers={teachers}
+            onGenerated={() => { loadData(); setActiveTab("view"); }}
+          />
         </TabsContent>
       </Tabs>
 
