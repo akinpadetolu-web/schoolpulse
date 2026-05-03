@@ -84,26 +84,40 @@ Deno.serve(async (req) => {
       endTime: e.endTime,
     }));
 
-    // OPTIMIZED PROMPT - minimal but complete
-    const systemContext = `You are a school timetable scheduling AI. Generate a timetable ONLY for these target classes.
+    // OPTIMIZED PROMPT - explicit full week schedule
+    const systemContext = `You are a school timetable scheduling AI. Generate a COMPLETE timetable for ALL 5 days (Monday, Tuesday, Wednesday, Thursday, Friday) for EVERY target class listed below.
 
 TARGET CLASSES: ${JSON.stringify(classesInfo)}
 AVAILABLE SUBJECTS: ${JSON.stringify(subjectsInfo)}
 AVAILABLE TEACHERS: ${JSON.stringify(teachersInfo)}
 EXISTING ENTRIES (do not reschedule): ${JSON.stringify(existingSummary)}
 
-RULES:
-1. No class can have two subjects at the same time on the same day
-2. No teacher can be in two places at the same time on the same day
-3. Use time slots: 08:00-09:00, 09:00-10:00, 10:15-11:15, 11:15-12:15, 13:00-14:00, 14:00-15:00
-4. Each class should have 5-6 periods per day (Mon-Fri)
-5. Assign teachers based on their subject availability
-6. Avoid rescheduling existing entries
+STRICT RULES:
+1. You MUST generate entries for ALL 5 days: Monday, Tuesday, Wednesday, Thursday, Friday. Do NOT skip any day.
+2. Each period is 45 minutes long.
+3. Monday–Thursday: school runs 08:30–15:15. Friday: school runs 08:30–14:30.
+4. Fixed breaks – NO classes during these times (every day):
+   - Short Break: 10:00–10:30
+   - Long Break: 12:00–13:00
+5. Mathematics, English, and Science MUST be scheduled between 08:30 and 12:00 (before long break).
+6. No class can have two subjects at the same time on the same day.
+7. No teacher can teach two classes at the same time on the same day.
+8. Assign teachers based on their teaching assignments.
+9. Do not reschedule existing entries.
 
-Generate ONLY for the target classes. Return a JSON with:
+Valid time slots (HH:MM format):
+- 08:30–09:15
+- 09:15–10:00
+- 10:30–11:15
+- 11:15–12:00
+- 13:00–13:45
+- 13:45–14:30
+- 14:30–15:15 (Monday–Thursday only)
+
+Return a JSON object with:
 {
   "reasoning": "brief explanation",
-  "slots": [{"classId": "...", "className": "...", "subjectId": "...", "subjectName": "...", "teacherId": "...", "teacherName": "...", "dayOfWeek": "...", "startTime": "...", "endTime": "..."}],
+  "slots": [{"classId": "...", "className": "...", "subjectId": "...", "subjectName": "...", "teacherId": "...", "teacherName": "...", "dayOfWeek": "...", "startTime": "HH:MM", "endTime": "HH:MM"}],
   "warnings": ["..."]
 }
 
@@ -112,7 +126,7 @@ USER INSTRUCTION: "${prompt}"`;
     // Use FASTER model (gemini_3_flash) with token limit
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: systemContext,
-      model: 'gemini_3_flash',
+      model: 'claude_opus_4_7',
       response_json_schema: {
         type: 'object',
         properties: {
