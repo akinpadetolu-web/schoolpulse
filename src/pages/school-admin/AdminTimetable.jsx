@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -205,6 +206,7 @@ export default function AdminTimetable() {
   const [aiTargetClasses, setAiTargetClasses] = useState([]);
   const [aiProgress, setAiProgress] = useState(0);
 
+  const [aiPrompt, setAiPrompt] = useState("");
   const [aiStatus, setAiStatus] = useState("");
 
   async function handleAiGenerate() {
@@ -224,6 +226,7 @@ export default function AdminTimetable() {
       const result = await base44.functions.invoke('generateTimetable', {
         schoolId,
         targetClassIds: targetIds,
+        prompt: aiPrompt.trim(),
       });
 
       setAiProgress(80);
@@ -581,6 +584,17 @@ export default function AdminTimetable() {
                   </div>
                 </div>
 
+                <div>
+                  <Label>Additional instructions (optional)</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    placeholder="e.g. Double periods for Maths on Monday/Wednesday, avoid Friday afternoon classes..."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                  />
+                </div>
+
                 {aiError && (
                   <div className="flex items-start gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
                     <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />{aiError}
@@ -605,7 +619,7 @@ export default function AdminTimetable() {
                     {aiGenerating ? aiStatus || "Generating..." : "Generate Timetable"}
                   </Button>
                   {aiPreview.length > 0 && (
-                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); setAiStatus(""); }}>
+                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); setAiStatus(""); setAiPrompt(""); }}>
                       <RefreshCw className="w-4 h-4 mr-1" /> Clear Preview
                     </Button>
                   )}

@@ -24,7 +24,8 @@ function getSlotsForDay(day) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { schoolId, targetClassIds } = await req.json();
+    const { schoolId, targetClassIds, prompt } = await req.json();
+    if (prompt) console.log(`[generateTimetable] User instructions: ${prompt}`);
 
     if (!schoolId || !targetClassIds || targetClassIds.length === 0) {
       return Response.json({ error: 'Missing required fields: schoolId, targetClassIds' }, { status: 400 });
