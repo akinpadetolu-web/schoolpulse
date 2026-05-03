@@ -182,8 +182,9 @@ export default function AdminTimetable() {
     if (selectedClass === "all") return toast.error("Select a specific class to clear");
     const toDelete = entries.filter(e => e.classId === selectedClass);
     if (!toDelete.length) return toast.info("No entries to clear");
-    await Promise.all(toDelete.map(e => base44.entities.TimetableEntry.delete(e.id)));
-    toast.success(`Cleared ${toDelete.length} entries`);
+    const results = await Promise.allSettled(toDelete.map(e => base44.entities.TimetableEntry.delete(e.id)));
+    const deleted = results.filter(r => r.status === "fulfilled").length;
+    toast.success(`Cleared ${deleted} entries`);
     loadData();
   }
 
