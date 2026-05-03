@@ -104,6 +104,9 @@ STRICT RULES:
 7. No teacher can teach two classes at the same time on the same day.
 8. Assign teachers based on their teaching assignments.
 9. Do not reschedule existing entries.
+10. CRITICAL: For 'subjectId' and 'subjectName', you MUST ONLY use values from the AVAILABLE SUBJECTS list above. Copy the exact 'id' and 'name' values. Do NOT invent or hallucinate subject names or IDs.
+11. CRITICAL: For 'teacherId' and 'teacherName', you MUST ONLY use values from the AVAILABLE TEACHERS list above. Copy the exact 'id' and 'name' values. Do NOT invent or hallucinate teacher names or IDs.
+12. CRITICAL: For 'classId' and 'className', you MUST ONLY use values from the TARGET CLASSES list above. Copy the exact 'id' and 'name' values.
 
 Valid time slots (HH:MM format):
 - 08:30–09:15
@@ -153,6 +156,23 @@ USER INSTRUCTION: "${prompt}"`;
         required: ['slots'],
       },
     });
+
+    // Save generated slots to the database
+    if (result && result.slots && result.slots.length > 0) {
+      const newEntries = result.slots.map(slot => ({
+        schoolId,
+        classId: slot.classId,
+        className: slot.className,
+        subjectId: slot.subjectId,
+        subjectName: slot.subjectName,
+        teacherId: slot.teacherId,
+        teacherName: slot.teacherName,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      }));
+      await base44.asServiceRole.entities.TimetableEntry.bulkCreate(newEntries);
+    }
 
     return Response.json(result);
   } catch (error) {
