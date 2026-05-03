@@ -3,10 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { schoolId, prompt, targetClassIds } = await req.json();
     if (!schoolId || !prompt || !targetClassIds || targetClassIds.length === 0) {
@@ -114,7 +110,7 @@ Generate ONLY for the target classes. Return a JSON with:
 USER INSTRUCTION: "${prompt}"`;
 
     // Use FASTER model (gemini_3_flash) with token limit
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: systemContext,
       model: 'gemini_3_flash',
       response_json_schema: {
