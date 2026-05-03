@@ -11,6 +11,20 @@
     "className": {
       "type": "string"
     },
+    "classIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Multiple class IDs this plan applies to"
+    },
+    "classNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of targeted classes"
+    },
     "subjectId": {
       "type": "string"
     },
@@ -53,23 +67,23 @@
             "type": "number"
           }
         }
-      },
-      "description": "Planned activities with descriptions and durations"
+      }
     },
     "resources": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Required resources / materials"
+      }
     },
     "homework": {
-      "type": "string",
-      "description": "Homework or follow-up task"
+      "type": "string"
     },
     "notes": {
+      "type": "string"
+    },
+    "pdfFileUrl": {
       "type": "string",
-      "description": "Teacher private notes"
+      "description": "URL to an attached PDF file"
     },
     "status": {
       "type": "string",
@@ -78,25 +92,21 @@
         "approved",
         "rejected"
       ],
-      "default": "pending",
-      "description": "Approval status"
+      "default": "pending"
     },
     "approvedBy": {
-      "type": "string",
-      "description": "Admin ID who approved/rejected"
+      "type": "string"
     },
     "approvalDate": {
       "type": "string",
       "format": "date-time"
     },
     "approvalNotes": {
-      "type": "string",
-      "description": "Admin feedback on approval/rejection"
+      "type": "string"
     },
     "isPublished": {
       "type": "boolean",
-      "default": false,
-      "description": "Visible to students when true"
+      "default": false
     }
   },
   "required": [

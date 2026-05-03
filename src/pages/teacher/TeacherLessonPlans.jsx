@@ -9,14 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const EMPTY_PLAN = {
-  title: "", date: "", classId: "", subjectId: "",
+  title: "", date: "", classIds: [], subjectId: "",
   objectives: [""], activities: [{ title: "", description: "", durationMinutes: "" }],
-  resources: [""], homework: "", notes: "", isPublished: false,
+  resources: [""], homework: "", notes: "", isPublished: false, pdfFileUrl: "",
 };
 
 export default function TeacherLessonPlans() {
@@ -31,6 +32,7 @@ export default function TeacherLessonPlans() {
   const [expandedId, setExpandedId] = useState(null);
   const [filterClassId, setFilterClassId] = useState("all");
   const [form, setForm] = useState(EMPTY_PLAN);
+  const [pdfUploading, setPdfUploading] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -61,7 +63,7 @@ export default function TeacherLessonPlans() {
     setForm({
       title: plan.title || "",
       date: plan.date || "",
-      classId: plan.classId || "",
+      classIds: plan.classIds?.length ? plan.classIds : (plan.classId ? [plan.classId] : []),
       subjectId: plan.subjectId || "",
       objectives: plan.objectives?.length ? plan.objectives : [""],
       activities: plan.activities?.length ? plan.activities : [{ title: "", description: "", durationMinutes: "" }],
@@ -69,19 +71,23 @@ export default function TeacherLessonPlans() {
       homework: plan.homework || "",
       notes: plan.notes || "",
       isPublished: plan.isPublished || false,
+      pdfFileUrl: plan.pdfFileUrl || "",
     });
     setShowDialog(true);
   }
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.title || !form.date || !form.classId || !form.subjectId) return toast.error("Title, date, class, and subject are required");
+    if (!form.title || !form.date || !form.classIds.length || !form.subjectId) return toast.error("Title, date, at least one class, and subject are required");
     setSaving(true);
-    const cls = classes.find(c => c.id === form.classId);
+    const selectedClasses = classes.filter(c => form.classIds.includes(c.id));
     const subj = subjects.find(s => s.id === form.subjectId);
+    // Use first class as primary for backward compat
+    const primaryClass = selectedClasses[0];
     const payload = {
       schoolId: user.schoolId, teacherId: user.id, teacherName: user.fullName,
-      classId: form.classId, className: cls?.className || "",
+      classId: primaryClass?.id || "", className: primaryClass?.className || "",
+      classIds: form.classIds, classNames: selectedClasses.map(c => c.className),
       subjectId: form.subjectId, subjectName: subj?.name || "",
       title: form.title, date: form.date,
       objectives: form.objectives.filter(o => o.trim()),
@@ -89,6 +95,7 @@ export default function TeacherLessonPlans() {
       resources: form.resources.filter(r => r.trim()),
       homework: form.homework, notes: form.notes,
       isPublished: form.isPublished,
+      pdfFileUrl: form.pdfFileUrl || "",
     };
     if (editingPlan) {
       await base44.entities.LessonPlan.update(editingPlan.id, payload);
@@ -100,6 +107,25 @@ export default function TeacherLessonPlans() {
     setShowDialog(false);
     loadData();
     setSaving(false);
+  }
+
+  async function handlePdfUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') return toast.error("Please select a PDF file");
+    setPdfUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, pdfFileUrl: file_url }));
+    setPdfUploading(false);
+    toast.success("PDF uploaded");
+  }
+
+  function toggleClass(classId) {
+    setForm(f => {
+      const has = f.classIds.includes(classId);
+      const newIds = has ? f.classIds.filter(id => id !== classId) : [...f.classIds, classId];
+      return { ...f, classIds: newIds, subjectId: "" };
+    });
   }
 
   async function handleDelete(plan) {
@@ -128,11 +154,13 @@ export default function TeacherLessonPlans() {
   const removeResource = (i) => setForm(f => ({ ...f, resources: f.resources.filter((_, j) => j !== i) }));
   const setResource = (i, v) => setForm(f => ({ ...f, resources: f.resources.map((r, j) => j === i ? v : r) }));
 
-  const subjectsForClass = form.classId
-    ? subjects.filter(s => (s.applicableClasses || []).includes(form.classId))
+  const subjectsForClass = form.classIds.length
+    ? subjects.filter(s => form.classIds.some(cid => (s.applicableClasses || []).includes(cid)))
     : subjects;
 
-  const filteredPlans = filterClassId === "all" ? plans : plans.filter(p => p.classId === filterClassId);
+  const filteredPlans = filterClassId === "all" ? plans : plans.filter(p =>
+    p.classId === filterClassId || (p.classIds || []).includes(filterClassId)
+  );
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -182,8 +210,9 @@ export default function TeacherLessonPlans() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {plan.subjectName} · {plan.className} · {plan.date ? format(new Date(plan.date), 'EEE, MMM d yyyy') : ''}
+                        {plan.subjectName} · {(plan.classNames?.length ? plan.classNames : [plan.className]).join(', ')} · {plan.date ? format(new Date(plan.date), 'EEE, MMM d yyyy') : ''}
                         {totalMins > 0 && <span className="ml-2">· {totalMins} min</span>}
+                        {plan.pdfFileUrl && <span className="ml-2 inline-flex items-center gap-1"><FileText className="w-3 h-3" /> PDF</span>}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -252,6 +281,11 @@ export default function TeacherLessonPlans() {
                           <p className="text-sm">{plan.homework}</p>
                         </div>
                       )}
+                      {plan.pdfFileUrl && (
+                        <a href={plan.pdfFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline p-2 bg-primary/5 rounded-lg">
+                          <FileText className="w-4 h-4" /> View attached PDF
+                        </a>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -272,18 +306,40 @@ export default function TeacherLessonPlans() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2 sm:col-span-2"><Label>Title *</Label><Input placeholder="e.g. Introduction to Photosynthesis" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
               <div className="space-y-2"><Label>Date *</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required /></div>
-              <div className="space-y-2"><Label>Class *</Label>
-                <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v, subjectId: "" })}>
-                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                  <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
-                </Select>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Class * <span className="text-muted-foreground font-normal">(select one or more)</span></Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                  {classes.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-secondary/40 px-2 py-1 rounded">
+                      <Checkbox
+                        checked={form.classIds.includes(c.id)}
+                        onCheckedChange={() => toggleClass(c.id)}
+                      />
+                      <span className="text-sm">{c.className}</span>
+                    </label>
+                  ))}
+                  {classes.length === 0 && <p className="text-sm text-muted-foreground">No classes assigned</p>}
+                </div>
+                {form.classIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {form.classIds.map(cid => {
+                      const cl = classes.find(c => c.id === cid);
+                      return cl ? (
+                        <span key={cid} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          {cl.className}
+                          <button type="button" onClick={() => toggleClass(cid)}><X className="w-3 h-3" /></button>
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                )}
               </div>
               <div className="space-y-2 sm:col-span-2"><Label>Subject *</Label>
                 <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
                     {subjectsForClass.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                    {subjectsForClass.length === 0 && <SelectItem value="_" disabled>No subjects for this class</SelectItem>}
+                    {subjectsForClass.length === 0 && <SelectItem value="_" disabled>No subjects for selected classes</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -358,6 +414,24 @@ export default function TeacherLessonPlans() {
             <div className="space-y-2">
               <Label className="text-muted-foreground">Private Notes (not visible to students)</Label>
               <Textarea placeholder="Your own notes, reminders, observations..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+
+            {/* PDF Attachment */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><FileText className="w-4 h-4" /> Attach PDF (optional)</Label>
+              {form.pdfFileUrl ? (
+                <div className="flex items-center gap-2 p-3 border rounded-lg bg-secondary/20">
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  <a href={form.pdfFileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline flex-1 truncate">View attached PDF</a>
+                  <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => setForm(f => ({ ...f, pdfFileUrl: "" }))}><X className="w-3.5 h-3.5" /></Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-secondary/20 transition-colors">
+                  {pdfUploading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Upload className="w-4 h-4 text-muted-foreground" />}
+                  <span className="text-sm text-muted-foreground">{pdfUploading ? "Uploading..." : "Click to upload a PDF file"}</span>
+                  <input type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} disabled={pdfUploading} />
+                </label>
+              )}
             </div>
 
             {/* Publish toggle */}
