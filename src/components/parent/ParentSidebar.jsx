@@ -18,6 +18,7 @@ const parentNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/parent/timetable", icon: Calendar },
+      { label: "School Calendar", path: "/parent/calendar", icon: CalendarDays },
       { label: "Assignments", path: "/parent/assignments", icon: FileText },
       { label: "Grades", path: "/parent/grades", icon: ClipboardList },
       { label: "Attendance", path: "/parent/timetable", icon: UserCheck },

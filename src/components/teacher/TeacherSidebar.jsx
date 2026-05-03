@@ -19,6 +19,7 @@ const teacherNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/teacher/timetable", icon: Calendar },
+      { label: "School Calendar", path: "/teacher/calendar", icon: CalendarDays },
       { label: "Assignments", path: "/teacher/assignments", icon: FileText },
       { label: "Grades", path: "/teacher/grades", icon: ClipboardList },
       { label: "Submissions", path: "/teacher/submissions", icon: NotebookPen },

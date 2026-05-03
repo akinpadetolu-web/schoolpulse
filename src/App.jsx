@@ -116,6 +116,10 @@ const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
 const ParentReportCards = lazy(() => import('./pages/parent/ParentReportCards'));
 const AdminMessaging = lazy(() => import('./pages/school-admin/AdminMessaging'));
+const AdminCalendar = lazy(() => import('./pages/school-admin/AdminCalendar'));
+const TeacherCalendar = lazy(() => import('./pages/teacher/TeacherCalendar'));
+const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
+const ParentCalendar = lazy(() => import('./pages/parent/ParentCalendar'));
 
 function PageLoader() {
   return (
@@ -184,6 +188,7 @@ const AuthenticatedApp = () => {
           <Route path="email-campaign" element={<AdminEmailCampaign />} />
           <Route path="e-class" element={<AdminEClass />} />
           <Route path="messages" element={<AdminMessaging />} />
+          <Route path="events" element={<AdminCalendar />} />
         </Route>
 
         {/* Teacher */}
@@ -203,7 +208,7 @@ const AuthenticatedApp = () => {
           <Route path="notifications" element={<TeacherNotifications />} />
           <Route path="progress" element={<TeacherProgressDashboard />} />
           <Route path="exam-results" element={<TeacherExamResults />} />
-          <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="calendar" element={<TeacherCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="profile" element={<TeacherProfile />} />
           <Route path="shared-notes" element={<TeacherSharedNotes />} />
@@ -222,7 +227,7 @@ const AuthenticatedApp = () => {
           <Route path="quizzes" element={<StudentQuizzes />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="e-class" element={<StudentEClass />} />
-          <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="calendar" element={<StudentCalendar />} />
           <Route path="report-cards" element={<StudentReportCards />} />
           <Route path="notes" element={<StudentNotes />} />
           <Route path="profile" element={<StudentProfile />} />
@@ -238,7 +243,7 @@ const AuthenticatedApp = () => {
           <Route path="messages" element={<ParentMessaging />} />
           <Route path="report-cards" element={<ParentReportCards />} />
           <Route path="e-class" element={<ParentEClass />} />
-          <Route path="calendar" element={<SchoolCalendar />} />
+          <Route path="calendar" element={<ParentCalendar />} />
           <Route path="profile" element={<ParentProfile />} />
         </Route>
 

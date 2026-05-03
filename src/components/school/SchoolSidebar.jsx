@@ -24,6 +24,7 @@ const adminNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/school-admin/timetable", icon: Calendar },
+      { label: "Calendar & Events", path: "/school-admin/events", icon: CalendarDays },
       { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
       { label: "Grades", path: "/school-admin/grade-weighting", icon: Award },
       { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },

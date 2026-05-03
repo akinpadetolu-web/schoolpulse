@@ -17,6 +17,7 @@ const studentNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/student/timetable", icon: Calendar },
+      { label: "School Calendar", path: "/student/calendar", icon: CalendarDays },
       { label: "Assignments", path: "/student/assignments", icon: FileText },
       { label: "Assignment Summary", path: "/student/assignment-summary", icon: TrendingUp },
       { label: "Grades", path: "/student/grades", icon: ClipboardList },
