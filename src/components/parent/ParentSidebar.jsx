@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
@@ -19,6 +19,7 @@ const parentNavGroups = [
     items: [
       { label: "Timetable", path: "/parent/timetable", icon: Calendar },
       { label: "School Calendar", path: "/parent/calendar", icon: CalendarDays },
+      { label: "Lesson Plans", path: "/parent/lesson-plans", icon: BookOpen },
       { label: "Assignments", path: "/parent/assignments", icon: FileText },
       { label: "Grades", path: "/parent/grades", icon: ClipboardList },
       { label: "Attendance", path: "/parent/timetable", icon: UserCheck },
