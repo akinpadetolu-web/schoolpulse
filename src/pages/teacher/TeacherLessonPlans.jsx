@@ -78,39 +78,56 @@ export default function TeacherLessonPlans() {
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.title || !form.date || !form.classIds.length || !form.subjectId) return toast.error("Title, date, at least one class, and subject are required");
-    setSaving(true);
-    const selectedClasses = classes.filter(c => form.classIds.includes(c.id));
-    const subj = subjects.find(s => s.id === form.subjectId);
-    const primaryClass = selectedClasses[0];
-    const payload = {
-      schoolId: user.schoolId, teacherId: user.id, teacherName: user.fullName,
-      classId: primaryClass?.id || "", className: primaryClass?.className || "",
-      classIds: form.classIds, classNames: selectedClasses.map(c => c.className),
-      subjectId: form.subjectId, subjectName: subj?.name || "",
-      title: form.title, date: form.date,
-      objectives: form.objectives.filter(o => o.trim()),
-      activities: form.activities.filter(a => a.title.trim()),
-      resources: form.resources.filter(r => r.trim()),
-      homework: form.homework, notes: form.notes,
-      pdfFileUrl: form.pdfFileUrl || "",
-    };
-    if (editingPlan) {
-      // Reset to pending when edited so admin re-approves
-      await base44.entities.LessonPlan.update(editingPlan.id, {
-        ...payload,
-        status: "pending",
-        isPublished: false,
-        approvedBy: "", approvalDate: "", approvalNotes: "",
-      });
-      toast.success("Plan updated — resubmitted for approval");
-    } else {
-      await base44.entities.LessonPlan.create({ ...payload, status: "pending", isPublished: false });
-      toast.success("Lesson plan submitted for approval");
+    if (!form.title || !form.date || !form.classIds.length || !form.subjectId) {
+      return toast.error("Title, date, at least one class, and subject are required");
     }
-    setShowDialog(false);
-    loadData();
-    setSaving(false);
+    if (!user?.schoolId || !user?.id) {
+      return toast.error("Session error — please log out and log back in.");
+    }
+    setSaving(true);
+
+    // Safety timeout — never leave button stuck
+    const timeout = setTimeout(() => {
+      setSaving(false);
+      toast.error("Submission timed out. Please try again.");
+    }, 30000);
+
+    try {
+      const selectedClasses = classes.filter(c => form.classIds.includes(c.id));
+      const subj = subjects.find(s => s.id === form.subjectId);
+      const primaryClass = selectedClasses[0];
+      const payload = {
+        schoolId: user.schoolId, teacherId: user.id, teacherName: user.fullName,
+        classId: primaryClass?.id || "", className: primaryClass?.className || "",
+        classIds: form.classIds, classNames: selectedClasses.map(c => c.className),
+        subjectId: form.subjectId, subjectName: subj?.name || "",
+        title: form.title, date: form.date,
+        objectives: form.objectives.filter(o => o.trim()),
+        activities: form.activities.filter(a => a.title.trim()),
+        resources: form.resources.filter(r => r.trim()),
+        homework: form.homework, notes: form.notes,
+        pdfFileUrl: form.pdfFileUrl || "",
+      };
+      if (editingPlan) {
+        await base44.entities.LessonPlan.update(editingPlan.id, {
+          ...payload,
+          status: "pending",
+          isPublished: false,
+          approvedBy: "", approvalDate: "", approvalNotes: "",
+        });
+        toast.success("Plan updated — resubmitted for approval");
+      } else {
+        await base44.entities.LessonPlan.create({ ...payload, status: "pending", isPublished: false });
+        toast.success("Lesson plan submitted for approval successfully");
+      }
+      setShowDialog(false);
+      loadData();
+    } catch (err) {
+      toast.error("Failed to save lesson plan: " + (err?.message || "Unknown error"));
+    } finally {
+      clearTimeout(timeout);
+      setSaving(false);
+    }
   }
 
   async function handleSubmitForApproval(plan) {
