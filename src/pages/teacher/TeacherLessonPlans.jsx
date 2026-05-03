@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload } from 'lucide-react';
+import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload, Clock, CheckCircle2, XCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -82,7 +82,6 @@ export default function TeacherLessonPlans() {
     setSaving(true);
     const selectedClasses = classes.filter(c => form.classIds.includes(c.id));
     const subj = subjects.find(s => s.id === form.subjectId);
-    // Use first class as primary for backward compat
     const primaryClass = selectedClasses[0];
     const payload = {
       schoolId: user.schoolId, teacherId: user.id, teacherName: user.fullName,
@@ -94,19 +93,30 @@ export default function TeacherLessonPlans() {
       activities: form.activities.filter(a => a.title.trim()),
       resources: form.resources.filter(r => r.trim()),
       homework: form.homework, notes: form.notes,
-      isPublished: form.isPublished,
       pdfFileUrl: form.pdfFileUrl || "",
     };
     if (editingPlan) {
-      await base44.entities.LessonPlan.update(editingPlan.id, payload);
-      toast.success("Plan updated");
+      // Reset to pending when edited so admin re-approves
+      await base44.entities.LessonPlan.update(editingPlan.id, {
+        ...payload,
+        status: "pending",
+        isPublished: false,
+        approvedBy: "", approvalDate: "", approvalNotes: "",
+      });
+      toast.success("Plan updated — resubmitted for approval");
     } else {
-      await base44.entities.LessonPlan.create(payload);
-      toast.success("Lesson plan created");
+      await base44.entities.LessonPlan.create({ ...payload, status: "pending", isPublished: false });
+      toast.success("Lesson plan submitted for approval");
     }
     setShowDialog(false);
     loadData();
     setSaving(false);
+  }
+
+  async function handleSubmitForApproval(plan) {
+    await base44.entities.LessonPlan.update(plan.id, { status: "pending", isPublished: false, approvedBy: "", approvalDate: "", approvalNotes: "" });
+    toast.success("Resubmitted for admin approval");
+    loadData();
   }
 
   async function handlePdfUpload(e) {
@@ -136,6 +146,9 @@ export default function TeacherLessonPlans() {
   }
 
   async function togglePublish(plan) {
+    if (!plan.isPublished && plan.status !== "approved") {
+      return toast.error("This plan must be approved by an admin before publishing");
+    }
     await base44.entities.LessonPlan.update(plan.id, { isPublished: !plan.isPublished });
     toast.success(plan.isPublished ? "Hidden from students" : "Published to students");
     loadData();
@@ -205,9 +218,15 @@ export default function TeacherLessonPlans() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold">{plan.title}</p>
-                        <Badge variant={plan.isPublished ? "default" : "secondary"} className="text-xs">
-                          {plan.isPublished ? "Published" : "Draft"}
-                        </Badge>
+                        {plan.isPublished ? (
+                          <Badge className="text-xs bg-emerald-100 text-emerald-700">Published</Badge>
+                        ) : plan.status === "approved" ? (
+                          <Badge className="text-xs bg-blue-100 text-blue-700"><CheckCircle2 className="w-3 h-3 mr-1" />Approved</Badge>
+                        ) : plan.status === "rejected" ? (
+                          <Badge className="text-xs bg-red-100 text-red-700"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>
+                        ) : (
+                          <Badge className="text-xs bg-amber-100 text-amber-700"><Clock className="w-3 h-3 mr-1" />Pending Approval</Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-0.5">
                         {plan.subjectName} · {(plan.classNames?.length ? plan.classNames : [plan.className]).join(', ')} · {plan.date ? format(new Date(plan.date), 'EEE, MMM d yyyy') : ''}
@@ -216,10 +235,17 @@ export default function TeacherLessonPlans() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={e => { e.stopPropagation(); togglePublish(plan); }}
-                        title={plan.isPublished ? "Hide from students" : "Publish to students"}>
-                        {plan.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+                      {plan.status === "approved" && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={e => { e.stopPropagation(); togglePublish(plan); }}
+                          title={plan.isPublished ? "Hide from students" : "Publish to students"}>
+                          {plan.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      )}
+                      {plan.status === "rejected" && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-600" title="Resubmit for approval" onClick={e => { e.stopPropagation(); handleSubmitForApproval(plan); }}>
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={e => { e.stopPropagation(); openEdit(plan); }}>
                         <Pencil className="w-4 h-4" />
                       </Button>
@@ -285,6 +311,18 @@ export default function TeacherLessonPlans() {
                         <a href={plan.pdfFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline p-2 bg-primary/5 rounded-lg">
                           <FileText className="w-4 h-4" /> View attached PDF
                         </a>
+                      )}
+                      {plan.status === "rejected" && plan.approvalNotes && (
+                        <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                          <p className="text-xs font-semibold text-red-700 mb-1 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Admin Feedback</p>
+                          <p className="text-sm text-red-800">{plan.approvalNotes}</p>
+                        </div>
+                      )}
+                      {plan.status === "approved" && plan.approvalNotes && (
+                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                          <p className="text-xs font-semibold text-blue-700 mb-1 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Admin Notes</p>
+                          <p className="text-sm text-blue-800">{plan.approvalNotes}</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -434,20 +472,16 @@ export default function TeacherLessonPlans() {
               )}
             </div>
 
-            {/* Publish toggle */}
-            <div className="flex items-center gap-3 p-3 bg-secondary/40 rounded-lg">
-              <input type="checkbox" id="published" checked={form.isPublished} onChange={e => setForm({ ...form, isPublished: e.target.checked })} className="w-4 h-4 accent-primary" />
-              <label htmlFor="published" className="text-sm cursor-pointer">
-                <span className="font-medium">Publish to students</span>
-                <span className="text-muted-foreground ml-1">— students in this class can see this plan</span>
-              </label>
+            <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800 flex items-center gap-2">
+              <Clock className="w-4 h-4 flex-shrink-0" />
+              Plans are submitted for admin approval. Once approved, you can publish them to students.
             </div>
 
             <div className="flex gap-2 pt-1">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setShowDialog(false)}>Cancel</Button>
               <Button type="submit" className="flex-1" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {editingPlan ? "Update Plan" : "Save Plan"}
+                {editingPlan ? "Update & Resubmit" : "Submit for Approval"}
               </Button>
             </div>
           </form>

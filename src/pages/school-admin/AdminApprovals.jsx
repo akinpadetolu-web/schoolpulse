@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -16,6 +17,7 @@ export default function AdminApprovals() {
   const [loading, setLoading] = useState(true);
   const [actionItem, setActionItem] = useState(null);
   const [actionType, setActionType] = useState(null); // 'approve' or 'reject'
+  const [rejectNotes, setRejectNotes] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -225,7 +227,7 @@ export default function AdminApprovals() {
           <div className="flex gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => handleApprove(actionItem, actionItem?.classId ? 'plan' : 'material')}
+              onClick={() => handleApprove(actionItem, actionItem?.subjectId && actionItem?.date ? 'plan' : 'material')}
               className="bg-primary"
             >
               Approve
@@ -235,18 +237,25 @@ export default function AdminApprovals() {
       </AlertDialog>
 
       {/* Rejection Dialog */}
-      <AlertDialog open={actionType === 'reject'} onOpenChange={(open) => !open && setActionType(null)}>
+      <AlertDialog open={actionType === 'reject'} onOpenChange={(open) => { if (!open) { setActionType(null); setRejectNotes(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reject Content?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will reject "{actionItem?.title}". The teacher will be notified and can revise and resubmit.
+              This will reject "{actionItem?.title}". Add feedback so the teacher knows what to fix.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-2">
+          <Textarea
+            placeholder="Reason for rejection (optional)..."
+            value={rejectNotes}
+            onChange={e => setRejectNotes(e.target.value)}
+            rows={3}
+            className="mt-2"
+          />
+          <div className="flex gap-2 mt-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => handleReject(actionItem, actionItem?.classId ? 'plan' : 'material', 'Rejected by admin')}
+              onClick={() => handleReject(actionItem, actionItem?.subjectId && actionItem?.date ? 'plan' : 'material', rejectNotes || 'Rejected by admin')}
               className="bg-destructive"
             >
               Reject
