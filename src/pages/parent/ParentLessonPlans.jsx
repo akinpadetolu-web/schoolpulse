@@ -20,20 +20,35 @@ export default function ParentLessonPlans() {
         setLoading(false);
         return;
       }
-      const allPlans = [];
-      for (const studentId of user.linkedStudentIds) {
-        const student = await base44.entities.SchoolUser.get(studentId);
-        if (student?.classId) {
-          const studentPlans = await base44.entities.LessonPlan.filter({
-            schoolId: user.schoolId,
-            classId: student.classId,
-            isPublished: true,
-            status: 'approved',
-          });
-          allPlans.push(...studentPlans);
-        }
+
+      // Fetch all students first
+      const students = await Promise.all(
+        user.linkedStudentIds.map(id => base44.entities.SchoolUser.get(id))
+      );
+
+      // Collect all valid classIds across all linked children
+      const classIds = [...new Set(students.filter(s => s?.classId).map(s => s.classId))];
+
+      if (!classIds.length) {
+        setLoading(false);
+        return;
       }
-      const unique = Array.from(new Map(allPlans.map(p => [p.id, p])).values());
+
+      // Fetch all published+approved lesson plans for this school
+      const allPlans = await base44.entities.LessonPlan.filter({
+        schoolId: user.schoolId,
+        isPublished: true,
+        status: 'approved',
+      });
+
+      // Keep plans that target any of the children's classes (via classId or classIds array)
+      const relevant = allPlans.filter(p => {
+        const primary = classIds.includes(p.classId);
+        const multi = Array.isArray(p.classIds) && p.classIds.some(cid => classIds.includes(cid));
+        return primary || multi;
+      });
+
+      const unique = Array.from(new Map(relevant.map(p => [p.id, p])).values());
       setPlans(unique.sort((a, b) => (b.date || "").localeCompare(a.date || "")));
       setLoading(false);
     }
