@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download } from 'lucide-react';
-
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import TimetableGenerator from '@/components/timetable/TimetableGenerator';
