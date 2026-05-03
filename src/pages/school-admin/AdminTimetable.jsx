@@ -13,7 +13,7 @@ import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock
 
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
-import TimetableGenerator from '@/components/timetable/TimetableGenerator.jsx';
+import TimetableGenerator from '@/components/timetable/TimetableGenerator';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
