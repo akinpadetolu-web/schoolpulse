@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -88,7 +87,7 @@ export default function AdminTimetable() {
   const [manualClashes, setManualClashes] = useState([]);
 
   // AI state
-  const [aiPrompt, setAiPrompt] = useState("");
+
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiPreview, setAiPreview] = useState([]);
   const [aiClashMap, setAiClashMap] = useState({}); // index -> [clashes]
@@ -206,49 +205,41 @@ export default function AdminTimetable() {
   const [aiTargetClasses, setAiTargetClasses] = useState([]);
   const [aiProgress, setAiProgress] = useState(0);
 
+  const [aiStatus, setAiStatus] = useState("");
+
   async function handleAiGenerate() {
-    setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({}); setAiProgress(0);
-    if (!aiPrompt.trim()) return setAiError("Please describe what you want, e.g. 'Generate a timetable for SS2 Science B with double periods for Maths and Physics'");
-    
-    // For now, use all classes if none selected, otherwise use selected
+    setAiError(""); setAiPreview([]); setAiLog(""); setAiClashMap({}); setAiProgress(0); setAiStatus("");
+
     const targetIds = aiTargetClasses.length > 0 ? aiTargetClasses : classes.map(c => c.id);
-    if (targetIds.length === 0) return setAiError("No classes selected");
-    
+    if (targetIds.length === 0) return setAiError("No classes available to generate timetable for");
+
     setAiGenerating(true);
-    setAiProgress(20);
+    setAiProgress(10);
+    setAiStatus("Fetching school data...");
 
     try {
-      // Call backend function instead of inline
-      setAiProgress(40);
+      setAiProgress(30);
+      setAiStatus("Generating timetable...");
+
       const result = await base44.functions.invoke('generateTimetable', {
         schoolId,
-        prompt: aiPrompt.trim(),
         targetClassIds: targetIds,
       });
 
       setAiProgress(80);
+      setAiStatus("Running clash detection...");
 
-      const slots = (result?.data?.slots || []).map(s => ({
-        schoolId,
-        classId: s.classId || "",
-        className: s.className || "",
-        subjectId: s.subjectId || "",
-        subjectName: s.subjectName || "",
-        teacherId: s.teacherId || "",
-        teacherName: s.teacherName || "",
-        dayOfWeek: s.dayOfWeek || "",
-        startTime: s.startTime || "",
-        endTime: s.endTime || "",
-      }));
+      const slots = (result?.data?.slots || []);
 
       if (slots.length === 0) {
-        setAiError("AI didn't generate any entries. Try a more specific prompt, e.g. 'Generate timetable for JS1A'");
+        setAiError("No entries were generated. Please check that subjects and classes are set up correctly in your school data.");
         setAiProgress(0);
+        setAiStatus("");
         setAiGenerating(false);
         return;
       }
 
-      // Run clash detection
+      // Run client-side clash detection for preview display
       const clashMap = {};
       slots.forEach((slot, i) => {
         const otherPreview = slots.filter((_, j) => j !== i);
@@ -256,43 +247,40 @@ export default function AdminTimetable() {
         if (clashes.length > 0) clashMap[i] = clashes;
       });
 
+      setAiProgress(90);
+      setAiStatus("Saving timetable...");
+
       setAiPreview(slots);
       setAiClashMap(clashMap);
       if (result?.data?.reasoning) setAiLog(result.data.reasoning);
+
       if (result?.data?.warnings?.length > 0) {
         result.data.warnings.forEach(w => toast.warning(w, { duration: 6000 }));
       }
-      const clashCount = Object.keys(clashMap).length;
+
+      const stats = result?.data?.stats;
+      const clashCount = result?.data?.stats?.clashes || 0;
+
+      setAiProgress(100);
+      setAiStatus("Timetable generated successfully!");
+
       if (clashCount > 0) {
-        toast.warning(`${clashCount} clash(es) detected in preview — review before saving`);
+        toast.warning(`Generated ${slots.length} entries with ${clashCount} clash(es) — review warnings`);
       } else {
         toast.success(`${slots.length} entries generated with no clashes`);
       }
-      setAiProgress(100);
+
+      // Data was already saved by backend — reload
+      loadData();
+
     } catch (error) {
       setAiError(`Generation failed: ${error.message}`);
-      console.error('AI generation error:', error);
+      setAiStatus("");
+      console.error('Timetable generation error:', error);
     } finally {
-      setTimeout(() => setAiProgress(0), 500);
+      setTimeout(() => { setAiProgress(0); setAiStatus(""); }, 3000);
       setAiGenerating(false);
     }
-  }
-
-  async function handleSaveAiPreview() {
-    const clashCount = Object.keys(aiClashMap).length;
-    if (clashCount > 0) {
-      if (!window.confirm(`There are ${clashCount} clash(es) in the preview. Save anyway?`)) return;
-    }
-    setSaving(true);
-    // Only save non-clashing entries unless confirmed
-    await Promise.all(aiPreview.map(entry => base44.entities.TimetableEntry.create(entry)));
-    toast.success(`Saved ${aiPreview.length} timetable entries`);
-    setAiPreview([]);
-    setAiPrompt("");
-    setAiLog("");
-    setAiClashMap({});
-    loadData();
-    setSaving(false);
   }
 
   // ── PDF Export ───────────────────────────────────────────────────────────
@@ -571,7 +559,7 @@ export default function AdminTimetable() {
 
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Target classes (optional — leave blank for all)</Label>
+                  <Label>Target classes (leave blank to generate for all classes)</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {classes.map(c => (
                       <label key={c.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-secondary/50">
@@ -593,26 +581,16 @@ export default function AdminTimetable() {
                   </div>
                 </div>
 
-                <div>
-                  <Label>Your instructions</Label>
-                  <Textarea
-                    className="mt-1"
-                    rows={3}
-                    placeholder="Be specific — double periods for Maths on Monday/Wednesday, avoid Friday afternoon classes, etc..."
-                    value={aiPrompt}
-                    onChange={e => setAiPrompt(e.target.value)}
-                  />
-                </div>
                 {aiError && (
                   <div className="flex items-start gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
                     <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />{aiError}
                   </div>
                 )}
 
-                {aiGenerating && aiProgress > 0 && (
+                {(aiGenerating || aiStatus) && aiProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Generating timetable...</span>
+                      <span className="text-muted-foreground">{aiStatus || "Working..."}</span>
                       <span className="font-semibold text-primary">{aiProgress}%</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
@@ -622,32 +600,17 @@ export default function AdminTimetable() {
                 )}
 
                 <div className="flex gap-2">
-                  <Button onClick={handleAiGenerate} disabled={aiGenerating || !aiPrompt.trim()} className="flex-1">
+                  <Button onClick={handleAiGenerate} disabled={aiGenerating} className="flex-1">
                     {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
-                    {aiGenerating ? "Generating (faster than before)..." : "Generate Timetable"}
+                    {aiGenerating ? aiStatus || "Generating..." : "Generate Timetable"}
                   </Button>
                   {aiPreview.length > 0 && (
-                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); }}>
-                      <RefreshCw className="w-4 h-4 mr-1" /> Reset
+                    <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); setAiProgress(0); setAiStatus(""); }}>
+                      <RefreshCw className="w-4 h-4 mr-1" /> Clear Preview
                     </Button>
                   )}
                 </div>
               </div>
-
-              {/* Quick generate buttons */}
-              {classes.length > 0 && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">Quick start — click to pre-fill:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {classes.map(c => (
-                      <button key={c.id} onClick={() => setAiPrompt(`Generate a full week timetable for ${c.className}`)}
-                        className="text-xs px-3 py-1.5 bg-secondary hover:bg-primary hover:text-white rounded-full transition-colors">
-                        {c.className}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -671,18 +634,17 @@ export default function AdminTimetable() {
                       {Object.keys(aiClashMap).length > 0
                         ? <AlertTriangle className="w-4 h-4 text-amber-500" />
                         : <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                      Preview — {aiPreview[0]?.className}
+                      Generated Preview
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {aiPreview.length} entries
+                      {aiPreview.length} entries saved
                       {Object.keys(aiClashMap).length > 0
                         ? <span className="text-amber-600 ml-2">• {Object.keys(aiClashMap).length} clash(es) found</span>
                         : <span className="text-emerald-600 ml-2">• No clashes</span>}
                     </p>
                   </div>
-                  <Button onClick={handleSaveAiPreview} disabled={saving}>
-                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                    Save to Timetable
+                  <Button variant="outline" onClick={() => { setAiPreview([]); setAiClashMap({}); setAiLog(""); }}>
+                    Dismiss Preview
                   </Button>
                 </div>
 
