@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import StudentSidebar from './StudentSidebar';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import TeacherSidebar from './TeacherSidebar';
