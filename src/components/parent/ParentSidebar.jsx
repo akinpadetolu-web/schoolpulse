@@ -12,7 +12,6 @@ const parentNavGroups = [
     label: 'MAIN',
     items: [
       { label: "Dashboard", path: "/parent", icon: LayoutDashboard },
-      { label: "My Children", path: "/parent", icon: Users },
     ]
   },
   {
@@ -39,7 +38,7 @@ const parentNavGroups = [
     label: 'ACCOUNT',
     items: [
       { label: "Profile", path: "/parent/profile", icon: Users },
-      { label: "Settings", path: "/parent", icon: Settings },
+      { label: "Settings", path: "/parent/settings", icon: Settings },
     ]
   },
 ];
