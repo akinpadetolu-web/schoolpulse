@@ -104,6 +104,7 @@ const StudentLessonPlans = lazy(() => import('./pages/student/StudentLessonPlans
 const StudentAnnouncements = lazy(() => import('./pages/student/StudentAnnouncements'));
 const StudentQuizzes = lazy(() => import('./pages/student/StudentQuizzes'));
 const StudentProfile = lazy(() => import('./pages/student/StudentProfile'));
+const StudentSettings = lazy(() => import('./pages/student/StudentSettings'));
 const StudentNotes = lazy(() => import('./pages/student/StudentNotes'));
 
 // Parent
@@ -232,6 +233,7 @@ const AuthenticatedApp = () => {
           <Route path="report-cards" element={<StudentReportCards />} />
           <Route path="notes" element={<StudentNotes />} />
           <Route path="profile" element={<StudentProfile />} />
+          <Route path="settings" element={<StudentSettings />} />
         </Route>
 
         {/* Parent */}

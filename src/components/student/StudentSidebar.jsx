@@ -40,7 +40,7 @@ const studentNavGroups = [
     label: 'ACCOUNT',
     items: [
       { label: "Profile", path: "/student/profile", icon: GraduationCap },
-      { label: "Settings", path: "/student", icon: Settings },
+      { label: "Settings", path: "/student/settings", icon: Settings },
     ]
   },
 ];
