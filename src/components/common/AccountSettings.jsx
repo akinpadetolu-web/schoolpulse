@@ -57,25 +57,22 @@ export default function AccountSettings() {
         userId: user.id,
       });
 
-      if (response.data?.error) {
-        setPasswordError(response.data.error);
-        setPasswordLoading(false);
+      const result = response.data;
+
+      if (result?.error) {
+        setPasswordError(result.error);
         return;
       }
 
-      toast.success('Password changed successfully - please log in again');
+      toast.success('Password changed successfully — please log in again');
       setIsPasswordOpen(false);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
-      // Clear session and logout
-      setTimeout(() => {
-        logout();
-      }, 1500);
+      setTimeout(() => logout(), 1500);
     } catch (error) {
-      setPasswordError(error.response?.data?.error || 'Failed to change password');
-      console.error(error);
+      const msg = error?.response?.data?.error || error?.message || 'Failed to change password';
+      setPasswordError(msg);
     } finally {
       setPasswordLoading(false);
     }
