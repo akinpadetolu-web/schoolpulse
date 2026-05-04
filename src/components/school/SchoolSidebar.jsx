@@ -86,8 +86,11 @@ export default function SchoolSidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} />}
-      <aside className={`fixed top-0 left-0 h-screen w-64 bg-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:static md:w-64 md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 md:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={onClose}
+      />
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <School className="w-6 h-6 text-sidebar-primary" />

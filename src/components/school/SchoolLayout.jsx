@@ -27,12 +27,7 @@ export default function SchoolLayout() {
 
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
-      <div className="hidden md:flex">
-        <SchoolSidebar isOpen={true} onClose={() => {}} />
-      </div>
-      <div className="md:hidden">
-        <SchoolSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      </div>
+      <SchoolSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-6 shrink-0 select-none"

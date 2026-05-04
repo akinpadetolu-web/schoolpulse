@@ -54,11 +54,14 @@ export default function StudentSidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />}
+      <div
+        className={cn("fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 md:hidden", isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none")}
+        onClick={onClose}
+      />
       <aside className={cn(
-        "w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300",
-        isOpen ? "fixed inset-y-0 left-0 z-50 translate-x-0" : "fixed inset-y-0 left-0 z-50 -translate-x-full",
-        "md:static md:w-64 md:flex-shrink-0 md:translate-x-0 md:flex"
+        "fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+        "md:relative md:translate-x-0 md:z-auto md:flex-shrink-0"
       )}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">

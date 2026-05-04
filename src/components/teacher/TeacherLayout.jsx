@@ -32,12 +32,7 @@ export default function TeacherLayout() {
 
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
-      <div className="hidden md:block">
-        <MemoTeacherSidebar isOpen={true} onClose={() => {}} />
-      </div>
-      <div className="md:hidden">
-        <MemoTeacherSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-      </div>
+      <MemoTeacherSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
