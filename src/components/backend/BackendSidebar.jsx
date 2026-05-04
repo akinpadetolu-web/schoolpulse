@@ -4,7 +4,7 @@ import { clearCurrentSuperAdmin } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, School, UserCog, Users, GraduationCap,
-  BookOpen, Wrench, FileText, Settings, LogOut, X, Shield
+  BookOpen, Wrench, FileText, Settings, LogOut, X, Shield, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +15,7 @@ const navItems = [
   { label: "Teachers", path: "/backend/teachers", icon: Users },
   { label: "Students", path: "/backend/students", icon: GraduationCap },
   { label: "Classes", path: "/backend/classes", icon: BookOpen },
+  { label: "Feature Toggles", path: "/backend/feature-toggles", icon: Zap },
   { label: "Support Tools", path: "/backend/support", icon: Wrench },
   { label: "Audit Logs", path: "/backend/audit-logs", icon: FileText },
   { label: "Settings", path: "/backend/settings", icon: Settings },

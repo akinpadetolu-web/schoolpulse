@@ -1,0 +1,129 @@
+{
+  "name": "FeatureToggle",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string",
+      "description": "School ID (empty for global defaults)"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "teacher",
+        "student",
+        "parent"
+      ],
+      "description": "Role this toggle applies to"
+    },
+    "userId": {
+      "type": "string",
+      "description": "Optional: specific user ID (if empty, applies to all users with this role)"
+    },
+    "userName": {
+      "type": "string"
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature flags as key-value pairs",
+      "properties": {
+        "assignments": {
+          "type": "boolean",
+          "default": true
+        },
+        "grades": {
+          "type": "boolean",
+          "default": true
+        },
+        "attendance": {
+          "type": "boolean",
+          "default": true
+        },
+        "announcements": {
+          "type": "boolean",
+          "default": true
+        },
+        "lessonPlans": {
+          "type": "boolean",
+          "default": true
+        },
+        "materials": {
+          "type": "boolean",
+          "default": true
+        },
+        "messaging": {
+          "type": "boolean",
+          "default": true
+        },
+        "quizzes": {
+          "type": "boolean",
+          "default": true
+        },
+        "timetable": {
+          "type": "boolean",
+          "default": true
+        },
+        "reportCards": {
+          "type": "boolean",
+          "default": true
+        },
+        "eClass": {
+          "type": "boolean",
+          "default": false
+        },
+        "studentReports": {
+          "type": "boolean",
+          "default": true
+        },
+        "teacherWorkload": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "role",
+    "features"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "superAdmin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "superAdmin"
+          }
+        },
+        {
+          "data.schoolId": "{{user.schoolId}}"
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "superAdmin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "superAdmin"
+      }
+    }
+  }
+}

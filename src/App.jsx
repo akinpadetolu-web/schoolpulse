@@ -36,6 +36,7 @@ const BackendClasses = lazy(() => import('./pages/backend/Classes'));
 const AuditLogs = lazy(() => import('./pages/backend/AuditLogs'));
 const SupportTools = lazy(() => import('./pages/backend/SupportTools'));
 const BackendSettings = lazy(() => import('./pages/backend/BackendSettings'));
+const FeatureToggles = lazy(() => import('./pages/backend/FeatureToggles'));
 
 // School Admin
 const AdminDashboard = lazy(() => import('./pages/school-admin/AdminDashboard'));
@@ -155,6 +156,7 @@ const AuthenticatedApp = () => {
           <Route path="classes" element={<BackendClasses />} />
           <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="support" element={<SupportTools />} />
+          <Route path="feature-toggles" element={<FeatureToggles />} />
           <Route path="settings" element={<BackendSettings />} />
         </Route>
 

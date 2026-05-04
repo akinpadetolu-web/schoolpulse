@@ -1,0 +1,388 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Loader2, Trash2, Copy, Save } from 'lucide-react';
+import { toast } from 'sonner';
+import { clearFeatureCache } from '@/lib/featureToggleManager';
+
+const FEATURES = [
+  { id: 'assignments', label: 'Assignments', description: 'Allow viewing and submitting assignments' },
+  { id: 'grades', label: 'Grades', description: 'Allow viewing grades and results' },
+  { id: 'attendance', label: 'Attendance', description: 'Allow viewing attendance records' },
+  { id: 'announcements', label: 'Announcements', description: 'Allow viewing school announcements' },
+  { id: 'lessonPlans', label: 'Lesson Plans', description: 'Allow viewing lesson plans' },
+  { id: 'materials', label: 'Lesson Materials', description: 'Allow viewing course materials' },
+  { id: 'messaging', label: 'Messaging', description: 'Allow messaging with other users' },
+  { id: 'quizzes', label: 'Quizzes', description: 'Allow taking and viewing quizzes' },
+  { id: 'timetable', label: 'Timetable', description: 'Allow viewing class timetable' },
+  { id: 'reportCards', label: 'Report Cards', description: 'Allow viewing report cards' },
+  { id: 'eClass', label: 'Virtual Classes', description: 'Allow access to e-learning classes' },
+  { id: 'studentReports', label: 'Student Reports', description: 'Allow generating student reports' },
+  { id: 'teacherWorkload', label: 'Teacher Workload', description: 'Allow viewing teacher workload' },
+];
+
+const ROLES = [
+  { value: 'admin', label: 'School Admin' },
+  { value: 'teacher', label: 'Teacher' },
+  { value: 'student', label: 'Student' },
+  { value: 'parent', label: 'Parent' },
+];
+
+export default function FeatureToggles() {
+  const [toggles, setToggles] = useState([]);
+  const [schools, setSchools] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('teacher');
+  const [selectedSchool, setSelectedSchool] = useState('');
+
+  const [form, setForm] = useState({
+    schoolId: '',
+    role: 'teacher',
+    userId: '',
+    features: {},
+    description: '',
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    const [togs, schs, usrs] = await Promise.all([
+      base44.entities.FeatureToggle.list(),
+      base44.entities.School.list(),
+      base44.entities.SchoolUser.list(),
+    ]);
+    setToggles(togs || []);
+    setSchools(schs || []);
+    setUsers(usrs || []);
+    setLoading(false);
+  }
+
+  function openForm(toggle = null) {
+    if (toggle) {
+      setForm({
+        schoolId: toggle.schoolId || '',
+        role: toggle.role,
+        userId: toggle.userId || '',
+        features: toggle.features || {},
+        description: toggle.description || '',
+      });
+      setEditingId(toggle.id);
+    } else {
+      setForm({
+        schoolId: '',
+        role: 'teacher',
+        userId: '',
+        features: {},
+        description: '',
+      });
+      setEditingId(null);
+    }
+    setShowForm(true);
+  }
+
+  async function saveToggle() {
+    if (!form.role) {
+      toast.error('Role is required');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const school = form.schoolId ? schools.find(s => s.id === form.schoolId) : null;
+      const user = form.userId ? users.find(u => u.id === form.userId) : null;
+
+      const payload = {
+        schoolId: form.schoolId,
+        schoolName: school?.schoolName || 'Global',
+        role: form.role,
+        userId: form.userId,
+        userName: user?.fullName || '',
+        features: form.features,
+        description: form.description,
+        isActive: true,
+      };
+
+      if (editingId) {
+        await base44.entities.FeatureToggle.update(editingId, payload);
+        toast.success('Toggle updated');
+      } else {
+        await base44.entities.FeatureToggle.create(payload);
+        toast.success('Toggle created');
+      }
+      clearFeatureCache();
+      setShowForm(false);
+      loadData();
+    } catch (error) {
+      toast.error('Failed to save toggle');
+    }
+    setSaving(false);
+  }
+
+  async function deleteToggle(id) {
+    if (!confirm('Delete this toggle?')) return;
+    await base44.entities.FeatureToggle.delete(id);
+    toast.success('Deleted');
+    clearFeatureCache();
+    loadData();
+  }
+
+  async function duplicateToggle(toggle) {
+    setSaving(true);
+    try {
+      const newPayload = { ...toggle };
+      delete newPayload.id;
+      delete newPayload.created_date;
+      delete newPayload.updated_date;
+      delete newPayload.created_by;
+
+      await base44.entities.FeatureToggle.create(newPayload);
+      toast.success('Toggle duplicated');
+      clearFeatureCache();
+      loadData();
+    } catch {
+      toast.error('Failed to duplicate');
+    }
+    setSaving(false);
+  }
+
+  const filteredToggles = toggles.filter(t => {
+    if (selectedRole && t.role !== selectedRole) return false;
+    if (selectedSchool && t.schoolId !== selectedSchool) return false;
+    return true;
+  });
+
+  const roleUsers = users.filter(u => u.role === selectedRole && (!selectedSchool || u.schoolId === selectedSchool));
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Feature Toggles</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage which features are available for each role and school
+          </p>
+        </div>
+        <Button onClick={() => openForm()}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Toggle
+        </Button>
+      </div>
+
+      <Tabs defaultValue="toggles">
+        <TabsList>
+          <TabsTrigger value="toggles">Toggles ({filteredToggles.length})</TabsTrigger>
+          <TabsTrigger value="features">Feature Library</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="toggles" className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div>
+              <Label className="text-xs">Filter by Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>All Roles</SelectItem>
+                  {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Filter by School</Label>
+              <Select value={selectedSchool} onValueChange={setSelectedSchool}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Global / All</SelectItem>
+                  {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.schoolName}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {filteredToggles.length === 0 ? (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <p>No toggles yet. Create one to get started.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredToggles.map(toggle => (
+                <Card key={toggle.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold">
+                            {toggle.schoolName} • {ROLES.find(r => r.value === toggle.role)?.label}
+                          </h3>
+                          {toggle.userId && (
+                            <Badge variant="outline">{toggle.userName}</Badge>
+                          )}
+                        </div>
+                        {toggle.description && (
+                          <p className="text-xs text-muted-foreground">{toggle.description}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => duplicateToggle(toggle)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => openForm(toggle)}>
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteToggle(toggle.id)}>
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      {FEATURES.map(f => (
+                        <Badge
+                          key={f.id}
+                          className={toggle.features?.[f.id] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
+                        >
+                          {f.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="features">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle>Available Features</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {FEATURES.map(f => (
+                  <div key={f.id} className="p-3 border rounded-lg">
+                    <p className="font-medium">{f.label}</p>
+                    <p className="text-sm text-muted-foreground">{f.description}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Form Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit' : 'Create'} Feature Toggle</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>School (optional - leave empty for global)</Label>
+                <Select value={form.schoolId} onValueChange={v => setForm({ ...form, schoolId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Global default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>Global Default</SelectItem>
+                    {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.schoolName}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Role *</Label>
+                <Select value={form.role} onValueChange={v => setForm({ ...form, role: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Specific User (optional - leave empty to apply to all with this role)</Label>
+              <Select value={form.userId} onValueChange={v => setForm({ ...form, userId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All users with this role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>All Users</SelectItem>
+                  {roleUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Description (optional)</Label>
+              <Input
+                placeholder="e.g., Restricted access for new admins"
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label className="mb-3 block">Features</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {FEATURES.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-2 border rounded">
+                    <div>
+                      <p className="font-medium text-sm">{f.label}</p>
+                      <p className="text-xs text-muted-foreground">{f.description}</p>
+                    </div>
+                    <Switch
+                      checked={form.features?.[f.id] || false}
+                      onCheckedChange={checked =>
+                        setForm({
+                          ...form,
+                          features: { ...form.features, [f.id]: checked },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Button onClick={saveToggle} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              {editingId ? 'Save Changes' : 'Create Toggle'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
