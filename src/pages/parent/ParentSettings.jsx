@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
 import AccountSettings from '@/components/common/AccountSettings';
-import ParentNotificationPreferences from '@/components/parent/ParentNotificationPreferences';
+
+const ParentNotificationPreferences = lazy(() => import('@/components/parent/ParentNotificationPreferences'));
 
 export default function ParentSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -49,7 +50,9 @@ export default function ParentSettings() {
       </Card>
 
       {/* Push Notifications */}
-      <ParentNotificationPreferences />
+      <Suspense fallback={<div className="p-6 text-muted-foreground">Loading notification preferences...</div>}>
+        <ParentNotificationPreferences />
+      </Suspense>
 
       {/* Password & Account */}
       <AccountSettings />
