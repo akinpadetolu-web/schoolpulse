@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Trash2, TrendingUp, CheckCircle2, AlertCircle, Clock, Play, Download } from 'lucide-react';
+import { Plus, Loader2, Trash2, TrendingUp, CheckCircle2, AlertCircle, Clock, Play, Download, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
 
@@ -51,6 +51,7 @@ export default function AdminPromotion() {
   const [saving, setSaving] = useState(false);
   const [runForm, setRunForm] = useState({ classId: '', termId: '' });
   const [showRun, setShowRun] = useState(false);
+  const [downloadingBulk, setDownloadingBulk] = useState(false);
 
   const [ruleForm, setRuleForm] = useState({
     fromClassId: '', toClassId: '', repeatClassId: '',
@@ -225,6 +226,45 @@ export default function AdminPromotion() {
     loadData();
   }
 
+  function downloadResultCSV(result) {
+    const rows = [
+      ['Student Name', result.studentName],
+      ['Class', result.currentClassName],
+      ['Term', result.termName],
+      ['Overall Average (%)', result.overallAverage],
+      ['Subjects Passed', `${result.subjectsPassed}/${result.totalSubjects}`],
+      ['Recommendation', result.recommendation.toUpperCase()],
+      ['Admin Decision', result.adminDecision],
+      ['', ''],
+      ['Subject', 'Average %', 'Grade', 'Status'],
+      ...result.subjectBreakdown.map(s => [s.subjectName, s.average, s.letterGrade, s.passed ? 'Pass' : 'Fail']),
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${result.studentName}_promotion_result.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadAllResultsCSV() {
+    setDownloadingBulk(true);
+    const rows = [['Student Name', 'Class', 'Term', 'Overall Average (%)', 'Subjects Passed', 'Recommendation', 'Admin Decision']];
+    rows.push(...results.map(r => [r.studentName, r.currentClassName, r.termName, r.overallAverage, `${r.subjectsPassed}/${r.totalSubjects}`, r.recommendation, r.adminDecision]));
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `promotion_results_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setDownloadingBulk(false);
+    toast.success('Results downloaded');
+  }
+
   const recBadge = { promote: 'bg-emerald-100 text-emerald-700', repeat: 'bg-red-100 text-red-700', review: 'bg-amber-100 text-amber-700' };
   const recIcon = { promote: CheckCircle2, repeat: AlertCircle, review: Clock };
 
@@ -237,9 +277,13 @@ export default function AdminPromotion() {
           <h1 className="text-2xl font-bold">Promotion & Grade Collation</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Auto-evaluate students and make promotion decisions</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowRule(true)}><Plus className="w-4 h-4 mr-2" /> Add Rule</Button>
           <Button onClick={() => setShowRun(true)}><Play className="w-4 h-4 mr-2" /> Run Evaluation</Button>
+          <Button variant="outline" onClick={downloadAllResultsCSV} disabled={downloadingBulk || results.length === 0}>
+            {downloadingBulk ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
+            Download All ({results.length})
+          </Button>
         </div>
       </div>
 
@@ -284,12 +328,17 @@ export default function AdminPromotion() {
                             <p className="text-xs text-muted-foreground">→ {r.recommendation === 'promote' ? 'Promote to' : 'Repeat'}: {r.recommendedClassName}</p>
                           )}
                         </div>
-                        {r.adminDecision === 'pending' && (
-                          <div className="flex gap-2">
-                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => applyDecision(r, 'promote')}>Promote</Button>
-                            <Button size="sm" variant="destructive" onClick={() => applyDecision(r, 'repeat')}>Repeat</Button>
-                          </div>
-                        )}
+                        <div className="flex gap-2 flex-wrap">
+                          {r.adminDecision === 'pending' && (
+                            <>
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => applyDecision(r, 'promote')}>Promote</Button>
+                              <Button size="sm" variant="destructive" onClick={() => applyDecision(r, 'repeat')}>Repeat</Button>
+                            </>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => downloadResultCSV(r)}>
+                            <Download className="w-3 h-3 mr-1" /> Download
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
