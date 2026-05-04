@@ -29,9 +29,8 @@ const parentNavGroups = [
   {
     label: 'COMMUNICATION',
     items: [
-      { label: "Announcements", path: "/parent/announcements", icon: Megaphone },
+      { label: "Notifications", path: "/parent/notifications", icon: Bell },
       { label: "Messages", path: "/parent/messages", icon: MessageSquare },
-      { label: "Notifications", path: "/parent/announcements", icon: Bell },
     ]
   },
   {

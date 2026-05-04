@@ -112,7 +112,7 @@ const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
 const ParentTimetable = lazy(() => import('./pages/parent/ParentTimetable'));
 const ParentAssignments = lazy(() => import('./pages/parent/ParentAssignments'));
 const ParentGrades = lazy(() => import('./pages/parent/ParentGrades'));
-const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncements'));
+const ParentNotifications = lazy(() => import('./pages/parent/ParentNotifications'));
 const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
 const ParentReportCards = lazy(() => import('./pages/parent/ParentReportCards'));
@@ -244,7 +244,7 @@ const AuthenticatedApp = () => {
           <Route path="timetable" element={<ParentTimetable />} />
           <Route path="assignments" element={<ParentAssignments />} />
           <Route path="grades" element={<ParentGrades />} />
-          <Route path="announcements" element={<ParentAnnouncements />} />
+          <Route path="notifications" element={<ParentNotifications />} />
           <Route path="messages" element={<ParentMessaging />} />
           <Route path="report-cards" element={<ParentReportCards />} />
           <Route path="attendance" element={<ParentAttendance />} />
