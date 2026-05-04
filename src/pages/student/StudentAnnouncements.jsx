@@ -68,6 +68,7 @@ export default function StudentAnnouncements() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Notifications</h1>
+      <p className="text-sm text-muted-foreground -mt-2">Announcements, teacher notifications, and grade updates</p>
 
       <Tabs defaultValue="announcements">
         <TabsList className="w-full grid grid-cols-3">

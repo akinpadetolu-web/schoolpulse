@@ -32,7 +32,6 @@ const studentNavGroups = [
   {
     label: 'COMMUNICATION',
     items: [
-      { label: "Announcements", path: "/student/announcements", icon: Megaphone },
       { label: "Notifications", path: "/student/announcements", icon: Bell },
     ]
   },
