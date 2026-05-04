@@ -47,15 +47,9 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
       const fetchRes = await fetch(preview);
       const blob = await fetchRes.blob();
       const compressedBlob = await compressImage(blob);
+      const file = new File([compressedBlob], 'profile_picture.jpg', { type: 'image/jpeg' });
 
-      const base64String = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedBlob);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-      });
-
-      const uploadResult = await base44.integrations.Core.UploadFile({ file: base64String });
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
       if (!uploadResult?.file_url) throw new Error('Upload returned no URL');
 
       const schoolUser = await base44.entities.SchoolUser.update(user.id, {
