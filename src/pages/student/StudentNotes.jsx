@@ -61,12 +61,6 @@ export default function StudentNotes() {
     if (current?.id) setSharingNote(current);
   };
 
-  // After save drawing, update the ref so share knows the id
-  const handleSaveDrawingWithRef = useCallback(async (dataUrl) => {
-    await handleSaveDrawing(dataUrl);
-    // editingNoteRef is updated inside handleSaveDrawing
-  }, [handleSaveDrawing]);
-
   const handleSaveDrawing = useCallback(async (dataUrl) => {
     // Upload the PNG data URL as a file
     const blob = await (await fetch(dataUrl)).blob();
@@ -188,7 +182,7 @@ export default function StudentNotes() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <NoteDrawingCanvas
               onSave={handleSaveDrawing}
-              onCancel={() => { setDialogMode(null); setEditingNote(null); }}
+              onCancel={() => { setDialogMode(null); setEditingNote(null); load(); }}
               existingImageUrl={editingNote?.drawingUrl}
               onShare={handleShareFromEditor}
               isSaved={!!editingNoteRef.current?.id}
