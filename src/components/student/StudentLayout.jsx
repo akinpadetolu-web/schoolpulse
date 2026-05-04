@@ -40,13 +40,12 @@ export default function StudentLayout() {
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="flex items-center gap-2">
-            {!isRootScreen ? (
-              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
+            {!isRootScreen && (
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => navigate(-1)}>
                 <ChevronLeft className="w-5 h-5" />
-              </Button>
-            ) : (
-              <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-5 h-5" />
               </Button>
             )}
             <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Student Portal</h2>
