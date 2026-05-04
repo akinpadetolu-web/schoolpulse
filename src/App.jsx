@@ -116,6 +116,7 @@ const ParentAnnouncements = lazy(() => import('./pages/parent/ParentAnnouncement
 const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
 const ParentReportCards = lazy(() => import('./pages/parent/ParentReportCards'));
+const ParentAttendance = lazy(() => import('./pages/parent/ParentAttendance'));
 const ParentLessonPlans = lazy(() => import('./pages/parent/ParentLessonPlans'));
 const ParentSettings = lazy(() => import('./pages/parent/ParentSettings'));
 const AdminMessaging = lazy(() => import('./pages/school-admin/AdminMessaging'));
@@ -246,6 +247,7 @@ const AuthenticatedApp = () => {
           <Route path="announcements" element={<ParentAnnouncements />} />
           <Route path="messages" element={<ParentMessaging />} />
           <Route path="report-cards" element={<ParentReportCards />} />
+          <Route path="attendance" element={<ParentAttendance />} />
           <Route path="lesson-plans" element={<ParentLessonPlans />} />
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="calendar" element={<ParentCalendar />} />

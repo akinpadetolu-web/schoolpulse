@@ -22,7 +22,7 @@ const parentNavGroups = [
       { label: "Lesson Plans", path: "/parent/lesson-plans", icon: BookOpen },
       { label: "Assignments", path: "/parent/assignments", icon: FileText },
       { label: "Grades", path: "/parent/grades", icon: ClipboardList },
-      { label: "Attendance", path: "/parent/timetable", icon: UserCheck },
+      { label: "Attendance", path: "/parent/attendance", icon: UserCheck },
       { label: "E-Class Schedule", path: "/parent/e-class", icon: Video },
     ]
   },
