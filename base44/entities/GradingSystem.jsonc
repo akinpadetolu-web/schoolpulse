@@ -88,6 +88,32 @@
         }
       ]
     },
+    "subjectWeights": {
+      "type": "array",
+      "description": "Weights for different subjects/categories to calculate overall report card average",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "description": "Subject ID"
+          },
+          "subjectName": {
+            "type": "string",
+            "description": "Subject name"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Percentage weight for this subject (0-100)"
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectName",
+          "weight"
+        ]
+      }
+    },
     "passMark": {
       "type": "number",
       "default": 40,

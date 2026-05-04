@@ -66,10 +66,27 @@ Deno.serve(async (req) => {
         };
       });
 
-      // Calculate overall average
-      const overallAverage = Math.round(
-        subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length
-      );
+      // Calculate overall average using subject weights if configured
+      let overallAverage;
+      if (gradingSystem?.subjectWeights && gradingSystem.subjectWeights.length > 0) {
+        let weightedSum = 0;
+        let totalWeight = 0;
+        
+        subjectGrades.forEach(sg => {
+          const subjectWeight = gradingSystem.subjectWeights.find(sw => sw.subjectId === sg.subjectId);
+          if (subjectWeight) {
+            weightedSum += sg.weightedAverage * (subjectWeight.weight / 100);
+            totalWeight += subjectWeight.weight / 100;
+          }
+        });
+        
+        overallAverage = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+      } else {
+        // Default: equal weight for all subjects
+        overallAverage = Math.round(
+          subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length
+        );
+      }
 
       // Create report card
       const reportCard = {

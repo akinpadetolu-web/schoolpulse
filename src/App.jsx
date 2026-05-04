@@ -56,6 +56,7 @@ const AdminAttendance = lazy(() => import('./pages/school-admin/AdminAttendance'
 const AdminStudentReports = lazy(() => import('./pages/school-admin/AdminStudentReports'));
 const AdminAnnouncements = lazy(() => import('./pages/school-admin/AdminAnnouncements'));
 const AdminGradeWeighting = lazy(() => import('./pages/school-admin/AdminGradeWeighting'));
+const AdminSubjectWeights = lazy(() => import('./pages/school-admin/AdminSubjectWeights'));
 const AdminReportCards = lazy(() => import('./pages/school-admin/AdminReportCards'));
 const AdminSchoolReport = lazy(() => import('./pages/school-admin/AdminSchoolReport'));
 const AdminApprovals = lazy(() => import('./pages/school-admin/AdminApprovals'));
@@ -179,6 +180,7 @@ const AuthenticatedApp = () => {
           <Route path="student-reports" element={<FeatureGuard path="/school-admin/student-reports"><AdminStudentReports /></FeatureGuard>} />
           <Route path="announcements" element={<FeatureGuard path="/school-admin/announcements"><AdminAnnouncements /></FeatureGuard>} />
           <Route path="grade-weighting" element={<FeatureGuard path="/school-admin/grade-weighting"><AdminGradeWeighting /></FeatureGuard>} />
+          <Route path="subject-weights" element={<AdminSubjectWeights />} />
           <Route path="report-cards" element={<FeatureGuard path="/school-admin/report-cards"><AdminReportCards /></FeatureGuard>} />
           <Route path="report-card-templates" element={<AdminReportCardTemplates />} />
           <Route path="school-report" element={<AdminSchoolReport />} />
