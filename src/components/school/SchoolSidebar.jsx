@@ -54,6 +54,7 @@ const adminNavGroups = [
   {
     label: 'STAFF',
     items: [
+      { label: "Teacher Workload", path: "/school-admin/teacher-workload", icon: TrendingUp },
       { label: "Clock In/Out", path: "/school-admin/staff-attendance", icon: Clock },
       { label: "Leave Requests", path: "/school-admin/leave-requests", icon: AlertCircle },
       { label: "HR", path: "/school-admin/hr", icon: Briefcase },
