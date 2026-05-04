@@ -25,7 +25,8 @@ export default function AdminGradeWeighting() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClasses, setSelectedClasses] = useState([]);
+  const [filterClass, setFilterClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
 
   const [form, setForm] = useState({
@@ -52,7 +53,7 @@ export default function AdminGradeWeighting() {
 
   async function handleCreate(e) {
     e.preventDefault();
-    if (!selectedClass || !selectedSubject || !form.categoryName || !form.weight) {
+    if (selectedClasses.length === 0 || !selectedSubject || !form.categoryName || !form.weight) {
       return toast.error('All fields are required');
     }
 
@@ -61,36 +62,44 @@ export default function AdminGradeWeighting() {
       return toast.error('Weight must be between 0 and 100');
     }
 
-    // Check if total weight for this subject exceeds 100%
-    const classSubjCategories = categories.filter(
-      c => c.classId === selectedClass && c.subjectId === selectedSubject
-    );
-    const totalWeight = classSubjCategories.reduce((sum, c) => sum + c.weight, 0) + weight;
-    if (totalWeight > 100) {
-      return toast.error(`Total weight would be ${totalWeight}%. Maximum is 100%.`);
-    }
-
     setSaving(true);
-    const cls = classes.find(c => c.id === selectedClass);
     const subj = subjects.find(s => s.id === selectedSubject);
 
-    const newCategory = {
-      schoolId: user.schoolId,
-      schoolName: user.schoolName,
-      classId: selectedClass,
-      className: cls.className,
-      subjectId: selectedSubject,
-      subjectName: subj.name,
-      categoryName: form.categoryName,
-      weight,
-      description: form.description,
-    };
+    const promises = selectedClasses.map(classId => {
+      const cls = classes.find(c => c.id === classId);
+      
+      // Check if total weight for this subject exceeds 100%
+      const classSubjCategories = categories.filter(
+        c => c.classId === classId && c.subjectId === selectedSubject
+      );
+      const totalWeight = classSubjCategories.reduce((sum, c) => sum + c.weight, 0) + weight;
+      if (totalWeight > 100) {
+        throw new Error(`${cls.className}: Total weight would be ${totalWeight}%. Maximum is 100%.`);
+      }
 
-    await base44.entities.GradeCategory.create(newCategory);
-    toast.success('Category created');
-    setForm({ categoryName: '', weight: '', description: '' });
-    setShowCreate(false);
-    loadData();
+      return base44.entities.GradeCategory.create({
+        schoolId: user.schoolId,
+        schoolName: user.schoolName,
+        classId,
+        className: cls.className,
+        subjectId: selectedSubject,
+        subjectName: subj.name,
+        categoryName: form.categoryName,
+        weight,
+        description: form.description,
+      });
+    });
+
+    try {
+      await Promise.all(promises);
+      toast.success(`Category created for ${selectedClasses.length} class(es)`);
+      setForm({ categoryName: '', weight: '', description: '' });
+      setSelectedClasses([]);
+      setShowCreate(false);
+      loadData();
+    } catch (error) {
+      toast.error(error.message);
+    }
     setSaving(false);
   }
 
@@ -102,7 +111,7 @@ export default function AdminGradeWeighting() {
   }
 
   const filtered = categories.filter(
-    c => !selectedClass || !selectedSubject || (c.classId === selectedClass && c.subjectId === selectedSubject)
+    c => !filterClass || !selectedSubject || (c.classId === filterClass && c.subjectId === selectedSubject)
   );
 
   const grouped = {};
@@ -125,7 +134,7 @@ export default function AdminGradeWeighting() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm">Filter by Class</Label>
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <Select value={filterClass} onValueChange={setFilterClass}>
               <SelectTrigger>
                 <SelectValue placeholder="All classes" />
               </SelectTrigger>
@@ -201,17 +210,28 @@ export default function AdminGradeWeighting() {
             <DialogTitle>Create Grade Category</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <Label className="text-sm">Class *</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+           <div>
+             <Label className="text-sm">Classes * (select one or more)</Label>
+             <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+               {classes.map(c => (
+                 <label key={c.id} className="flex items-center gap-2 cursor-pointer">
+                   <input
+                     type="checkbox"
+                     checked={selectedClasses.includes(c.id)}
+                     onChange={(e) => {
+                       if (e.target.checked) {
+                         setSelectedClasses([...selectedClasses, c.id]);
+                       } else {
+                         setSelectedClasses(selectedClasses.filter(id => id !== c.id));
+                       }
+                     }}
+                     className="rounded"
+                   />
+                   <span className="text-sm">{c.className}</span>
+                 </label>
+               ))}
+             </div>
+           </div>
             <div>
               <Label className="text-sm">Subject *</Label>
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
