@@ -1,6 +1,8 @@
 import { base44 } from '@/api/base44Client';
 
 let gradingSystemCache = {};
+// Clear cache on module load to pick up any schema changes
+gradingSystemCache = {};
 
 /**
  * Get the grading system for a school (cached)
@@ -9,8 +11,9 @@ async function getGradingSystem(schoolId) {
   if (!schoolId) return null;
   if (gradingSystemCache[schoolId]) return gradingSystemCache[schoolId];
   
-  const systems = await base44.entities.GradingSystem.filter({ schoolId, isDefault: true });
-  const system = systems?.[0] || null;
+  const systems = await base44.entities.GradingSystem.filter({ schoolId });
+  // Prefer isDefault, otherwise take the first one
+  const system = systems?.find(s => s.isDefault) || systems?.[0] || null;
   if (system) gradingSystemCache[schoolId] = system;
   return system;
 }
