@@ -383,22 +383,22 @@ export default function FeatureToggles() {
               {form.schoolIds.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-2">No schools selected = Global default</p>
               )}
-            </div>
-              <div>
-                <Label>Role *</Label>
-                <Select value={form.role} onValueChange={v => {
-                  const newDefaults = getDefaultFeatures(v);
-                  setForm({ ...form, role: v, features: newDefaults });
-                }}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
               </div>
-            </div>
+
+              <div>
+              <Label>Role *</Label>
+              <Select value={form.role} onValueChange={v => {
+                const newDefaults = getDefaultFeatures(v);
+                setForm({ ...form, role: v, features: newDefaults });
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              </div>
 
             <div>
               <Label>Specific User (optional - leave empty to apply to all with this role)</Label>
