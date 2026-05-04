@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, UserPlus, TrendingUp, TrendingDown, AlertCircle, BookOpen, Calendar, FileText, FlaskConical, ClipboardList } from 'lucide-react';
+import UserAvatar from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ExamProgressReport from '@/components/parent/ExamProgressReport';
@@ -311,9 +312,7 @@ export default function ParentDashboard() {
                 <Card key={child.id} className={`border-2 shadow-sm ${childColor}`}>
                   <CardHeader>
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shrink-0 border-2 border-current">
-                        <span className="font-bold text-lg">{child.fullName?.charAt(0)}</span>
-                      </div>
+                      <UserAvatar user={child} size="xl" className="shrink-0" />
                       <div className="flex-1">
                         <CardTitle className="text-lg">{child.fullName}</CardTitle>
                         <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>

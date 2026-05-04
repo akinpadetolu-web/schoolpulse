@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Search, Users } from 'lucide-react';
+import UserAvatar from '@/components/common/UserAvatar';
 
 export default function TeacherStudents() {
   const { schoolUser: user } = useSchoolAuth();
@@ -123,9 +124,7 @@ export default function TeacherStudents() {
             <Card key={student.id} className="shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {student.fullName?.charAt(0)}
-                  </div>
+                  <UserAvatar user={student} size="md" className="flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{student.fullName}</p>
                     <p className="text-xs text-muted-foreground truncate">{student.email}</p>

@@ -2,27 +2,15 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Edit2 } from 'lucide-react';
+import UserAvatar from '@/components/common/UserAvatar';
 
 export default function StudentGridCard({ student, onView, onEdit }) {
-  const initials = (student.fullName || 'S')
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
-  const bgColors = [
-    'bg-blue-100', 'bg-emerald-100', 'bg-purple-100',
-    'bg-amber-100', 'bg-pink-100', 'bg-cyan-100',
-  ];
-  const bgColor = bgColors[initials.charCodeAt(0) % bgColors.length];
-
   return (
     <div className="rounded-lg border bg-card hover:shadow-md transition-shadow">
       <div className="p-4 space-y-3">
         {/* Avatar */}
-        <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center mx-auto`}>
-          <span className="text-sm font-bold text-foreground">{initials}</span>
+        <div className="flex justify-center">
+          <UserAvatar user={student} size="lg" />
         </div>
 
         {/* Name */}
