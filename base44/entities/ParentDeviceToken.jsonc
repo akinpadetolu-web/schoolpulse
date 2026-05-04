@@ -1,0 +1,56 @@
+{
+  "name": "ParentDeviceToken",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "parentId": {
+      "type": "string",
+      "description": "SchoolUser ID of the parent"
+    },
+    "parentEmail": {
+      "type": "string"
+    },
+    "deviceToken": {
+      "type": "string",
+      "description": "Push notification device token from FCM or other service"
+    },
+    "deviceName": {
+      "type": "string",
+      "description": "Device identifier (e.g., 'iPhone', 'Android Samsung')"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether notifications are enabled for this device"
+    },
+    "notificationTypes": {
+      "type": "object",
+      "description": "Notification preferences",
+      "properties": {
+        "gradeUpdates": {
+          "type": "boolean",
+          "default": true
+        },
+        "assignmentScores": {
+          "type": "boolean",
+          "default": true
+        },
+        "announcements": {
+          "type": "boolean",
+          "default": true
+        },
+        "gradeAlerts": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "required": [
+    "schoolId",
+    "parentId",
+    "deviceToken"
+  ]
+}

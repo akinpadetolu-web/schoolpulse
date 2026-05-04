@@ -3,6 +3,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
 import AccountSettings from '@/components/common/AccountSettings';
+import ParentNotificationPreferences from '@/components/parent/ParentNotificationPreferences';
 
 export default function ParentSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -46,6 +47,9 @@ export default function ParentSettings() {
           )}
         </CardContent>
       </Card>
+
+      {/* Push Notifications */}
+      <ParentNotificationPreferences />
 
       {/* Password & Account */}
       <AccountSettings />

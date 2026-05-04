@@ -13,7 +13,10 @@
       "enum": [
         "assignment",
         "quiz",
-        "announcement"
+        "announcement",
+        "grade_updated",
+        "grade_alert",
+        "grade_submitted"
       ],
       "description": "Type of notification"
     },
@@ -28,7 +31,8 @@
       "enum": [
         "student",
         "parent",
-        "teacher"
+        "teacher",
+        "admin"
       ],
       "description": "Role this notification is for"
     },
@@ -55,7 +59,9 @@
       "enum": [
         "Assignment",
         "Quiz",
-        "Announcement"
+        "Announcement",
+        "Grade",
+        "Subject"
       ]
     },
     "isRead": {
@@ -72,6 +78,16 @@
     "createdByUser": {
       "type": "string",
       "description": "Email of user who triggered the notification"
+    },
+    "pushSent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether push notification was sent to devices"
+    },
+    "pushDeliveredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when push was delivered"
     }
   },
   "required": [
