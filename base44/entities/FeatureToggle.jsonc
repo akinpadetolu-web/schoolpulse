@@ -30,6 +30,34 @@
       "type": "object",
       "description": "Feature flags as key-value pairs",
       "properties": {
+        "adminDashboard": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminStudents": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminTeachers": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminClasses": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminSubjects": {
+          "type": "boolean",
+          "default": true
+        },
+        "timetable": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminEvents": {
+          "type": "boolean",
+          "default": true
+        },
         "assignments": {
           "type": "boolean",
           "default": true
@@ -42,7 +70,79 @@
           "type": "boolean",
           "default": true
         },
+        "adminExaminations": {
+          "type": "boolean",
+          "default": true
+        },
+        "reportCards": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminReportCardTemplates": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminTeacherAssignments": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminBulkAssign": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminCategories": {
+          "type": "boolean",
+          "default": true
+        },
+        "eClass": {
+          "type": "boolean",
+          "default": false
+        },
         "announcements": {
+          "type": "boolean",
+          "default": true
+        },
+        "messages": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminEmailCampaign": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminApprovals": {
+          "type": "boolean",
+          "default": true
+        },
+        "teacherWorkload": {
+          "type": "boolean",
+          "default": true
+        },
+        "staffAttendance": {
+          "type": "boolean",
+          "default": true
+        },
+        "leaveRequests": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHR": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminSettings": {
+          "type": "boolean",
+          "default": true
+        },
+        "gradingSystem": {
+          "type": "boolean",
+          "default": true
+        },
+        "promotion": {
+          "type": "boolean",
+          "default": true
+        },
+        "academicTerms": {
           "type": "boolean",
           "default": true
         },
@@ -54,31 +154,11 @@
           "type": "boolean",
           "default": true
         },
-        "messaging": {
-          "type": "boolean",
-          "default": true
-        },
         "quizzes": {
           "type": "boolean",
           "default": true
         },
-        "timetable": {
-          "type": "boolean",
-          "default": true
-        },
-        "reportCards": {
-          "type": "boolean",
-          "default": true
-        },
-        "eClass": {
-          "type": "boolean",
-          "default": false
-        },
         "studentReports": {
-          "type": "boolean",
-          "default": true
-        },
-        "teacherWorkload": {
           "type": "boolean",
           "default": true
         }

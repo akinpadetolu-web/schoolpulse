@@ -11,23 +11,48 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Loader2, Trash2, Copy, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { clearFeatureCache } from '@/lib/featureToggleManager';
+import { clearFeatureCache, getDefaultFeatures } from '@/lib/featureToggleManager';
 
-const FEATURES = [
-  { id: 'assignments', label: 'Assignments', description: 'Allow viewing and submitting assignments' },
-  { id: 'grades', label: 'Grades', description: 'Allow viewing grades and results' },
-  { id: 'attendance', label: 'Attendance', description: 'Allow viewing attendance records' },
-  { id: 'announcements', label: 'Announcements', description: 'Allow viewing school announcements' },
-  { id: 'lessonPlans', label: 'Lesson Plans', description: 'Allow viewing lesson plans' },
-  { id: 'materials', label: 'Lesson Materials', description: 'Allow viewing course materials' },
-  { id: 'messaging', label: 'Messaging', description: 'Allow messaging with other users' },
-  { id: 'quizzes', label: 'Quizzes', description: 'Allow taking and viewing quizzes' },
-  { id: 'timetable', label: 'Timetable', description: 'Allow viewing class timetable' },
-  { id: 'reportCards', label: 'Report Cards', description: 'Allow viewing report cards' },
-  { id: 'eClass', label: 'Virtual Classes', description: 'Allow access to e-learning classes' },
-  { id: 'studentReports', label: 'Student Reports', description: 'Allow generating student reports' },
-  { id: 'teacherWorkload', label: 'Teacher Workload', description: 'Allow viewing teacher workload' },
+const ALL_FEATURES = [
+  { id: 'adminDashboard', label: 'Admin Dashboard', description: 'Access to admin dashboard' },
+  { id: 'adminStudents', label: 'Manage Students', description: 'View and manage student records' },
+  { id: 'adminTeachers', label: 'Manage Teachers', description: 'View and manage teacher records' },
+  { id: 'adminClasses', label: 'Manage Classes', description: 'Create and manage school classes' },
+  { id: 'adminSubjects', label: 'Manage Subjects', description: 'Create and manage subjects' },
+  { id: 'timetable', label: 'Timetable', description: 'View and manage class timetable' },
+  { id: 'adminEvents', label: 'School Events', description: 'Manage school calendar and events' },
+  { id: 'assignments', label: 'Assignments', description: 'View and manage assignments' },
+  { id: 'grades', label: 'Grades', description: 'View and manage grades' },
+  { id: 'attendance', label: 'Attendance', description: 'View and manage attendance records' },
+  { id: 'adminExaminations', label: 'Examinations', description: 'Manage exam results and data' },
+  { id: 'reportCards', label: 'Report Cards', description: 'View and manage report cards' },
+  { id: 'adminReportCardTemplates', label: 'RC Templates', description: 'Manage report card templates' },
+  { id: 'adminTeacherAssignments', label: 'Teacher Assignments', description: 'Assign teachers to classes' },
+  { id: 'adminBulkAssign', label: 'Bulk Assign', description: 'Bulk assign teachers to classes' },
+  { id: 'adminCategories', label: 'Subject Categories', description: 'Manage subject categories' },
+  { id: 'eClass', label: 'Virtual Classes', description: 'Access e-learning classes' },
+  { id: 'announcements', label: 'Announcements', description: 'View and create announcements' },
+  { id: 'messages', label: 'Messaging', description: 'Send and receive messages' },
+  { id: 'adminEmailCampaign', label: 'Email Campaign', description: 'Send email campaigns' },
+  { id: 'adminApprovals', label: 'Approvals', description: 'Approve content and requests' },
+  { id: 'teacherWorkload', label: 'Teacher Workload', description: 'View teacher workload' },
+  { id: 'staffAttendance', label: 'Staff Attendance', description: 'Track staff clock in/out' },
+  { id: 'leaveRequests', label: 'Leave Requests', description: 'Manage leave requests' },
+  { id: 'adminHR', label: 'HR Management', description: 'Manage HR operations' },
+  { id: 'adminSettings', label: 'School Settings', description: 'Configure school settings' },
+  { id: 'gradingSystem', label: 'Grading System', description: 'Configure grading system' },
+  { id: 'promotion', label: 'Promotion', description: 'Manage student promotion' },
+  { id: 'academicTerms', label: 'Academic Terms', description: 'Manage academic terms' },
+  { id: 'lessonPlans', label: 'Lesson Plans', description: 'View lesson plans' },
+  { id: 'materials', label: 'Lesson Materials', description: 'View course materials' },
+  { id: 'quizzes', label: 'Quizzes', description: 'View and take quizzes' },
+  { id: 'studentReports', label: 'Student Reports', description: 'View student reports' },
 ];
+
+function getRoleFeatures(role) {
+  const defaults = getDefaultFeatures(role);
+  return ALL_FEATURES.filter(f => f.id in defaults);
+}
 
 const ROLES = [
   { value: 'admin', label: 'School Admin' },
@@ -82,11 +107,13 @@ export default function FeatureToggles() {
       });
       setEditingId(toggle.id);
     } else {
+      const defaultRole = 'teacher';
+      const defaultFeatures = getDefaultFeatures(defaultRole);
       setForm({
         schoolId: '',
-        role: 'teacher',
+        role: defaultRole,
         userId: '',
-        features: {},
+        features: defaultFeatures,
         description: '',
       });
       setEditingId(null);
@@ -262,7 +289,7 @@ export default function FeatureToggles() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                      {FEATURES.map(f => (
+                      {getRoleFeatures(toggle.role).map(f => (
                         <Badge
                           key={f.id}
                           className={toggle.features?.[f.id] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
@@ -285,7 +312,7 @@ export default function FeatureToggles() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {FEATURES.map(f => (
+                {ALL_FEATURES.map(f => (
                   <div key={f.id} className="p-3 border rounded-lg">
                     <p className="font-medium">{f.label}</p>
                     <p className="text-sm text-muted-foreground">{f.description}</p>
@@ -320,7 +347,10 @@ export default function FeatureToggles() {
               </div>
               <div>
                 <Label>Role *</Label>
-                <Select value={form.role} onValueChange={v => setForm({ ...form, role: v })}>
+                <Select value={form.role} onValueChange={v => {
+                  const newDefaults = getDefaultFeatures(v);
+                  setForm({ ...form, role: v, features: newDefaults });
+                }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -354,9 +384,9 @@ export default function FeatureToggles() {
             </div>
 
             <div>
-              <Label className="mb-3 block">Features</Label>
+              <Label className="mb-3 block">Features for {ROLES.find(r => r.value === form.role)?.label}</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {FEATURES.map(f => (
+                {getRoleFeatures(form.role).map(f => (
                   <div key={f.id} className="flex items-center justify-between p-2 border rounded">
                     <div>
                       <p className="font-medium text-sm">{f.label}</p>

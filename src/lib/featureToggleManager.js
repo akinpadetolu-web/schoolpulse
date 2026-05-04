@@ -61,32 +61,123 @@ export async function getFeatures(schoolId, role, userId = null) {
 
 export function getDefaultFeatures(role) {
   const defaults = {
+    adminDashboard: true,
+    adminStudents: true,
+    adminTeachers: true,
+    adminClasses: true,
+    adminSubjects: true,
+    timetable: true,
+    adminEvents: true,
     assignments: true,
     grades: true,
     attendance: true,
+    adminExaminations: true,
+    reportCards: true,
+    adminReportCardTemplates: true,
+    adminTeacherAssignments: true,
+    adminBulkAssign: true,
+    adminCategories: true,
+    eClass: false,
     announcements: true,
+    messages: true,
+    adminEmailCampaign: true,
+    adminApprovals: true,
+    teacherWorkload: true,
+    staffAttendance: true,
+    leaveRequests: true,
+    adminHR: true,
+    adminSettings: true,
+    gradingSystem: true,
+    promotion: true,
+    academicTerms: true,
     lessonPlans: true,
     materials: true,
-    messaging: true,
     quizzes: true,
-    timetable: true,
-    reportCards: true,
-    eClass: false,
     studentReports: true,
-    teacherWorkload: true,
   };
 
-  // Role-specific defaults
-  if (role === 'parent') {
-    defaults.quizzes = false;
-    defaults.lessonPlans = true;
-    defaults.studentReports = true;
-    defaults.attendance = true;
+  // Role-specific defaults - only admin gets all features
+  if (role === 'teacher') {
+    defaults.adminDashboard = false;
+    defaults.adminStudents = false;
+    defaults.adminTeachers = false;
+    defaults.adminClasses = false;
+    defaults.adminSubjects = false;
+    defaults.adminEvents = false;
+    defaults.adminExaminations = false;
+    defaults.adminReportCardTemplates = false;
+    defaults.adminTeacherAssignments = false;
+    defaults.adminBulkAssign = false;
+    defaults.adminCategories = false;
+    defaults.messages = true;
+    defaults.adminEmailCampaign = false;
+    defaults.adminApprovals = false;
+    defaults.staffAttendance = false;
+    defaults.leaveRequests = true;
+    defaults.adminHR = false;
+    defaults.adminSettings = false;
+    defaults.gradingSystem = false;
+    defaults.promotion = false;
+    defaults.academicTerms = false;
+    defaults.studentReports = false;
   }
 
   if (role === 'student') {
-    defaults.studentReports = false;
+    defaults.adminDashboard = false;
+    defaults.adminStudents = false;
+    defaults.adminTeachers = false;
+    defaults.adminClasses = false;
+    defaults.adminSubjects = false;
+    defaults.adminEvents = false;
+    defaults.adminExaminations = false;
+    defaults.adminReportCardTemplates = false;
+    defaults.adminTeacherAssignments = false;
+    defaults.adminBulkAssign = false;
+    defaults.adminCategories = false;
+    defaults.messages = true;
+    defaults.adminEmailCampaign = false;
+    defaults.adminApprovals = false;
     defaults.teacherWorkload = false;
+    defaults.staffAttendance = false;
+    defaults.leaveRequests = false;
+    defaults.adminHR = false;
+    defaults.adminSettings = false;
+    defaults.gradingSystem = false;
+    defaults.promotion = false;
+    defaults.academicTerms = false;
+    defaults.studentReports = false;
+  }
+
+  if (role === 'parent') {
+    defaults.adminDashboard = false;
+    defaults.adminStudents = false;
+    defaults.adminTeachers = false;
+    defaults.adminClasses = false;
+    defaults.adminSubjects = false;
+    defaults.timetable = true;
+    defaults.adminEvents = false;
+    defaults.assignments = true;
+    defaults.grades = true;
+    defaults.attendance = true;
+    defaults.adminExaminations = false;
+    defaults.adminReportCardTemplates = false;
+    defaults.adminTeacherAssignments = false;
+    defaults.adminBulkAssign = false;
+    defaults.adminCategories = false;
+    defaults.announcements = true;
+    defaults.messages = true;
+    defaults.adminEmailCampaign = false;
+    defaults.adminApprovals = false;
+    defaults.teacherWorkload = false;
+    defaults.staffAttendance = false;
+    defaults.leaveRequests = false;
+    defaults.adminHR = false;
+    defaults.adminSettings = false;
+    defaults.gradingSystem = false;
+    defaults.promotion = false;
+    defaults.academicTerms = false;
+    defaults.lessonPlans = true;
+    defaults.studentReports = true;
   }
 
   return defaults;
