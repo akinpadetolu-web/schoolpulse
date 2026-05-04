@@ -7,18 +7,21 @@ const SESSION_KEY = 'schoolpulse_session_v2';
 
 function readStoredSession() {
   try {
+    if (typeof window === 'undefined' || !window.localStorage || !window.sessionStorage) return null;
     const v = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     return v ? JSON.parse(v) : null;
   } catch { return null; }
 }
 
 function writeStoredSession(user) {
+  if (typeof window === 'undefined' || !window.localStorage || !window.sessionStorage) return;
   const data = JSON.stringify({ id: user.id, email: user.email, schoolId: user.schoolId, role: user.role });
   try { localStorage.setItem(SESSION_KEY, data); } catch {}
   try { sessionStorage.setItem(SESSION_KEY, data); } catch {}
 }
 
 function clearStoredSession() {
+  if (typeof window === 'undefined' || !window.localStorage || !window.sessionStorage) return;
   try { localStorage.removeItem(SESSION_KEY); } catch {}
   try { sessionStorage.removeItem(SESSION_KEY); } catch {}
   // Also clear old keys
