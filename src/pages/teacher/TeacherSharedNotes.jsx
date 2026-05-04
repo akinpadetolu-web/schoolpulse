@@ -3,10 +3,13 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, FileText, ImageIcon, Loader2, MessageSquare, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, FileText, ImageIcon, Loader2, MessageSquare, Users, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
+import JSZip from 'jszip';
 
 export default function TeacherSharedNotes() {
   const { schoolUser: user } = useSchoolAuth();
@@ -14,10 +17,11 @@ export default function TeacherSharedNotes() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState(null);
+  const [filterSubject, setFilterSubject] = useState('');
+  const [zipping, setZipping] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    // Fetch notes shared with this teacher
     const data = await base44.entities.Note.filter({ schoolId: user.schoolId, isShared: true, isArchived: false });
     const mine = (data || []).filter(n => n.sharedWith?.includes(user.id));
     setNotes(mine);
@@ -26,10 +30,48 @@ export default function TeacherSharedNotes() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = notes.filter(n =>
-    n.title?.toLowerCase().includes(search.toLowerCase()) ||
-    n.studentName?.toLowerCase().includes(search.toLowerCase())
-  );
+  const subjects = [...new Set(notes.map(n => n.subject).filter(Boolean))].sort();
+
+  const filtered = notes.filter(n => {
+    const matchSearch = n.title?.toLowerCase().includes(search.toLowerCase()) ||
+      n.studentName?.toLowerCase().includes(search.toLowerCase());
+    const matchSubject = !filterSubject || n.subject === filterSubject;
+    return matchSearch && matchSubject;
+  });
+
+  const handleDownloadZip = async () => {
+    const toZip = filterSubject ? notes.filter(n => n.subject === filterSubject) : notes;
+    if (!toZip.length) return;
+    setZipping(true);
+    const zip = new JSZip();
+    const subjectLabel = filterSubject || 'All_Subjects';
+
+    for (const note of toZip) {
+      const studentFolder = (note.studentName || 'Unknown').replace(/[^a-z0-9_\- ]/gi, '_');
+      if (note.mode === 'drawing' && note.drawingUrl) {
+        try {
+          const res = await fetch(note.drawingUrl);
+          const blob = await res.blob();
+          zip.file(`${subjectLabel}/${studentFolder}/${note.title || 'drawing'}.png`, blob);
+        } catch {/* skip failed fetch */}
+      } else if (note.content) {
+        const plainText = note.content
+          .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n')
+          .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+        zip.file(`${subjectLabel}/${studentFolder}/${note.title || 'note'}.txt`, plainText);
+      }
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes_${subjectLabel}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setZipping(false);
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -38,16 +80,33 @@ export default function TeacherSharedNotes() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Shared Notes</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Notes shared with you by students</p>
         </div>
+        <Button onClick={handleDownloadZip} disabled={zipping || notes.length === 0} variant="outline" className="gap-2">
+          {zipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Download ZIP {filterSubject ? `(${filterSubject})` : '(All)'}
+        </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by title or student..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by title or student..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        {subjects.length > 0 && (
+          <Select value={filterSubject} onValueChange={setFilterSubject}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All subjects</SelectItem>
+              {subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (
