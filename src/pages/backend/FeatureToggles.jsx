@@ -76,7 +76,7 @@ export default function FeatureToggles() {
   const [previewFeatures, setPreviewFeatures] = useState({});
 
   const [form, setForm] = useState({
-    schoolId: '',
+    schoolIds: [],
     role: 'teacher',
     userId: '',
     features: {},
@@ -102,7 +102,7 @@ export default function FeatureToggles() {
   function openForm(toggle = null) {
     if (toggle) {
       setForm({
-        schoolId: toggle.schoolId || '',
+        schoolIds: toggle.schoolId ? [toggle.schoolId] : [],
         role: toggle.role,
         userId: toggle.userId || '',
         features: toggle.features || {},
@@ -113,7 +113,7 @@ export default function FeatureToggles() {
       const defaultRole = 'teacher';
       const defaultFeatures = getDefaultFeatures(defaultRole);
       setForm({
-        schoolId: '',
+        schoolIds: [],
         role: defaultRole,
         userId: '',
         features: defaultFeatures,
@@ -132,27 +132,31 @@ export default function FeatureToggles() {
 
     setSaving(true);
     try {
-      const school = form.schoolId ? schools.find(s => s.id === form.schoolId) : null;
       const user = form.userId ? users.find(u => u.id === form.userId) : null;
+      const schoolsToCreate = form.schoolIds.length > 0 ? form.schoolIds : [''];
 
-      const payload = {
-        schoolId: form.schoolId,
-        schoolName: school?.schoolName || 'Global',
-        role: form.role,
-        userId: form.userId,
-        userName: user?.fullName || '',
-        features: form.features,
-        description: form.description,
-        isActive: true,
-      };
+      const promises = schoolsToCreate.map(schoolId => {
+        const school = schoolId ? schools.find(s => s.id === schoolId) : null;
+        const payload = {
+          schoolId: schoolId,
+          schoolName: school?.schoolName || 'Global',
+          role: form.role,
+          userId: form.userId,
+          userName: user?.fullName || '',
+          features: form.features,
+          description: form.description,
+          isActive: true,
+        };
 
-      if (editingId) {
-        await base44.entities.FeatureToggle.update(editingId, payload);
-        toast.success('Toggle updated');
-      } else {
-        await base44.entities.FeatureToggle.create(payload);
-        toast.success('Toggle created');
-      }
+        if (editingId && form.schoolIds.length === 1) {
+          return base44.entities.FeatureToggle.update(editingId, payload);
+        } else {
+          return base44.entities.FeatureToggle.create(payload);
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success(`Toggle ${editingId && form.schoolIds.length === 1 ? 'updated' : 'created'} for ${schoolsToCreate.length} school(s)`);
       clearFeatureCache();
       setShowForm(false);
       loadData();
@@ -350,20 +354,36 @@ export default function FeatureToggles() {
             <DialogTitle>{editingId ? 'Edit' : 'Create'} Feature Toggle</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>School (optional - leave empty for global)</Label>
-                <Select value={form.schoolId} onValueChange={v => setForm({ ...form, schoolId: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Global default" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>Global Default</SelectItem>
-                    {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.schoolName}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div>
+              <Label>Schools (optional - leave empty for global)</Label>
+              <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
+                {schools.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No schools available</p>
+                ) : (
+                  schools.map(s => (
+                    <label key={s.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.schoolIds.includes(s.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setForm({ ...form, schoolIds: [...form.schoolIds, s.id] });
+                          } else {
+                            setForm({ ...form, schoolIds: form.schoolIds.filter(id => id !== s.id) });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{s.schoolName}</span>
+                    </label>
+                  ))
+                )}
               </div>
+              {form.schoolIds.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">No schools selected = Global default</p>
+              )}
+            </div>
               <div>
                 <Label>Role *</Label>
                 <Select value={form.role} onValueChange={v => {
