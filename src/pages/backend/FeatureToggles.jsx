@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Loader2, Trash2, Copy, Save } from 'lucide-react';
+import { Plus, Loader2, Trash2, Copy, Save, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { clearFeatureCache, getDefaultFeatures } from '@/lib/featureToggleManager';
+import SidebarPreview from '@/components/backend/SidebarPreview';
 
 const ALL_FEATURES = [
   { id: 'adminDashboard', label: 'Admin Dashboard', description: 'Access to admin dashboard' },
@@ -71,6 +72,8 @@ export default function FeatureToggles() {
   const [saving, setSaving] = useState(false);
   const [selectedRole, setSelectedRole] = useState('teacher');
   const [selectedSchool, setSelectedSchool] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewFeatures, setPreviewFeatures] = useState({});
 
   const [form, setForm] = useState({
     schoolId: '',
@@ -277,6 +280,12 @@ export default function FeatureToggles() {
                         )}
                       </div>
                       <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setPreviewFeatures(toggle.features);
+                          setShowPreview(true);
+                        }}>
+                          <Eye className="w-3 h-3" />
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => duplicateToggle(toggle)}>
                           <Copy className="w-3 h-3" />
                         </Button>
@@ -323,6 +332,16 @@ export default function FeatureToggles() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Dashboard Preview</DialogTitle>
+          </DialogHeader>
+          <SidebarPreview features={previewFeatures} />
+        </DialogContent>
+      </Dialog>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
