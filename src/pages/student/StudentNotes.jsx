@@ -56,34 +56,42 @@ export default function StudentNotes() {
   React.useEffect(() => { editingNoteRef.current = editingNote; }, [editingNote]);
 
   // Share from within editor — open the share dialog for the current note
-  const handleShareFromEditor = () => {
+  const handleShareFromEditor = async () => {
     const current = editingNoteRef.current;
-    if (current?.id) setSharingNote(current);
+    if (current?.id) {
+      setSharingNote(current);
+    } else {
+      console.warn('Cannot share: note not yet saved');
+    }
   };
 
   const handleSaveDrawing = useCallback(async (dataUrl) => {
-    // Upload the PNG data URL as a file
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], 'drawing.png', { type: 'image/png' });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    try {
+      // Upload the PNG data URL as a file
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'drawing.png', { type: 'image/png' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-    const current = editingNoteRef.current;
-    const title = current?.title || `Drawing ${new Date().toLocaleDateString()}`;
-    if (current?.id) {
-      await base44.entities.Note.update(current.id, { drawingUrl: file_url, mode: 'drawing' });
-    } else {
-      const created = await base44.entities.Note.create({
-        schoolId: user.schoolId,
-        studentId: user.id,
-        studentName: user.fullName,
-        title,
-        drawingUrl: file_url,
-        mode: 'drawing',
-      });
-      // Update ref so subsequent auto-saves update the same record
-      editingNoteRef.current = created;
+      const current = editingNoteRef.current;
+      const title = current?.title || `Drawing ${new Date().toLocaleDateString()}`;
+      if (current?.id) {
+        await base44.entities.Note.update(current.id, { drawingUrl: file_url, mode: 'drawing' });
+      } else {
+        const created = await base44.entities.Note.create({
+          schoolId: user.schoolId,
+          studentId: user.id,
+          studentName: user.fullName,
+          title,
+          drawingUrl: file_url,
+          mode: 'drawing',
+        });
+        // Update ref so subsequent auto-saves update the same record
+        editingNoteRef.current = created;
+      }
+      load();
+    } catch (error) {
+      console.error('Drawing save error:', error);
     }
-    load();
   }, [user, load]);
 
   const handleEdit = (note) => {

@@ -126,7 +126,15 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
             Download PDF
           </Button>
           {onShare && (
-            <Button variant="outline" size="sm" onClick={onShare} disabled={!noteIdRef.current}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (noteIdRef.current) onShare();
+                else console.warn('Cannot share: note not yet saved');
+              }} 
+              disabled={!noteIdRef.current}
+            >
               <Share2 className="w-4 h-4 mr-1" /> Share with Teacher
             </Button>
           )}

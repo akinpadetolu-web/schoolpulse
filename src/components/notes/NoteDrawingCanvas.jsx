@@ -66,12 +66,33 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
     setDownloading(true);
     try {
       const dataUrl = await canvasRef.current.exportImage('png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'drawing.png';
-      a.click();
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `drawing-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Download failed:', e);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!isSaved) {
+      setSaveStatus('saving');
+      try {
+        const dataUrl = await canvasRef.current.exportImage('png');
+        await onSave(dataUrl);
+        setSaveStatus('saved');
+        setTimeout(() => onShare?.(), 300);
+      } catch (e) {
+        console.error('Save before share failed:', e);
+        setSaveStatus('idle');
+      }
+    } else {
+      onShare?.();
     }
   };
 
@@ -158,8 +179,9 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
             Download
           </Button>
           {onShare && (
-            <Button size="sm" variant="outline" onClick={onShare} disabled={!isSaved}>
-              <Share2 className="w-4 h-4 mr-1" /> Share with Teacher
+            <Button size="sm" variant="outline" onClick={handleShare} disabled={saveStatus === 'saving'}>
+              {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Share2 className="w-4 h-4 mr-1" />}
+              Share with Teacher
             </Button>
           )}
         </div>
