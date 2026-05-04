@@ -72,19 +72,37 @@ const adminNavGroups = [
 ];
 
 const featureMap = {
+  "/school-admin": "adminDashboard",
+  "/school-admin/students": "adminStudents",
+  "/school-admin/teachers": "adminTeachers",
+  "/school-admin/classes": "adminClasses",
+  "/school-admin/subjects": "adminSubjects",
+  "/school-admin/timetable": "timetable",
+  "/school-admin/events": "adminEvents",
   "/school-admin/assignments": "assignments",
   "/school-admin/grade-weighting": "grades",
   "/school-admin/grades": "grades",
   "/school-admin/attendance": "attendance",
-  "/school-admin/announcements": "announcements",
-  "/school-admin/messages": "messaging",
-  "/school-admin/email-campaign": "messaging",
-  "/school-admin/approvals": "messaging",
-  "/school-admin/timetable": "timetable",
-  "/school-admin/e-class": "eClass",
+  "/school-admin/school-report": "adminExaminations",
   "/school-admin/report-cards": "reportCards",
-  "/school-admin/student-reports": "studentReports",
+  "/school-admin/report-card-templates": "adminReportCardTemplates",
+  "/school-admin/teacher-assignments": "adminTeacherAssignments",
+  "/school-admin/bulk-assign": "adminBulkAssign",
+  "/school-admin/categories": "adminCategories",
+  "/school-admin/e-class": "eClass",
+  "/school-admin/announcements": "announcements",
+  "/school-admin/messages": "messages",
+  "/school-admin/email-campaign": "adminEmailCampaign",
+  "/school-admin/approvals": "adminApprovals",
   "/school-admin/teacher-workload": "teacherWorkload",
+  "/school-admin/staff-attendance": "staffAttendance",
+  "/school-admin/leave-requests": "leaveRequests",
+  "/school-admin/hr": "adminHR",
+  "/school-admin/settings": "adminSettings",
+  "/school-admin/grading-system": "gradingSystem",
+  "/school-admin/promotion": "promotion",
+  "/school-admin/academic-terms": "academicTerms",
+  "/school-admin/calendar": "adminEvents",
 };
 
 export default function SchoolSidebar({ isOpen, onClose }) {
@@ -117,7 +135,8 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     ...group,
     items: group.items.filter(item => {
       const requiredFeature = featureMap[item.path];
-      return !requiredFeature || features[requiredFeature] !== false;
+      if (!requiredFeature) return true;
+      return features[requiredFeature] !== false;
     })
   })).filter(group => group.items.length > 0);
 
