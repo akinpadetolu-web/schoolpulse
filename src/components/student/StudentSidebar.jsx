@@ -67,7 +67,7 @@ export default function StudentSidebar({ isOpen, onClose }) {
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           <SidebarNavGroups 
             groups={studentNavGroups}
             isActive={isActive}
