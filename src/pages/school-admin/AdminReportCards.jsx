@@ -23,6 +23,7 @@ export default function AdminReportCards() {
   const [grades, setGrades] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [terms, setTerms] = useState([]);
+  const [gradingSystem, setGradingSystem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -42,7 +43,7 @@ export default function AdminReportCards() {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const [cards, stud, cls, subj, tmpl, grd, att, termData] = await Promise.all([
+    const [cards, stud, cls, subj, tmpl, grd, att, termData, gradingSystems] = await Promise.all([
       base44.entities.ReportCard.filter({ schoolId: user?.schoolId }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
@@ -51,6 +52,7 @@ export default function AdminReportCards() {
       base44.entities.Grade.filter({ schoolId: user?.schoolId }),
       base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
       getTerms(user?.schoolId),
+      base44.entities.GradingSystem.filter({ schoolId: user?.schoolId }),
     ]);
     setReportCards(cards || []);
     setStudents(stud || []);
@@ -60,10 +62,17 @@ export default function AdminReportCards() {
     setGrades(grd || []);
     setAttendance(att || []);
     setTerms(termData || []);
+    setGradingSystem((gradingSystems || [])[0] || null);
     setLoading(false);
   }
 
   function getLetterGrade(percentage) {
+    const gradeScale = gradingSystem?.grades || [];
+    if (gradeScale.length > 0) {
+      const match = gradeScale.find(g => percentage >= g.minScore && percentage <= g.maxScore);
+      return match?.letter || 'F';
+    }
+    // Fallback if no grading system defined
     if (percentage >= 90) return 'A';
     if (percentage >= 80) return 'B';
     if (percentage >= 70) return 'C';

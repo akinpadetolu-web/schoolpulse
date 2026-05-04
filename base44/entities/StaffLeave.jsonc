@@ -69,5 +69,6 @@
     "leaveType",
     "startDate",
     "endDate"
-  ]
+  ],
+  "rls": {}
 }
