@@ -105,7 +105,7 @@ Return ONLY valid JSON — no markdown fences, no explanation text:
 
     const llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: llmPrompt,
-      model: 'claude_sonnet_4_6',
+      model: 'gpt_5_4',
       response_json_schema: {
         type: 'object',
         properties: {

@@ -448,8 +448,6 @@ export default function AdminTimetable() {
           <TimetableGenerator
             schoolId={schoolId}
             classes={classes}
-            subjects={subjects}
-            teachers={teachers}
             onGenerated={() => { loadData(); setActiveTab("view"); }}
           />
         </TabsContent>
