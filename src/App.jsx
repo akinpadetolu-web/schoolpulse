@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 
 import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
+import FeatureGuard from '@/components/school/FeatureGuard';
 
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
@@ -171,17 +172,17 @@ const AuthenticatedApp = () => {
           <Route path="subjects" element={<AdminSubjects />} />
           <Route path="teacher-assignments" element={<AdminTeacherAssignments />} />
           <Route path="bulk-assign" element={<AdminBulkAssign />} />
-          <Route path="timetable" element={<AdminTimetable />} />
-          <Route path="teacher-workload" element={<AdminTeacherWorkload />} />
-          <Route path="assignments" element={<AdminAssignments />} />
-          <Route path="attendance" element={<AdminAttendance />} />
-          <Route path="student-reports" element={<AdminStudentReports />} />
-          <Route path="announcements" element={<AdminAnnouncements />} />
-          <Route path="grade-weighting" element={<AdminGradeWeighting />} />
-          <Route path="report-cards" element={<AdminReportCards />} />
+          <Route path="timetable" element={<FeatureGuard path="/school-admin/timetable"><AdminTimetable /></FeatureGuard>} />
+          <Route path="teacher-workload" element={<FeatureGuard path="/school-admin/teacher-workload"><AdminTeacherWorkload /></FeatureGuard>} />
+          <Route path="assignments" element={<FeatureGuard path="/school-admin/assignments"><AdminAssignments /></FeatureGuard>} />
+          <Route path="attendance" element={<FeatureGuard path="/school-admin/attendance"><AdminAttendance /></FeatureGuard>} />
+          <Route path="student-reports" element={<FeatureGuard path="/school-admin/student-reports"><AdminStudentReports /></FeatureGuard>} />
+          <Route path="announcements" element={<FeatureGuard path="/school-admin/announcements"><AdminAnnouncements /></FeatureGuard>} />
+          <Route path="grade-weighting" element={<FeatureGuard path="/school-admin/grade-weighting"><AdminGradeWeighting /></FeatureGuard>} />
+          <Route path="report-cards" element={<FeatureGuard path="/school-admin/report-cards"><AdminReportCards /></FeatureGuard>} />
           <Route path="report-card-templates" element={<AdminReportCardTemplates />} />
           <Route path="school-report" element={<AdminSchoolReport />} />
-          <Route path="approvals" element={<AdminApprovals />} />
+          <Route path="approvals" element={<FeatureGuard path="/school-admin/approvals"><AdminApprovals /></FeatureGuard>} />
           <Route path="academic-terms" element={<AdminAcademicTerms />} />
           <Route path="calendar" element={<SchoolCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />
@@ -191,9 +192,9 @@ const AuthenticatedApp = () => {
           <Route path="hr" element={<AdminHR />} />
           <Route path="staff-attendance" element={<AdminStaffAttendance />} />
           <Route path="leave-requests" element={<AdminLeaveRequests />} />
-          <Route path="email-campaign" element={<AdminEmailCampaign />} />
-          <Route path="e-class" element={<AdminEClass />} />
-          <Route path="messages" element={<AdminMessaging />} />
+          <Route path="email-campaign" element={<FeatureGuard path="/school-admin/email-campaign"><AdminEmailCampaign /></FeatureGuard>} />
+          <Route path="e-class" element={<FeatureGuard path="/school-admin/e-class"><AdminEClass /></FeatureGuard>} />
+          <Route path="messages" element={<FeatureGuard path="/school-admin/messages"><AdminMessaging /></FeatureGuard>} />
           <Route path="events" element={<AdminCalendar />} />
         </Route>
 

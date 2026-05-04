@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
   FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail
@@ -8,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
+import { getFeatures } from '@/lib/featureToggleManager';
 
 const adminNavGroups = [
   {
@@ -69,10 +71,37 @@ const adminNavGroups = [
   },
 ];
 
+const featureMap = {
+  "/school-admin/assignments": "assignments",
+  "/school-admin/grade-weighting": "grades",
+  "/school-admin/grades": "grades",
+  "/school-admin/attendance": "attendance",
+  "/school-admin/announcements": "announcements",
+  "/school-admin/messages": "messaging",
+  "/school-admin/email-campaign": "messaging",
+  "/school-admin/approvals": "messaging",
+  "/school-admin/timetable": "timetable",
+  "/school-admin/e-class": "eClass",
+  "/school-admin/report-cards": "reportCards",
+  "/school-admin/student-reports": "studentReports",
+  "/school-admin/teacher-workload": "teacherWorkload",
+};
+
 export default function SchoolSidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { schoolUser: user, logout } = useSchoolAuth();
+  const [features, setFeatures] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadFeatures() {
+      const enabledFeatures = await getFeatures(user?.schoolId, user?.role, user?.id);
+      setFeatures(enabledFeatures);
+      setLoading(false);
+    }
+    if (user?.schoolId) loadFeatures();
+  }, [user?.schoolId, user?.role, user?.id]);
 
   function handleLogout() {
     logout();
@@ -83,6 +112,14 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     if (path === "/school-admin") return location.pathname === "/school-admin";
     return location.pathname.startsWith(path);
   };
+
+  const filteredNavGroups = adminNavGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      const requiredFeature = featureMap[item.path];
+      return !requiredFeature || features[requiredFeature] !== false;
+    })
+  })).filter(group => group.items.length > 0);
 
   return (
     <>
@@ -105,11 +142,15 @@ export default function SchoolSidebar({ isOpen, onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
-          <SidebarNavGroups 
-            groups={adminNavGroups}
-            isActive={isActive}
-            onItemClick={onClose}
-          />
+          {loading ? (
+            <div className="p-4 text-xs text-sidebar-foreground/60">Loading menu...</div>
+          ) : (
+            <SidebarNavGroups 
+              groups={filteredNavGroups}
+              isActive={isActive}
+              onItemClick={onClose}
+            />
+          )}
         </div>
 
         <div className="p-3 border-t border-sidebar-border shrink-0">
