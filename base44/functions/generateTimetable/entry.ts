@@ -1,26 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const TIME_SLOTS = [
-  { start: '08:30', end: '09:15' },
-  { start: '09:15', end: '10:00' },
-  { start: '10:30', end: '11:15' },
-  { start: '11:15', end: '12:00' },
-  { start: '13:00', end: '13:45' },
-  { start: '13:45', end: '14:30' },
-  { start: '14:30', end: '15:15' },
-];
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-
-function getSlotsForDay(day) {
-  if (day === 'Friday') return TIME_SLOTS.slice(0, 6);
-  return TIME_SLOTS;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { schoolId, targetClassIds, startTime, periodDuration, periodsPerDay, prompt } = await req.json();
+    const { schoolId, targetClassIds, prompt } = await req.json();
 
     if (!schoolId || !targetClassIds || targetClassIds.length === 0) {
       return Response.json({ error: 'Missing required fields: schoolId, targetClassIds' }, { status: 400 });
@@ -40,198 +23,168 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No valid classes found for the given IDs' }, { status: 400 });
     }
 
-    function getSubjectsForClass(classId) {
-      return (allSubjects || []).filter(s => {
-        if (!s.isArchived) {
-          const applicable = s.applicableClasses || [];
-          return applicable.length === 0 || applicable.includes(classId);
-        }
-        return false;
-      });
+    const classesInfo = targetClasses.map(c => ({ id: c.id, name: c.className }));
+
+    const subjectsInfo = (allSubjects || []).map(s => ({
+      id: s.id,
+      name: s.name,
+      applicableClasses: s.applicableClasses || [],
+    }));
+
+    const teachersInfo = (allTeachers || []).map(t => ({
+      id: t.id,
+      name: t.fullName,
+      teachingAssignments: (t.teachingAssignments || []).map(a => ({
+        classId: a.classId,
+        subjectId: a.subjectId,
+      })),
+      assignedSubjects: t.assignedSubjects || [],
+    }));
+
+    const existingEntriesInfo = (existingEntries || [])
+      .filter(e => !targetClassIds.includes(e.classId))
+      .map(e => ({
+        teacherId: e.teacherId,
+        teacherName: e.teacherName,
+        dayOfWeek: e.dayOfWeek,
+        startTime: e.startTime,
+        endTime: e.endTime,
+      }));
+
+    const llmPrompt = `
+You are a school timetable scheduling expert. Generate a complete weekly timetable strictly following the user's instructions.
+
+## USER INSTRUCTIONS:
+${prompt || 'Generate a balanced weekly timetable distributing all subjects evenly across the week for each class.'}
+
+## SCHOOL DATA:
+
+### Classes to schedule:
+${JSON.stringify(classesInfo, null, 2)}
+
+### Available Subjects (with applicable class IDs — empty array means applies to all classes):
+${JSON.stringify(subjectsInfo, null, 2)}
+
+### Teachers (with teaching assignments per class/subject):
+${JSON.stringify(teachersInfo, null, 2)}
+
+### Already-scheduled entries for OTHER classes (avoid teacher clashes with these):
+${JSON.stringify(existingEntriesInfo, null, 2)}
+
+## NON-NEGOTIABLE RULES:
+1. No teacher should be in two classes at the same time.
+2. No class should have two subjects scheduled at the same time.
+3. Assign the correct teacher per subject+class using teachingAssignments. Fall back to assignedSubjects if no specific assignment exists.
+4. For break/free period entries use: subjectId="", teacherId="", teacherName="".
+5. All times must be in "HH:MM" 24-hour format (e.g. "08:30", "13:00").
+6. dayOfWeek must be exactly one of: Monday, Tuesday, Wednesday, Thursday, Friday.
+
+Everything else (period lengths, break times, subject priorities, distribution, special rules) must come entirely from the USER INSTRUCTIONS above.
+
+## REQUIRED OUTPUT FORMAT:
+Return ONLY valid JSON — no markdown fences, no explanation text:
+{
+  "entries": [
+    {
+      "classId": "string",
+      "className": "string",
+      "subjectId": "string",
+      "subjectName": "string",
+      "teacherId": "string",
+      "teacherName": "string",
+      "dayOfWeek": "string",
+      "startTime": "HH:MM",
+      "endTime": "HH:MM"
     }
+  ],
+  "warnings": ["string"]
+}
+`;
 
-    function getTeacherForSubjectClass(subjectId, classId) {
-      const assigned = (allTeachers || []).find(t =>
-        !t.isArchived &&
-        (t.teachingAssignments || []).some(a => a.subjectId === subjectId && a.classId === classId)
-      );
-      if (assigned) return assigned;
+    console.log('[generateTimetable] Calling LLM...');
 
-      const subjectOnly = (allTeachers || []).find(t =>
-        !t.isArchived &&
-        (t.teachingAssignments || []).some(a => a.subjectId === subjectId)
-      );
-      if (subjectOnly) return subjectOnly;
-
-      const byAssignedSubjects = (allTeachers || []).find(t =>
-        !t.isArchived &&
-        (t.assignedSubjects || []).includes(subjectId)
-      );
-      return byAssignedSubjects || null;
-    }
-
-    const teacherBusy = {};
-    const classBusy = {};
-
-    (existingEntries || []).forEach(e => {
-      if (!targetClassIds.includes(e.classId)) {
-        if (e.teacherId && e.dayOfWeek && e.startTime) {
-          const slotIdx = TIME_SLOTS.findIndex(s => s.start === e.startTime);
-          if (slotIdx >= 0) {
-            if (!teacherBusy[e.teacherId]) teacherBusy[e.teacherId] = {};
-            if (!teacherBusy[e.teacherId][e.dayOfWeek]) teacherBusy[e.teacherId][e.dayOfWeek] = {};
-            teacherBusy[e.teacherId][e.dayOfWeek][slotIdx] = true;
-          }
-        }
-      }
+    const llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: llmPrompt,
+      model: 'claude_sonnet_4_6',
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          entries: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                classId: { type: 'string' },
+                className: { type: 'string' },
+                subjectId: { type: 'string' },
+                subjectName: { type: 'string' },
+                teacherId: { type: 'string' },
+                teacherName: { type: 'string' },
+                dayOfWeek: { type: 'string' },
+                startTime: { type: 'string' },
+                endTime: { type: 'string' },
+              },
+            },
+          },
+          warnings: { type: 'array', items: { type: 'string' } },
+        },
+      },
     });
 
-    function canAssign(teacherId, classId, day, slotIdx) {
-      if (teacherId) {
-        if (teacherBusy[teacherId]?.[day]?.[slotIdx]) return false;
-      }
-      if (classBusy[classId]?.[day]?.[slotIdx]) return false;
-      return true;
+    const entries = llmResult?.entries || [];
+    const warnings = llmResult?.warnings || [];
+
+    console.log(`[generateTimetable] LLM returned ${entries.length} entries`);
+
+    if (entries.length === 0) {
+      return Response.json({ error: 'LLM returned no entries. Try again or adjust your prompt.' }, { status: 400 });
     }
 
-    function markBusy(teacherId, classId, day, slotIdx) {
-      if (teacherId) {
-        if (!teacherBusy[teacherId]) teacherBusy[teacherId] = {};
-        if (!teacherBusy[teacherId][day]) teacherBusy[teacherId][day] = {};
-        teacherBusy[teacherId][day][slotIdx] = true;
-      }
-      if (!classBusy[classId]) classBusy[classId] = {};
-      if (!classBusy[classId][day]) classBusy[classId][day] = {};
-      classBusy[classId][day][slotIdx] = true;
-    }
-
-    const slots = [];
-    const warnings = [];
-
-    const allSlotPairs = [];
-    DAYS.forEach(day => {
-      getSlotsForDay(day).forEach((slot, idx) => {
-        allSlotPairs.push({ day, slotIdx: idx, start: slot.start, end: slot.end });
-      });
-    });
-
-    for (const cls of targetClasses) {
-      const classSubjects = getSubjectsForClass(cls.id);
-      if (classSubjects.length === 0) {
-        warnings.push(`No subjects found for class ${cls.className} — skipping`);
-        continue;
-      }
-
-      const totalSlots = allSlotPairs.length;
-      const periodsPerSubject = Math.max(1, Math.min(5, Math.floor(totalSlots / classSubjects.length)));
-
-      const priorityNames = ['mathematics', 'math', 'english', 'science', 'physics', 'chemistry', 'biology'];
-
-      const scheduleRequests = classSubjects.map(subj => {
-        const isPriority = priorityNames.some(p => subj.name.toLowerCase().includes(p));
-        return { subject: subj, periodsNeeded: isPriority ? Math.min(periodsPerSubject + 1, 5) : periodsPerSubject };
-      });
-
-      scheduleRequests.sort((a, b) => b.periodsNeeded - a.periodsNeeded);
-
-      for (const { subject, periodsNeeded } of scheduleRequests) {
-        const teacher = getTeacherForSubjectClass(subject.id, cls.id);
-        let assigned = 0;
-        const daysUsed = new Set();
-
-        for (const { day, slotIdx, start, end } of allSlotPairs) {
-          if (assigned >= periodsNeeded) break;
-          if (daysUsed.has(day) && assigned < periodsNeeded && daysUsed.size < DAYS.length) continue;
-
-          if (canAssign(teacher?.id || null, cls.id, day, slotIdx)) {
-            markBusy(teacher?.id || null, cls.id, day, slotIdx);
-            slots.push({
-              classId: cls.id,
-              className: cls.className,
-              subjectId: subject.id,
-              subjectName: subject.name,
-              teacherId: teacher?.id || '',
-              teacherName: teacher?.fullName || '',
-              dayOfWeek: day,
-              startTime: start,
-              endTime: end,
-            });
-            daysUsed.add(day);
-            assigned++;
-          }
-        }
-
-        if (assigned < periodsNeeded) {
-          for (const { day, slotIdx, start, end } of allSlotPairs) {
-            if (assigned >= periodsNeeded) break;
-            if (canAssign(teacher?.id || null, cls.id, day, slotIdx)) {
-              markBusy(teacher?.id || null, cls.id, day, slotIdx);
-              slots.push({
-                classId: cls.id,
-                className: cls.className,
-                subjectId: subject.id,
-                subjectName: subject.name,
-                teacherId: teacher?.id || '',
-                teacherName: teacher?.fullName || '',
-                dayOfWeek: day,
-                startTime: start,
-                endTime: end,
-              });
-              assigned++;
-            }
-          }
-        }
-
-        if (assigned === 0) {
-          warnings.push(`Could not schedule ${subject.name} for ${cls.className} — no available slots`);
-        } else if (assigned < periodsNeeded) {
-          warnings.push(`Only scheduled ${assigned}/${periodsNeeded} periods for ${subject.name} in ${cls.className}`);
-        }
-
-        if (!teacher) {
-          warnings.push(`No teacher found for ${subject.name} in ${cls.className}`);
-        }
-      }
-    }
-
+    // Clash detection before saving
     const clashCheck = {};
-    let clashCount = 0;
-    for (const slot of slots) {
-      const key = `${slot.classId}|${slot.dayOfWeek}|${slot.startTime}`;
-      if (clashCheck[key]) {
-        clashCount++;
-        warnings.push(`CLASS CLASH: ${slot.className} on ${slot.dayOfWeek} at ${slot.startTime}`);
-      } else {
-        clashCheck[key] = true;
-      }
-    }
-
     const teacherClashCheck = {};
-    for (const slot of slots) {
-      if (!slot.teacherId) continue;
-      const key = `${slot.teacherId}|${slot.dayOfWeek}|${slot.startTime}`;
-      if (teacherClashCheck[key]) {
+    let clashCount = 0;
+    const validEntries = [];
+
+    for (const entry of entries) {
+      const classKey = `${entry.classId}|${entry.dayOfWeek}|${entry.startTime}`;
+      const teacherKey = entry.teacherId ? `${entry.teacherId}|${entry.dayOfWeek}|${entry.startTime}` : null;
+
+      let hasClash = false;
+
+      if (clashCheck[classKey]) {
+        warnings.push(`CLASS CLASH removed: ${entry.className} on ${entry.dayOfWeek} at ${entry.startTime} (${entry.subjectName})`);
         clashCount++;
-        warnings.push(`TEACHER CLASH: ${slot.teacherName} on ${slot.dayOfWeek} at ${slot.startTime}`);
-      } else {
-        teacherClashCheck[key] = true;
+        hasClash = true;
+      }
+
+      if (!hasClash && teacherKey && teacherClashCheck[teacherKey]) {
+        warnings.push(`TEACHER CLASH removed: ${entry.teacherName} on ${entry.dayOfWeek} at ${entry.startTime}`);
+        clashCount++;
+        hasClash = true;
+      }
+
+      if (!hasClash) {
+        clashCheck[classKey] = true;
+        if (teacherKey) teacherClashCheck[teacherKey] = true;
+        validEntries.push(entry);
       }
     }
 
-    if (slots.length > 0) {
+    if (validEntries.length > 0) {
       await base44.asServiceRole.entities.TimetableEntry.bulkCreate(
-        slots.map(s => ({ ...s, schoolId }))
+        validEntries.map(e => ({ ...e, schoolId }))
       );
     }
 
     return Response.json({
-      slots,
+      slots: validEntries,
       warnings,
       stats: {
         classes: targetClasses.length,
         subjects: (allSubjects || []).length,
         teachers: (allTeachers || []).length,
-        slots: slots.length,
+        slots: validEntries.length,
         clashes: clashCount,
       }
     });
