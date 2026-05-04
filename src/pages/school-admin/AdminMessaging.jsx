@@ -4,7 +4,6 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import MessageThread from '@/components/messaging/MessageThread';
-import { Input } from '@/components/ui/input';
 import { Mail, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,6 +14,7 @@ export default function AdminMessaging() {
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [school, setSchool] = useState(null);
 
   useEffect(() => {
     loadMessages();
@@ -25,18 +25,19 @@ export default function AdminMessaging() {
   async function loadMessages() {
     if (!user?.schoolId) return;
     try {
-      // Get all messages between admin and parents (both sent and received)
-      const allMessages = await base44.entities.Message.filter({
-        schoolId: user.schoolId,
-      });
-      
+      const [allMessages, schools] = await Promise.all([
+        base44.entities.Message.filter({ schoolId: user.schoolId }),
+        base44.entities.School.filter({ id: user.schoolId }),
+      ]);
+
       // Filter to only parent conversations
-      const relevantMessages = (allMessages || []).filter(msg => 
-        (msg.senderRole === 'parent' && msg.receiverId === user.id) ||
-        (msg.senderRole === 'admin' && msg.senderId === user.id && msg.receiverRole === 'parent')
+      const relevantMessages = (allMessages || []).filter(msg =>
+        (msg.senderRole === 'parent') ||
+        (msg.senderRole === 'admin' && msg.receiverRole === 'parent')
       );
-      
+
       setMessages(relevantMessages);
+      setSchool((schools || [])[0] || null);
 
       // Mark parent messages as read
       for (const msg of relevantMessages) {
@@ -51,14 +52,21 @@ export default function AdminMessaging() {
     }
   }
 
+  // Group by parent (sender of original message)
   const grouped = {};
   messages.forEach(msg => {
-    const key = msg.senderId;
-    if (!grouped[key]) {
-      grouped[key] = { sender: msg.senderName, messages: [] };
+    const parentId = msg.senderRole === 'parent' ? msg.senderId : msg.receiverId;
+    const parentName = msg.senderRole === 'parent' ? msg.senderName : msg.receiverName || 'Parent';
+    if (!grouped[parentId]) {
+      grouped[parentId] = { parentName, messages: [] };
     }
-    grouped[key].messages.push(msg);
+    grouped[parentId].messages.push(msg);
   });
+
+  // Sort each thread by date
+  Object.values(grouped).forEach(conv =>
+    conv.messages.sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+  );
 
   const thread = selectedParent ? grouped[selectedParent]?.messages || [] : [];
 
@@ -70,10 +78,12 @@ export default function AdminMessaging() {
 
     setSending(true);
     try {
+      const schoolName = school?.schoolName || user.schoolName || 'School';
+
       await base44.entities.Message.create({
         schoolId: user.schoolId,
         senderId: user.id,
-        senderName: user.fullName,
+        senderName: schoolName,
         senderRole: 'admin',
         receiverId: selectedParent,
         receiverRole: 'parent',
@@ -96,8 +106,6 @@ export default function AdminMessaging() {
   if (loading) {
     return <div className="text-center py-8">Loading messages...</div>;
   }
-
-  const unreadCount = messages.filter(m => !m.isRead).length;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -125,7 +133,7 @@ export default function AdminMessaging() {
                       : 'bg-card border-border hover:bg-secondary/50'
                   }`}
                 >
-                  <p className="font-medium text-sm truncate">{data.sender}</p>
+                  <p className="font-medium text-sm truncate">{data.parentName}</p>
                   <p className="text-xs text-muted-foreground truncate">{data.messages.length} message(s)</p>
                 </button>
               ))
@@ -138,7 +146,7 @@ export default function AdminMessaging() {
       {selectedParent ? (
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>{grouped[selectedParent]?.sender}</CardTitle>
+            <CardTitle>{grouped[selectedParent]?.parentName}</CardTitle>
             <CardDescription>{thread.length} message(s) in conversation</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

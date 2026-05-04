@@ -10,6 +10,7 @@ export default function ParentMessaging() {
   const { schoolUser: user } = useSchoolAuth();
   const [messages, setMessages] = useState([]);
   const [admins, setAdmins] = useState([]);
+  const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,17 +22,21 @@ export default function ParentMessaging() {
   async function loadData() {
     if (!user?.schoolId) return;
     try {
-      const msgs = await base44.entities.Message.filter({
-        schoolId: user.schoolId,
-        senderRole: 'parent',
-      });
-      setMessages(msgs || []);
+      const [allMsgs, adminsData, schools] = await Promise.all([
+        base44.entities.Message.filter({ schoolId: user.schoolId }),
+        base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'admin' }),
+        base44.entities.School.filter({ id: user.schoolId }),
+      ]);
 
-      const adminsData = await base44.entities.SchoolUser.filter({
-        schoolId: user.schoolId,
-        role: 'admin',
-      });
+      // Only messages involving this parent
+      const myMsgs = (allMsgs || []).filter(msg =>
+        (msg.senderId === user.id && msg.senderRole === 'parent') ||
+        (msg.receiverId === user.id && msg.receiverRole === 'parent')
+      );
+
+      setMessages(myMsgs);
       setAdmins(adminsData || []);
+      setSchool((schools || [])[0] || null);
     } catch (error) {
       console.error('Failed to load messages:', error);
     } finally {
@@ -43,14 +48,22 @@ export default function ParentMessaging() {
     return <div className="text-center py-8">Loading...</div>;
   }
 
+  // Group messages by conversation (each admin = one thread)
   const conversations = {};
   messages.forEach(msg => {
-    const key = msg.receiverId;
-    if (!conversations[key]) {
-      conversations[key] = [];
+    const otherPartyId = msg.senderId === user.id ? msg.receiverId : msg.senderId;
+    if (!conversations[otherPartyId]) {
+      conversations[otherPartyId] = [];
     }
-    conversations[key].push(msg);
+    conversations[otherPartyId].push(msg);
   });
+
+  // Sort each thread by date
+  Object.values(conversations).forEach(thread =>
+    thread.sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+  );
+
+  const schoolName = school?.schoolName || 'School Admin';
 
   return (
     <div className="space-y-6">
@@ -64,12 +77,11 @@ export default function ParentMessaging() {
           </CardContent>
         </Card>
       ) : (
-        Object.entries(conversations).map(([adminId, threadMessages]) => {
-          const admin = admins.find(a => a.id === adminId);
+        Object.entries(conversations).map(([otherPartyId, threadMessages]) => {
           return (
-            <Card key={adminId}>
+            <Card key={otherPartyId}>
               <CardHeader>
-                <CardTitle className="text-base">{admin?.fullName || 'School Admin'}</CardTitle>
+                <CardTitle className="text-base">{schoolName}</CardTitle>
                 <CardDescription>{threadMessages.length} message(s)</CardDescription>
               </CardHeader>
               <CardContent>
