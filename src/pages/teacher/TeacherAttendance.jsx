@@ -107,12 +107,15 @@ export default function TeacherAttendance() {
     });
 
     try {
-      if (creates.length > 0) await base44.entities.Attendance.bulkCreate(creates);
+      if (creates.length > 0) {
+        // Use individual creates instead of bulkCreate to respect RLS
+        await Promise.all(creates.map(r => base44.entities.Attendance.create(r)));
+      }
       await Promise.all(updates);
       toast.success(`Attendance saved for ${students.length} students`);
       await loadStudentsAndAttendance();
-    } catch {
-      // Rollback optimistic state on failure
+    } catch (err) {
+      console.error('Attendance save error:', err);
       setAttendance(prevAttendance);
       toast.error('Failed to save attendance. Changes reverted.');
     } finally {
