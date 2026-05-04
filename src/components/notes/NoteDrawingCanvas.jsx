@@ -2,11 +2,11 @@ import React, { useRef, useState, useCallback } from 'react';
 import { ReactSketchCanvas } from 'react-sketch-canvas';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2, Download, Share2 } from 'lucide-react';
 
 const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#f59e0b', '#ec4899', '#14b8a6', '#64748b', '#ffffff'];
 
-export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl }) {
+export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved }) {
   const canvasRef = useRef(null);
   const autoSaveTimer = useRef(null);
   const isSavingRef = useRef(false);
@@ -14,6 +14,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl }
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
+  const [downloading, setDownloading] = useState(false);
 
   const triggerAutoSave = useCallback(() => {
     clearTimeout(autoSaveTimer.current);
@@ -42,6 +43,36 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl }
     canvasRef.current?.clearCanvas();
     setSaveStatus('idle');
     triggerAutoSave();
+  };
+
+  const handleManualSave = async () => {
+    clearTimeout(autoSaveTimer.current);
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+    setSaveStatus('saving');
+    try {
+      const dataUrl = await canvasRef.current.exportImage('png');
+      await onSave(dataUrl);
+      setSaveStatus('saved');
+    } catch (e) {
+      console.error('Drawing save failed:', e);
+      setSaveStatus('idle');
+    } finally {
+      isSavingRef.current = false;
+    }
+  };
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const dataUrl = await canvasRef.current.exportImage('png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'drawing.png';
+      a.click();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -120,8 +151,25 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl }
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3 shrink-0">
-        <Button variant="outline" onClick={onCancel}>Close</Button>
+      <div className="flex items-center justify-between gap-3 shrink-0 flex-wrap">
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={handleDownload} disabled={downloading}>
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+            Download
+          </Button>
+          {onShare && (
+            <Button size="sm" variant="outline" onClick={onShare} disabled={!isSaved}>
+              <Share2 className="w-4 h-4 mr-1" /> Share with Teacher
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={onCancel}>Close</Button>
+          <Button size="sm" onClick={handleManualSave} disabled={saveStatus === 'saving'}>
+            {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Cloud className="w-4 h-4 mr-1" />}
+            Save
+          </Button>
+        </div>
       </div>
     </div>
   );

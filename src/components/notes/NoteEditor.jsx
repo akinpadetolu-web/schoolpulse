@@ -3,7 +3,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Cloud, CloudOff, Loader2 } from 'lucide-react';
+import { X, Cloud, CloudOff, Loader2, Share2, Download } from 'lucide-react';
 
 const QUILL_MODULES = {
   toolbar: [
@@ -16,13 +16,37 @@ const QUILL_MODULES = {
 };
 
 // Auto-save status: 'idle' | 'saving' | 'saved' | 'error'
-export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
+async function downloadTextAsPdf(note, title, content) {
+  const { jsPDF } = await import('jspdf').then(m => m);
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  const maxW = pageW - margin * 2;
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title || 'Note', margin, 60);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120);
+  doc.setTextColor(0);
+  const plainText = (content || '')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  doc.setFontSize(11);
+  const lines = doc.splitTextToSize(plainText, maxW);
+  doc.text(lines, margin, 100);
+  doc.save(`${title || 'note'}.pdf`);
+}
+
+export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare }) {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [saveStatus, setSaveStatus] = useState('idle');
   const autoSaveTimer = useRef(null);
   // Track the created note id for new notes after first save
   const noteIdRef = useRef(note?.id || null);
+  const [downloading, setDownloading] = useState(false);
 
   const triggerAutoSave = useCallback((newTitle, newContent) => {
     const trimmedTitle = newTitle.trim() || 'Untitled Note';
@@ -86,8 +110,28 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel }) {
           style={{ height: '100%', minHeight: '260px' }}
         />
       </div>
-      <div className="flex justify-end gap-2 mt-8">
-        <Button variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" />Close</Button>
+      <div className="flex items-center justify-between gap-2 mt-8 flex-wrap">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={downloading}
+            onClick={async () => {
+              setDownloading(true);
+              await downloadTextAsPdf(note, title, content);
+              setDownloading(false);
+            }}
+          >
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
+            Download PDF
+          </Button>
+          {onShare && (
+            <Button variant="outline" size="sm" onClick={onShare} disabled={!noteIdRef.current}>
+              <Share2 className="w-4 h-4 mr-1" /> Share with Teacher
+            </Button>
+          )}
+        </div>
+        <Button variant="outline" size="sm" onClick={onCancel}><X className="w-4 h-4 mr-1" />Close</Button>
       </div>
     </div>
   );

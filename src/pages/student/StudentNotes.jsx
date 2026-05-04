@@ -55,6 +55,18 @@ export default function StudentNotes() {
   const editingNoteRef = React.useRef(editingNote);
   React.useEffect(() => { editingNoteRef.current = editingNote; }, [editingNote]);
 
+  // Share from within editor — open the share dialog for the current note
+  const handleShareFromEditor = () => {
+    const current = editingNoteRef.current;
+    if (current?.id) setSharingNote(current);
+  };
+
+  // After save drawing, update the ref so share knows the id
+  const handleSaveDrawingWithRef = useCallback(async (dataUrl) => {
+    await handleSaveDrawing(dataUrl);
+    // editingNoteRef is updated inside handleSaveDrawing
+  }, [handleSaveDrawing]);
+
   const handleSaveDrawing = useCallback(async (dataUrl) => {
     // Upload the PNG data URL as a file
     const blob = await (await fetch(dataUrl)).blob();
@@ -153,6 +165,7 @@ export default function StudentNotes() {
             onSave={handleSaveText}
             onAutoSave={handleAutoSaveText}
             onCancel={() => { setDialogMode(null); setEditingNote(null); load(); }}
+            onShare={handleShareFromEditor}
           />
         </DialogContent>
       </Dialog>
@@ -177,6 +190,8 @@ export default function StudentNotes() {
               onSave={handleSaveDrawing}
               onCancel={() => { setDialogMode(null); setEditingNote(null); }}
               existingImageUrl={editingNote?.drawingUrl}
+              onShare={handleShareFromEditor}
+              isSaved={!!editingNoteRef.current?.id}
             />
           </div>
         </DialogContent>

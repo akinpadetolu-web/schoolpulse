@@ -23,9 +23,9 @@ export default function NoteShareDialog({ note, open, onClose, currentUserId, sc
     setFeedbackRequested(note?.feedbackRequested || false);
     setSaved(false);
     base44.entities.SchoolUser.filter({ schoolId, isArchived: false }).then(data => {
-      // Show teachers and classmates (exclude self)
+      // Show teachers first, then classmates (exclude self)
       const filtered = (data || []).filter(u =>
-        u.id !== currentUserId &&
+        u.id !== currentUserId && !u.isArchived &&
         (u.role === 'teacher' || (u.role === 'student' && u.classId === note?.classId))
       );
       setUsers(filtered);
