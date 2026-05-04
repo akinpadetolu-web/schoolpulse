@@ -450,7 +450,6 @@ export default function FeatureToggles() {
               {editingId ? 'Save Changes' : 'Create Toggle'}
             </Button>
           </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const { schoolId, studentId, subjectName, score, maxScore, assessmentType } = data;
 
     // Fetch student
-    const student = await base44.asServiceRole.entities.SchoolUser.get('SchoolUser', studentId);
+    const student = await base44.asServiceRole.entities.SchoolUser.get(studentId);
     if (!student || !student.email) {
       return Response.json({ status: 'student_not_found' });
     }
