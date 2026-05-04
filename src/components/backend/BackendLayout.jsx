@@ -21,14 +21,16 @@ export default function BackendLayout() {
     <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <BackendSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-6 shrink-0">
+        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-8 shrink-0">
           <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
           <h2 className="text-sm font-medium text-muted-foreground">Dashboard</h2>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
+          <div className="max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
