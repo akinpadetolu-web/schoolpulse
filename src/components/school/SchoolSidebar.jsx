@@ -101,7 +101,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="flex-1 overflow-y-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           <SidebarNavGroups 
             groups={adminNavGroups}
             isActive={isActive}
