@@ -5,14 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, TrendingUp } from 'lucide-react';
-
-function gradeLabel(p) {
-  if (p >= 70) return { label: "A", color: "text-emerald-600" };
-  if (p >= 60) return { label: "B", color: "text-blue-600" };
-  if (p >= 50) return { label: "C", color: "text-amber-600" };
-  if (p >= 40) return { label: "D", color: "text-orange-600" };
-  return { label: "F", color: "text-red-600" };
-}
+import { getGradeLabel } from '@/lib/gradeMapper';
 
 function pct(score, max) {
   if (!max) return 0;
@@ -23,6 +16,7 @@ export default function StudentGrades() {
   const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [gradeLabels, setGradeLabels] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,6 +45,17 @@ export default function StudentGrades() {
 
     return () => unsubscribe();
   }, [user?.id, user?.schoolId]);
+
+  // Load grade labels for all unique percentages using school rubric
+  useEffect(() => {
+    if (!user?.schoolId || !grades.length) return;
+    const percentages = new Set();
+    grades.forEach(g => { if (g.maxScore > 0) percentages.add(Math.round((g.score / g.maxScore) * 100)); });
+    Promise.all([...percentages].map(async p => [p, await getGradeLabel(p, user.schoolId)]))
+      .then(entries => setGradeLabels(Object.fromEntries(entries)));
+  }, [grades, user?.schoolId]);
+
+  const getLabelForPct = (p) => gradeLabels[p] || { label: '…', color: 'text-muted-foreground' };
 
   // Group grades by subject and calculate averages
   const groupedBySubject = {};
@@ -99,7 +104,7 @@ export default function StudentGrades() {
                   <TrendingUp className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">Overall Average</p>
-                    <p className={`text-3xl font-bold mt-0.5 ${gradeLabel(overallAverage).color}`}>
+                    <p className={`text-3xl font-bold mt-0.5 ${getLabelForPct(overallAverage).color}`}>
                       {overallAverage !== null ? `${overallAverage}%` : '—'}
                     </p>
                   </div>
@@ -110,7 +115,7 @@ export default function StudentGrades() {
             {/* Subject Breakdown */}
             <div className="space-y-4">
               {subjectAverages.map(({ name, avg, grades: subjectGrades }) => {
-                const { label, color } = gradeLabel(avg);
+                const { label, color } = getLabelForPct(avg);
                 return (
                   <Card key={name} className="border-0 shadow-sm">
                     <CardHeader className="pb-3">
@@ -136,7 +141,7 @@ export default function StudentGrades() {
                           <TableBody>
                             {subjectGrades.map(g => {
                               const p = pct(g.score, g.maxScore);
-                              const { label: gradeL, color: gradeC } = gradeLabel(p);
+                              const { label: gradeL, color: gradeC } = getLabelForPct(p);
                               return (
                                 <TableRow key={g.id}>
                                   <TableCell className="capitalize text-xs">{g.assessmentType}</TableCell>
