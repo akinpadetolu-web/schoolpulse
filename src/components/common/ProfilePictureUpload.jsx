@@ -41,54 +41,35 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
 
   const handleUpload = async () => {
     if (!preview) return;
-
     setIsLoading(true);
     try {
-      // Get the blob from the preview
-      const response = await fetch(preview);
-      const blob = await response.blob();
-
-      // Compress before uploading
+      // Fetch the object URL blob, compress it, convert to base64, then upload
+      const fetchRes = await fetch(preview);
+      const blob = await fetchRes.blob();
       const compressedBlob = await compressImage(blob);
-      
-      // Upload to Base44 - pass blob directly as base64 string
-      const reader = new FileReader();
-      reader.readAsDataURL(compressedBlob);
-      
-      reader.onload = async () => {
-        try {
-          const base64String = reader.result;
-          const uploadResult = await base44.integrations.Core.UploadFile({
-            file: base64String,
-          });
 
-          if (!uploadResult?.file_url) {
-            throw new Error('Upload failed');
-          }
+      const base64String = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedBlob);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
 
-          // Update user profile with picture URL
-          const schoolUser = await base44.entities.SchoolUser.update(user.id, {
-            profilePictureUrl: uploadResult.file_url,
-          });
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: base64String });
+      if (!uploadResult?.file_url) throw new Error('Upload returned no URL');
 
-          toast.success('Profile picture updated');
-          setIsOpen(false);
-          setPreview(null);
-          onSuccess?.(schoolUser);
-        } catch (error) {
-          toast.error('Failed to upload picture');
-          console.error(error);
-          setIsLoading(false);
-        }
-      };
+      const schoolUser = await base44.entities.SchoolUser.update(user.id, {
+        profilePictureUrl: uploadResult.file_url,
+      });
 
-      reader.onerror = () => {
-        toast.error('Failed to read file');
-        setIsLoading(false);
-      };
+      toast.success('Profile picture updated');
+      setIsOpen(false);
+      setPreview(null);
+      onSuccess?.(schoolUser);
     } catch (error) {
       toast.error('Failed to upload picture');
       console.error(error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -98,11 +79,11 @@ export default function ProfilePictureUpload({ user, onSuccess }) {
 
     setIsLoading(true);
     try {
-      await base44.entities.SchoolUser.update(user.id, {
+      const schoolUser = await base44.entities.SchoolUser.update(user.id, {
         profilePictureUrl: null,
       });
       toast.success('Profile picture removed');
-      onSuccess?.();
+      onSuccess?.(schoolUser);
     } catch (error) {
       toast.error('Failed to remove picture');
     } finally {
