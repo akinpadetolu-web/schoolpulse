@@ -47,7 +47,7 @@ const EMPTY_FORM = {
 
 export default function TeacherGrades() {
   const { schoolUser: user } = useSchoolAuth();
-  const [grades, setGrades] = useState([]);
+  const [grades, setGrades] = useState({ myGrades: [], classGrades: [] });
   const [classes, setClasses] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
@@ -68,7 +68,7 @@ export default function TeacherGrades() {
     loadData(); 
     // Subscribe to grade updates for real-time sync
     const unsubscribe = base44.entities.Grade.subscribe((event) => {
-      if (event.data?.teacherId === user?.id && event.data?.schoolId === user?.schoolId) {
+      if (event.data?.schoolId === user?.schoolId) {
         loadData();
       }
     });
@@ -83,14 +83,14 @@ export default function TeacherGrades() {
       (user?.teachingAssignments || []).map(a => a.subjectId).filter(Boolean)
     )];
 
-    const [g, cls, studs, subjs] = await Promise.all([
-      base44.entities.Grade.filter({ schoolId: user?.schoolId, teacherId: user?.id }),
+    const [allGrades, cls, studs, subjs] = await Promise.all([
+      // Fetch ALL grades for this school — needed so Term Averages shows complete data
+      // for all students across all subjects, not just grades entered by this teacher
+      base44.entities.Grade.filter({ schoolId: user?.schoolId }),
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: "student", isArchived: false }),
       base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
     ]);
-
-    setGrades(g || []);
 
     // Limit to assigned classes/subjects if teacher has assignments
     const filteredCls = assignedClassIds.length
@@ -100,8 +100,23 @@ export default function TeacherGrades() {
       ? (subjs || []).filter(s => assignedSubjectIds.includes(s.id))
       : (subjs || []);
 
+    const filteredStudents = studs || [];
+
+    // For "All Records" tab: only show grades entered by this teacher
+    // For Term Averages: we need all grades for students in teacher's classes
+    const myGrades = (allGrades || []).filter(g => g.teacherId === user?.id);
+    const classStudentIds = new Set(
+      filteredStudents.filter(s => assignedClassIds.includes(s.classId)).map(s => s.id)
+    );
+    // All grades for students in teacher's classes (any teacher) — used for Term Averages
+    const classGrades = (allGrades || []).filter(g =>
+      classStudentIds.has(g.studentId) &&
+      (assignedSubjectIds.length === 0 || assignedSubjectIds.includes(g.subjectId))
+    );
+
+    setGrades({ myGrades, classGrades });
     setClasses(filteredCls);
-    setAllStudents(studs || []);
+    setAllStudents(filteredStudents);
     setAllSubjects(filteredSubjs);
     setLoading(false);
   }
@@ -163,14 +178,6 @@ export default function TeacherGrades() {
       comment: form.comment,
     };
 
-    // Optimistic update — apply immediately, rollback on error
-    const prevGrades = [...grades];
-    if (editingGrade) {
-      setGrades(prev => prev.map(g => g.id === editingGrade.id ? { ...g, ...payload } : g));
-    } else {
-      const tempId = `temp-${Date.now()}`;
-      setGrades(prev => [...prev, { ...payload, id: tempId }]);
-    }
     setShowDialog(false);
 
     try {
@@ -184,7 +191,6 @@ export default function TeacherGrades() {
         gradeId = result?.id;
         toast.success("Grade saved");
       }
-      // Trigger notification function
       if (gradeId) {
         try {
           await base44.functions.invoke('onGradeSubmittedV2', {
@@ -199,9 +205,8 @@ export default function TeacherGrades() {
           console.warn('Notification trigger failed (non-critical):', notifError);
         }
       }
-      loadData(); // sync with server
+      loadData();
     } catch {
-      setGrades(prevGrades); // rollback
       toast.error("Failed to save grade. Please try again.");
       setShowDialog(true);
     } finally {
@@ -211,20 +216,19 @@ export default function TeacherGrades() {
 
   async function handleDelete(grade) {
     if (!window.confirm(`Delete grade for ${grade.studentName}?`)) return;
-    // Optimistic delete
-    const prevGrades = [...grades];
-    setGrades(prev => prev.filter(g => g.id !== grade.id));
     try {
       await base44.entities.Grade.delete(grade.id);
       toast.success("Grade deleted");
+      loadData();
     } catch {
-      setGrades(prevGrades);
       toast.error("Failed to delete grade.");
     }
   }
 
-  // Filtered view
-  const filtered = grades.filter(g => {
+  const { myGrades, classGrades } = grades;
+
+  // Filtered view (All Records tab — only my grades)
+  const filtered = myGrades.filter(g => {
     if (filterClass !== "all" && g.classId !== filterClass) return false;
     if (filterSubject !== "all" && g.subjectId !== filterSubject) return false;
     if (filterTerm !== "all" && g.term !== filterTerm) return false;
@@ -261,7 +265,7 @@ export default function TeacherGrades() {
           <MyStudentsSection
             teachingAssignments={user?.teachingAssignments || []}
             students={allStudents}
-            grades={grades}
+            grades={classGrades}
             subjects={allSubjects}
             classes={classes}
           />
@@ -273,7 +277,7 @@ export default function TeacherGrades() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Total Records</p>
-                <p className="text-2xl font-bold mt-1">{grades.length}</p>
+                <p className="text-2xl font-bold mt-1">{myGrades.length}</p>
               </CardContent>
             </Card>
             <Card className="border-0 shadow-sm">
@@ -387,7 +391,7 @@ export default function TeacherGrades() {
         </TabsContent>
 
         <TabsContent value="averages">
-          <TermAverages grades={grades} classes={classes} subjects={allSubjects} />
+          <TermAverages grades={classGrades} classes={classes} subjects={allSubjects} />
         </TabsContent>
       </Tabs>
 
