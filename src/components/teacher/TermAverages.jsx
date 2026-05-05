@@ -45,35 +45,36 @@ export default function TermAverages({ grades, classes, subjects }) {
     // Compute averages
     return Object.entries(map).map(([studentId, data]) => {
       const subjectAverages = Object.entries(data.subjects).map(([subjectId, sData]) => {
-        const avg = Math.round(
-          sData.records.reduce((sum, r) => sum + pct(r.score, r.maxScore), 0) / sData.records.length
-        );
+        const totalPct = sData.records.reduce((sum, r) => sum + pct(r.score, r.maxScore), 0);
+        const avg = Math.round(totalPct / sData.records.length);
         return { subjectId, subjectName: sData.subjectName, avg, count: sData.records.length };
       });
-      const overallAvg = subjectAverages.length
-        ? Math.round(subjectAverages.reduce((s, x) => s + x.avg, 0) / subjectAverages.length)
+      // Overall = average of all individual grade percentages (not average-of-averages)
+      const allRecords = Object.values(data.subjects).flatMap(s => s.records);
+      const overallAvg = allRecords.length
+        ? Math.round(allRecords.reduce((sum, r) => sum + pct(r.score, r.maxScore), 0) / allRecords.length)
         : 0;
       return { studentId, studentName: data.studentName, classId: data.classId, subjectAverages, overallAvg };
     }).sort((a, b) => b.overallAvg - a.overallAvg);
   }, [grades, filterClass, filterTerm]);
 
-  // All unique subjects in filtered results
-  const activeSubjectIds = useMemo(() => {
+  // All unique subjects in filtered results — stable memo
+  const activeSubjects = useMemo(() => {
     const ids = new Set();
     averages.forEach(r => r.subjectAverages.forEach(s => ids.add(s.subjectId)));
-    return [...ids];
+    return [...ids].map(id => {
+      const found = averages.flatMap(a => a.subjectAverages).find(s => s.subjectId === id);
+      return { id, name: found?.subjectName || id };
+    });
   }, [averages]);
 
-  const activeSubjects = activeSubjectIds.map(id => {
-    const found = averages.flatMap(a => a.subjectAverages).find(s => s.subjectId === id);
-    return { id, name: found?.subjectName || id };
-  });
-
-  // Class average per subject
+  // Class average per subject — only students who have a score for that subject
   const classSubjectAverages = useMemo(() => {
     const result = {};
     for (const subj of activeSubjects) {
-      const vals = averages.map(a => a.subjectAverages.find(s => s.subjectId === subj.id)?.avg).filter(v => v !== undefined);
+      const vals = averages
+        .map(a => a.subjectAverages.find(s => s.subjectId === subj.id)?.avg)
+        .filter(v => v !== undefined && v !== null);
       result[subj.id] = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
     }
     return result;
@@ -123,7 +124,9 @@ export default function TermAverages({ grades, classes, subjects }) {
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Class Average</p>
                 <p className="text-2xl font-bold mt-1">
-                  {averages.length ? Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length) : 0}%
+                  {averages.length
+                    ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%`
+                    : "—"}
                 </p>
               </CardContent>
             </Card>
@@ -186,8 +189,8 @@ export default function TermAverages({ grades, classes, subjects }) {
                       {classSubjectAverages[s.id] !== null ? `${classSubjectAverages[s.id]}%` : "—"}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center text-sm">
-                    {averages.length ? Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length) : 0}%
+                  <TableCell className="text-center text-sm font-bold">
+                   {averages.length ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%` : "—"}
                   </TableCell>
                   <TableCell></TableCell>
                 </TableRow>
