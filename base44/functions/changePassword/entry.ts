@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Fetch the specific user by ID using service role
+    // Fetch user by ID
     let targetUser = null;
     try {
       targetUser = await base44.asServiceRole.entities.SchoolUser.get(userId);
@@ -23,14 +23,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Verify current password
-    const isPasswordValid = bcrypt.compareSync(currentPassword, targetUser.passwordHash);
+    if (!targetUser.passwordHash) {
+      return Response.json({ error: 'No password set for this account. Please contact your administrator.' }, { status: 400 });
+    }
+
+    // Use async bcrypt methods (sync versions do not work reliably in Deno)
+    const isPasswordValid = await bcrypt.compare(currentPassword, targetUser.passwordHash);
     if (!isPasswordValid) {
       return Response.json({ error: 'Current password is incorrect' }, { status: 401 });
     }
 
     // Hash and save new password
-    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await base44.asServiceRole.entities.SchoolUser.update(userId, {
       passwordHash: hashedPassword,
       mustChangePassword: false,

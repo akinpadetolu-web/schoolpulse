@@ -57,8 +57,8 @@ export default function AccountSettings() {
         userId: user.id,
       });
 
-      const result = response.data;
-
+      // Non-2xx responses are thrown by Axios, but check data.error just in case
+      const result = response?.data;
       if (result?.error) {
         setPasswordError(result.error);
         return;
@@ -71,7 +71,9 @@ export default function AccountSettings() {
       setConfirmPassword('');
       setTimeout(() => logout(), 1500);
     } catch (error) {
-      const msg = error?.response?.data?.error || error?.message || 'Failed to change password';
+      // Axios throws on non-2xx — extract the server's error message
+      const serverMsg = error?.response?.data?.error;
+      const msg = serverMsg || error?.message || 'Failed to change password';
       setPasswordError(msg);
     } finally {
       setPasswordLoading(false);
