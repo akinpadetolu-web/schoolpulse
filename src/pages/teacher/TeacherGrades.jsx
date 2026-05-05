@@ -108,11 +108,8 @@ export default function TeacherGrades() {
     const classStudentIds = new Set(
       filteredStudents.filter(s => assignedClassIds.includes(s.classId)).map(s => s.id)
     );
-    // All grades for students in teacher's classes (any teacher) — used for Term Averages
-    const classGrades = (allGrades || []).filter(g =>
-      classStudentIds.has(g.studentId) &&
-      (assignedSubjectIds.length === 0 || assignedSubjectIds.includes(g.subjectId))
-    );
+    // All grades for students in teacher's classes (any teacher, any subject) — used for Term Averages
+    const classGrades = (allGrades || []).filter(g => classStudentIds.has(g.studentId));
 
     setGrades({ myGrades, classGrades });
     setClasses(filteredCls);
