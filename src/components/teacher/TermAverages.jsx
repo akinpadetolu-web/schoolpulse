@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Award } from 'lucide-react';
 
-const TERMS = ["First Term", "Second Term", "Third Term"];
-
 function pct(score, max) {
   if (!max) return 0;
   return Math.round((score / max) * 100);
@@ -22,12 +20,24 @@ function gradeLabel(p) {
 
 export default function TermAverages({ grades, classes, subjects }) {
   const [filterClass, setFilterClass] = useState("all");
-  const [filterTerm, setFilterTerm] = useState(TERMS[0]);
+
+  // Derive available terms from actual grade data — never rely on hardcoded list
+  const availableTerms = useMemo(() => {
+    const seen = new Set();
+    grades.forEach(g => { if (g.term) seen.add(g.term); });
+    return [...seen].sort();
+  }, [grades]);
+
+  const [filterTerm, setFilterTerm] = useState("");
+
+  // Auto-select first term when available terms load
+  const effectiveTerm = filterTerm || availableTerms[0] || "";
 
   // Build per-student per-subject averages for selected term & class
   const averages = useMemo(() => {
+    if (!effectiveTerm) return [];
     const termGrades = grades.filter(g => {
-      if (g.term !== filterTerm) return false;
+      if (g.term !== effectiveTerm) return false;
       if (filterClass !== "all" && g.classId !== filterClass) return false;
       return true;
     });
@@ -56,7 +66,7 @@ export default function TermAverages({ grades, classes, subjects }) {
         : 0;
       return { studentId, studentName: data.studentName, classId: data.classId, subjectAverages, overallAvg };
     }).sort((a, b) => b.overallAvg - a.overallAvg);
-  }, [grades, filterClass, filterTerm]);
+  }, [grades, filterClass, effectiveTerm]);
 
   // All unique subjects in filtered results — stable memo
   const activeSubjects = useMemo(() => {
@@ -84,10 +94,10 @@ export default function TermAverages({ grades, classes, subjects }) {
     <div>
       {/* Filters */}
       <div className="flex gap-3 mb-5 flex-wrap">
-        <Select value={filterTerm} onValueChange={setFilterTerm}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+        <Select value={effectiveTerm} onValueChange={setFilterTerm}>
+          <SelectTrigger className="w-40"><SelectValue placeholder="Select term" /></SelectTrigger>
           <SelectContent>
-            {TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {availableTerms.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterClass} onValueChange={setFilterClass}>
@@ -102,7 +112,7 @@ export default function TermAverages({ grades, classes, subjects }) {
       {averages.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p>No grades recorded for {filterTerm} yet.</p>
+          <p>{availableTerms.length === 0 ? "No grades have been recorded yet." : `No grades recorded for ${effectiveTerm} yet.`}</p>
         </div>
       ) : (
         <>

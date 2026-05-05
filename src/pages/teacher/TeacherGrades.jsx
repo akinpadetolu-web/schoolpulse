@@ -103,13 +103,17 @@ export default function TeacherGrades() {
     const filteredStudents = studs || [];
 
     // For "All Records" tab: only show grades entered by this teacher
-    // For Term Averages: we need all grades for students in teacher's classes
     const myGrades = (allGrades || []).filter(g => g.teacherId === user?.id);
-    const classStudentIds = new Set(
-      filteredStudents.filter(s => assignedClassIds.includes(s.classId)).map(s => s.id)
-    );
-    // All grades for students in teacher's classes (any teacher, any subject) — used for Term Averages
-    const classGrades = (allGrades || []).filter(g => classStudentIds.has(g.studentId));
+
+    // For Term Averages & My Students: all grades for students in teacher's assigned classes.
+    // If teacher has no assignments, show all students in school (fallback for unassigned teachers).
+    const relevantStudents = assignedClassIds.length
+      ? filteredStudents.filter(s => assignedClassIds.includes(s.classId))
+      : filteredStudents;
+    const classStudentIds = new Set(relevantStudents.map(s => s.id));
+    const classGrades = assignedClassIds.length
+      ? (allGrades || []).filter(g => classStudentIds.has(g.studentId))
+      : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
 
     setGrades({ myGrades, classGrades });
     setClasses(filteredCls);
