@@ -22,6 +22,7 @@ const EVENT_TYPES = [
   { value: 'parent_teacher_meeting', label: 'Parent-Teacher Meeting', color: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500', icon: Users },
   { value: 'school_event', label: 'School Event', color: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-500', icon: Star },
   { value: 'other', label: 'Other', color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-500', icon: Circle },
+  { value: 'assignment', label: 'Assignment Due', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', icon: BookOpen },
 ];
 
 const ROLES = ['admin', 'teacher', 'student', 'parent'];
@@ -41,6 +42,7 @@ export default function SchoolCalendar() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [assignments, setAssignments] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [filterClass, setFilterClass] = useState('all');
 
@@ -57,39 +59,59 @@ export default function SchoolCalendar() {
   async function load() {
     setLoading(true);
     try {
-      const evs = await base44.entities.SchoolEvent.filter({ schoolId: user.schoolId });
+      const [evs, cls] = await Promise.all([
+        base44.entities.SchoolEvent.filter({ schoolId: user.schoolId }),
+        base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false }),
+      ]);
       setEvents(evs || []);
-
-      await new Promise(resolve => setTimeout(resolve, 150));
-
-      const cls = await base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false });
       setClasses(cls || []);
+
+      // Load assignments for students and parents
+      if (user.role === 'student' || user.role === 'parent') {
+        const classId = user.classId;
+        if (classId) {
+          const asgn = await base44.entities.Assignment.filter({ schoolId: user.schoolId, classId, isPublished: true });
+          setAssignments(asgn || []);
+        }
+      }
     } catch (error) {
       console.error('Failed to load calendar data:', error);
     }
     setLoading(false);
   }
 
+  // Convert assignments to synthetic calendar events
+  const assignmentEvents = useMemo(() => assignments
+    .filter(a => a.dueDate)
+    .map(a => ({
+      id: `asgn-${a.id}`,
+      title: a.title,
+      description: `${a.subjectName || ''} — Due date`,
+      type: 'assignment',
+      startDate: a.dueDate,
+      endDate: a.dueDate,
+      targetRoles: ['student', 'parent'],
+      targetClassIds: [],
+      _isAssignment: true,
+    })), [assignments]);
+
   // Filter events visible to current user
   const visibleEvents = useMemo(() => {
-    return events.filter(ev => {
+    const combined = [...events, ...assignmentEvents];
+    return combined.filter(ev => {
       // role filter
       if (ev.targetRoles?.length && !ev.targetRoles.includes(user.role)) return false;
       // class filter for students/teachers
       if (ev.targetClassIds?.length) {
         if (user.role === 'student' && !ev.targetClassIds.includes(user.classId)) return false;
         if (user.role === 'teacher' && !(user.assignedClasses || []).some(c => ev.targetClassIds.includes(c))) return false;
-        if (user.role === 'parent') {
-          // parent sees event if any linked child's class matches
-          // We just show all class-specific events to parents; they can filter
-        }
       }
       // UI filters
       if (filterType !== 'all' && ev.type !== filterType) return false;
       if (filterClass !== 'all' && ev.targetClassIds?.length && !ev.targetClassIds.includes(filterClass)) return false;
       return true;
     });
-  }, [events, user, filterType, filterClass]);
+  }, [events, assignmentEvents, user, filterType, filterClass]);
 
   const days = useMemo(() => eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) }), [currentMonth]);
 

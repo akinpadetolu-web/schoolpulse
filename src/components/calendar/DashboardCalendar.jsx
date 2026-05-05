@@ -19,21 +19,36 @@ export default function DashboardCalendar() {
 
   async function loadEvents() {
     try {
-      const allEvents = await base44.entities.SchoolEvent.filter({ schoolId: user?.schoolId });
-      if (allEvents) {
-        // Filter events visible to current user's role
-        const roleEvents = (allEvents || []).filter(e => 
-          (e.targetRoles || []).includes(user?.role) || (e.targetRoles || []).length === 0
-        );
-        // Filter by user's class if student/parent
-        let filtered = roleEvents;
-        if ((user?.role === 'student' || user?.role === 'parent') && user?.classId) {
-          filtered = roleEvents.filter(e => 
-            (e.targetClassIds || []).length === 0 || (e.targetClassIds || []).includes(user.classId)
-          );
-        }
-        setEvents(filtered);
+      const promises = [base44.entities.SchoolEvent.filter({ schoolId: user?.schoolId })];
+      // Load assignments for students and parents
+      if ((user?.role === 'student' || user?.role === 'parent') && user?.classId) {
+        promises.push(base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }));
       }
+      const [allEvents, assignments] = await Promise.all(promises);
+
+      // Filter school events for role/class
+      const roleEvents = (allEvents || []).filter(e =>
+        (e.targetRoles || []).length === 0 || (e.targetRoles || []).includes(user?.role)
+      );
+      let filtered = roleEvents;
+      if ((user?.role === 'student' || user?.role === 'parent') && user?.classId) {
+        filtered = roleEvents.filter(e =>
+          (e.targetClassIds || []).length === 0 || (e.targetClassIds || []).includes(user.classId)
+        );
+      }
+
+      // Merge assignment due dates as synthetic events
+      const assignmentEvents = (assignments || [])
+        .filter(a => a.dueDate)
+        .map(a => ({
+          id: `asgn-${a.id}`,
+          title: a.title,
+          type: 'assignment',
+          startDate: a.dueDate,
+          _isAssignment: true,
+        }));
+
+      setEvents([...filtered, ...assignmentEvents]);
     } catch (err) {
       console.error('Failed to load events:', err);
     }
@@ -64,6 +79,7 @@ export default function DashboardCalendar() {
     parent_teacher_meeting: 'bg-purple-100 text-purple-700',
     school_event: 'bg-green-100 text-green-700',
     other: 'bg-gray-100 text-gray-700',
+    assignment: 'bg-emerald-100 text-emerald-700',
   };
 
   if (loading) return <Card className="border-0 shadow-sm"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading calendar...</CardContent></Card>;
