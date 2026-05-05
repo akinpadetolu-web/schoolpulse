@@ -6,6 +6,7 @@ import HeaderUserMenu from '@/components/common/HeaderUserMenu';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 
 export default function StudentLayout() {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ export default function StudentLayout() {
           </AnimatePresence>
         </main>
       </div>
+      <MobileBottomNav role="student" />
     </div>
   );
 }
