@@ -3,7 +3,8 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Cloud, CloudOff, Loader2, Share2, Download } from 'lucide-react';
+import { X, Cloud, CloudOff, Loader2, Share2, Download, Tag } from 'lucide-react';
+import SubjectTagPicker from '@/components/notes/SubjectTagPicker';
 
 const QUILL_MODULES = {
   toolbar: [
@@ -42,13 +43,14 @@ async function downloadTextAsPdf(note, title, content) {
 export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare }) {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
+  const [subject, setSubject] = useState(note?.subject || '');
   const [saveStatus, setSaveStatus] = useState('idle');
   const autoSaveTimer = useRef(null);
   // Track the created note id for new notes after first save
   const noteIdRef = useRef(note?.id || null);
   const [downloading, setDownloading] = useState(false);
 
-  const triggerAutoSave = useCallback((newTitle, newContent) => {
+  const triggerAutoSave = useCallback((newTitle, newContent, newSubject) => {
     const trimmedTitle = newTitle.trim() || 'Untitled Note';
     clearTimeout(autoSaveTimer.current);
     setSaveStatus('idle');
@@ -56,11 +58,9 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
       setSaveStatus('saving');
       try {
         if (noteIdRef.current) {
-          // Existing note — update in place
-          await onAutoSave({ id: noteIdRef.current, title: trimmedTitle, content: newContent });
+          await onAutoSave({ id: noteIdRef.current, title: trimmedTitle, content: newContent, subject: newSubject });
         } else {
-          // New note — create it for the first time, then keep updating
-          const created = await onSave({ title: trimmedTitle, content: newContent, mode: 'text' });
+          const created = await onSave({ title: trimmedTitle, content: newContent, subject: newSubject, mode: 'text' });
           if (created?.id) noteIdRef.current = created.id;
         }
         setSaveStatus('saved');
@@ -73,12 +73,17 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
-    triggerAutoSave(e.target.value, content);
+    triggerAutoSave(e.target.value, content, subject);
   };
 
   const handleContentChange = (val) => {
     setContent(val);
-    triggerAutoSave(title, val);
+    triggerAutoSave(title, val, subject);
+  };
+
+  const handleSubjectChange = (val) => {
+    setSubject(val);
+    triggerAutoSave(title, content, val);
   };
 
   useEffect(() => () => clearTimeout(autoSaveTimer.current), []);
@@ -101,6 +106,7 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
         />
         <StatusIcon />
       </div>
+      <SubjectTagPicker value={subject} onChange={handleSubjectChange} />
       <div className="flex-1 min-h-[300px]">
         <ReactQuill
           theme="snow"

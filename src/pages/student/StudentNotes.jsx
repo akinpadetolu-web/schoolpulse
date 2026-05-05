@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search, FileText, ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Search, FileText, ImageIcon, Loader2, Tag } from 'lucide-react';
 import NoteCard from '@/components/notes/NoteCard';
 import NoteEditor from '@/components/notes/NoteEditor';
 import NoteDrawingCanvas from '@/components/notes/NoteDrawingCanvas';
@@ -15,6 +15,7 @@ export default function StudentNotes() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterTag, setFilterTag] = useState('');
 
   // Dialog state
   const [dialogMode, setDialogMode] = useState(null); // null | 'text' | 'drawing'
@@ -31,13 +32,14 @@ export default function StudentNotes() {
   useEffect(() => { load(); }, [load]);
 
   // Create a new note (called by NoteEditor on first auto-save of a new note)
-  const handleSaveText = async ({ title, content, mode }) => {
+  const handleSaveText = async ({ title, content, subject, mode }) => {
     const created = await base44.entities.Note.create({
       schoolId: user.schoolId,
       studentId: user.id,
       studentName: user.fullName,
       title,
       content,
+      subject: subject || '',
       mode: 'text',
     });
     load();
@@ -45,9 +47,9 @@ export default function StudentNotes() {
   };
 
   // Auto-save for EXISTING notes (debounced from NoteEditor)
-  const handleAutoSaveText = async ({ id, title, content }) => {
+  const handleAutoSaveText = async ({ id, title, content, subject }) => {
     if (!id) return;
-    await base44.entities.Note.update(id, { title, content });
+    await base44.entities.Note.update(id, { title, content, subject });
     load();
   };
 
@@ -105,9 +107,14 @@ export default function StudentNotes() {
     load();
   };
 
-  const filtered = notes.filter(n =>
-    n.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Collect unique tags across all notes
+  const allTags = [...new Set(notes.map(n => n.subject).filter(Boolean))].sort();
+
+  const filtered = notes.filter(n => {
+    const matchSearch = n.title?.toLowerCase().includes(search.toLowerCase());
+    const matchTag = !filterTag || n.subject === filterTag;
+    return matchSearch && matchTag;
+  });
 
   return (
     <div className="p-4 md:p-6 space-y-5 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
@@ -139,6 +146,27 @@ export default function StudentNotes() {
           className="pl-9"
         />
       </div>
+
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <button
+            onClick={() => setFilterTag('')}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${!filterTag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          >
+            All
+          </button>
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setFilterTag(filterTag === tag ? '' : tag)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${filterTag === tag ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16">
@@ -202,6 +230,12 @@ export default function StudentNotes() {
               existingImageUrl={editingNote?.drawingUrl}
               onShare={handleShareFromEditor}
               isSaved={!!editingNoteRef.current?.id}
+              initialSubject={editingNote?.subject || ''}
+              onSubjectChange={async (val) => {
+                if (editingNoteRef.current?.id) {
+                  await base44.entities.Note.update(editingNoteRef.current.id, { subject: val });
+                }
+              }}
             />
           </div>
         </DialogContent>

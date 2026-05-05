@@ -2,10 +2,11 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2, Download, Share2 } from 'lucide-react';
+import SubjectTagPicker from '@/components/notes/SubjectTagPicker';
 
 const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#f59e0b', '#ec4899', '#14b8a6', '#64748b', '#ffffff'];
 
-export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved }) {
+export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved, initialSubject, onSubjectChange }) {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPos = useRef(null);
@@ -19,6 +20,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [saveStatus, setSaveStatus] = useState('idle');
   const [downloading, setDownloading] = useState(false);
+  const [subject, setSubject] = useState(initialSubject || '');
 
   // Initialize canvas and load existing image
   useEffect(() => {
@@ -252,6 +254,9 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
           {saveStatus === 'saved' && <span className="flex items-center gap-1 text-xs text-emerald-600"><Cloud className="w-3 h-3" /> Saved</span>}
         </div>
       </div>
+
+      {/* Subject tag */}
+      <SubjectTagPicker value={subject} onChange={(val) => { setSubject(val); onSubjectChange?.(val); }} />
 
       {/* Canvas */}
       <div className="flex-1 border rounded-lg overflow-hidden bg-white" style={{ minHeight: 0 }}>
