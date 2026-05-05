@@ -96,6 +96,7 @@ export default function StudentNotes() {
 
   const handleEdit = (note) => {
     setEditingNote(note);
+    editingNoteRef.current = note; // sync ref immediately so drawing saves update correct record
     setDialogMode(note.mode === 'drawing' ? 'drawing' : 'text');
   };
 
@@ -182,7 +183,14 @@ export default function StudentNotes() {
       />
 
       {/* Drawing Dialog */}
-      <Dialog open={dialogMode === 'drawing'} onOpenChange={open => !open && setDialogMode(null)}>
+      <Dialog open={dialogMode === 'drawing'} onOpenChange={open => {
+        if (!open) {
+          setDialogMode(null);
+          setEditingNote(null);
+          editingNoteRef.current = null;
+          load();
+        }
+      }}>
         <DialogContent className="max-w-3xl h-[95vh] flex flex-col overflow-hidden">
           <DialogHeader className="shrink-0">
             <DialogTitle>{editingNote ? 'Edit Drawing' : 'New Drawing'}</DialogTitle>
@@ -190,7 +198,7 @@ export default function StudentNotes() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <NoteDrawingCanvas
               onSave={handleSaveDrawing}
-              onCancel={() => { setDialogMode(null); setEditingNote(null); load(); }}
+              onCancel={() => { setDialogMode(null); setEditingNote(null); editingNoteRef.current = null; load(); }}
               existingImageUrl={editingNote?.drawingUrl}
               onShare={handleShareFromEditor}
               isSaved={!!editingNoteRef.current?.id}
