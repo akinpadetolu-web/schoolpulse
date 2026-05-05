@@ -48,7 +48,7 @@ export default function StudentLayout() {
           </div>
           <HeaderUserMenu />
         </header>
-        <main className="flex-1 min-h-0 overflow-y-auto">
+        <main className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -56,7 +56,7 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              style={{ minHeight: 0 }}
+              style={{ minHeight: '100%' }}
             >
               <Outlet />
             </motion.div>

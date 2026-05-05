@@ -127,8 +127,23 @@
     }
   }
 
-  /* Smooth scrolling with momentum */
-  .overflow-y-auto {
+  /* Smooth native scrolling on Android & iOS */
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  main {
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent double-bounce / scroll trapping on Android WebView */
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 }

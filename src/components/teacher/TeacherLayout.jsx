@@ -51,7 +51,7 @@ export default function TeacherLayout() {
           </div>
           <HeaderUserMenu />
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

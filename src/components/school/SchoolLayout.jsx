@@ -45,7 +45,7 @@ export default function SchoolLayout() {
           </div>
           <h2 className="text-sm font-medium text-muted-foreground md:block hidden">{user.schoolName || "School"} — Admin</h2>
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
