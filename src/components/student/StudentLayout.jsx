@@ -55,6 +55,7 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
+              style={{ minHeight: 0 }}
             >
               <Outlet />
             </motion.div>
