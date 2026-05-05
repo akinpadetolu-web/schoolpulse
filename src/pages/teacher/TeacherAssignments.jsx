@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { createAssignmentNotification } from '@/lib/notificationService';
 import { toast } from 'sonner';
@@ -22,7 +23,23 @@ export default function TeacherAssignments() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", classId: "", subjectId: "", dueDate: "", maxScore: 100 });
+  const [form, setForm] = useState({ title: "", description: "", classIds: [], subjectId: "", dueDate: "", maxScore: 100 });
+
+  function toggleClass(classId) {
+    setForm(prev => ({
+      ...prev,
+      classIds: prev.classIds.includes(classId)
+        ? prev.classIds.filter(id => id !== classId)
+        : [...prev.classIds, classId],
+      subjectId: "",
+    }));
+  }
+
+  // Subjects available for ALL selected classes (teacher must teach that subject in at least one selected class)
+  const availableSubjects = subjects.filter(s =>
+    form.classIds.length === 0 ||
+    form.classIds.some(cid => (user?.teachingAssignments || []).some(ta => ta.subjectId === s.id && ta.classId === cid))
+  );
 
   useEffect(() => { loadData(); }, []);
 
@@ -46,29 +63,32 @@ export default function TeacherAssignments() {
 
   async function handleCreate(e) {
     e.preventDefault();
+    if (form.classIds.length === 0) { toast.error("Please select at least one class"); return; }
     setSaving(true);
     try {
-      const cls = classes.find(c => c.id === form.classId);
       const subj = subjects.find(s => s.id === form.subjectId);
-      const assignment = {
-        schoolId: user.schoolId,
-        classId: form.classId,
-        className: cls?.className || "",
-        subjectId: form.subjectId,
-        subjectName: subj?.name || "",
-        teacherId: user.id,
-        teacherName: user.fullName,
-        title: form.title,
-        description: form.description,
-        dueDate: form.dueDate,
-        maxScore: Number(form.maxScore) || 100,
-        isPublished: true,
-        isArchived: false,
-      };
-      await base44.entities.Assignment.create(assignment);
-      await createAssignmentNotification(assignment, user);
-      toast.success("Assignment created and students notified");
-      setForm({ title: "", description: "", classId: "", subjectId: "", dueDate: "", maxScore: 100 });
+      await Promise.all(form.classIds.map(async (classId) => {
+        const cls = classes.find(c => c.id === classId);
+        const assignment = {
+          schoolId: user.schoolId,
+          classId,
+          className: cls?.className || "",
+          subjectId: form.subjectId,
+          subjectName: subj?.name || "",
+          teacherId: user.id,
+          teacherName: user.fullName,
+          title: form.title,
+          description: form.description,
+          dueDate: form.dueDate,
+          maxScore: Number(form.maxScore) || 100,
+          isPublished: true,
+          isArchived: false,
+        };
+        await base44.entities.Assignment.create(assignment);
+        await createAssignmentNotification(assignment, user);
+      }));
+      toast.success(`Assignment created for ${form.classIds.length} class${form.classIds.length > 1 ? 'es' : ''}`);
+      setForm({ title: "", description: "", classIds: [], subjectId: "", dueDate: "", maxScore: 100 });
       setShowCreate(false);
       loadData();
     } catch (err) { console.error(err); toast.error("Failed to create assignment"); }
@@ -101,23 +121,35 @@ export default function TeacherAssignments() {
           ))}
         </div>
       )}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={v => { setShowCreate(v); if (!v) setForm({ title: "", description: "", classIds: [], subjectId: "", dueDate: "", maxScore: 100 }); }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Create Assignment</DialogTitle></DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2"><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
-            <div className="space-y-2"><Label>Class</Label>
-              <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v, subjectId: "" })}>
-                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label>Classes * <span className="text-xs text-muted-foreground font-normal">(select one or more)</span></Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
+                {classes.map(c => (
+                  <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
+                    <Checkbox
+                      checked={form.classIds.includes(c.id)}
+                      onCheckedChange={() => toggleClass(c.id)}
+                    />
+                    <span className="text-sm">{c.className}</span>
+                  </label>
+                ))}
+                {classes.length === 0 && <p className="text-sm text-muted-foreground">No classes assigned</p>}
+              </div>
+              {form.classIds.length > 0 && (
+                <p className="text-xs text-primary">{form.classIds.length} class{form.classIds.length > 1 ? 'es' : ''} selected</p>
+              )}
             </div>
             <div className="space-y-2"><Label>Subject</Label>
               <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
                 <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                 <SelectContent>
-                  {subjects.filter(s => !form.classId || (s.applicableClasses || []).includes(form.classId) || (user?.teachingAssignments || []).some(ta => ta.subjectId === s.id && ta.classId === form.classId)).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {availableSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
