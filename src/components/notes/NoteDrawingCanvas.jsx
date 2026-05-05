@@ -1,5 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { ReactSketchCanvas } from 'react-sketch-canvas';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Pencil, Eraser, Trash2, Undo, Redo, Cloud, Loader2, Download, Share2 } from 'lucide-react';
@@ -8,13 +7,94 @@ const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c'
 
 export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved }) {
   const canvasRef = useRef(null);
+  const isDrawing = useRef(false);
+  const lastPos = useRef(null);
+  const history = useRef([]); // stack of ImageData snapshots
+  const redoStack = useRef([]);
   const autoSaveTimer = useRef(null);
   const isSavingRef = useRef(false);
+
   const [tool, setTool] = useState('pen');
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
-  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
+  const [saveStatus, setSaveStatus] = useState('idle');
   const [downloading, setDownloading] = useState(false);
+
+  // Initialize canvas and load existing image
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (existingImageUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        pushHistory();
+      };
+      img.src = existingImageUrl;
+    } else {
+      pushHistory();
+    }
+  }, [existingImageUrl]);
+
+  const pushHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    history.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (history.current.length > 50) history.current.shift();
+    redoStack.current = [];
+  };
+
+  const getPos = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
+  };
+
+  const startDrawing = useCallback((e) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    isDrawing.current = true;
+    lastPos.current = getPos(e, canvas);
+  }, []);
+
+  const draw = useCallback((e) => {
+    e.preventDefault();
+    if (!isDrawing.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const pos = getPos(e, canvas);
+
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : strokeColor;
+    ctx.lineWidth = tool === 'eraser' ? strokeWidth * 3 : strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    lastPos.current = pos;
+  }, [tool, strokeColor, strokeWidth]);
+
+  const stopDrawing = useCallback((e) => {
+    if (!isDrawing.current) return;
+    e.preventDefault();
+    isDrawing.current = false;
+    lastPos.current = null;
+    pushHistory();
+    triggerAutoSave();
+  }, []);
 
   const triggerAutoSave = useCallback(() => {
     clearTimeout(autoSaveTimer.current);
@@ -23,11 +103,11 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
       isSavingRef.current = true;
       setSaveStatus('saving');
       try {
-        const dataUrl = await canvasRef.current.exportImage('png');
+        const dataUrl = canvasRef.current.toDataURL('image/png');
         await onSave(dataUrl);
         setSaveStatus('saved');
       } catch (e) {
-        console.error('Drawing save failed:', e);
+        console.error('Drawing auto-save failed:', e);
         setSaveStatus('idle');
       } finally {
         isSavingRef.current = false;
@@ -35,13 +115,31 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
     }, 2000);
   }, [onSave]);
 
-  const handleStrokeEnd = () => {
+  const handleUndo = () => {
+    if (history.current.length <= 1) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    redoStack.current.push(history.current.pop());
+    ctx.putImageData(history.current[history.current.length - 1], 0, 0);
+    triggerAutoSave();
+  };
+
+  const handleRedo = () => {
+    if (redoStack.current.length === 0) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const next = redoStack.current.pop();
+    history.current.push(next);
+    ctx.putImageData(next, 0, 0);
     triggerAutoSave();
   };
 
   const handleClear = () => {
-    canvasRef.current?.clearCanvas();
-    setSaveStatus('idle');
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    pushHistory();
     triggerAutoSave();
   };
 
@@ -51,7 +149,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
     isSavingRef.current = true;
     setSaveStatus('saving');
     try {
-      const dataUrl = await canvasRef.current.exportImage('png');
+      const dataUrl = canvasRef.current.toDataURL('image/png');
       await onSave(dataUrl);
       setSaveStatus('saved');
     } catch (e) {
@@ -62,10 +160,10 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     setDownloading(true);
     try {
-      const dataUrl = await canvasRef.current.exportImage('png');
+      const dataUrl = canvasRef.current.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = `drawing-${Date.now()}.png`;
@@ -83,7 +181,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
     if (!isSaved) {
       setSaveStatus('saving');
       try {
-        const dataUrl = await canvasRef.current.exportImage('png');
+        const dataUrl = canvasRef.current.toDataURL('image/png');
         await onSave(dataUrl);
         setSaveStatus('saved');
         setTimeout(() => onShare?.(), 300);
@@ -116,7 +214,6 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
               style={{ background: c, borderColor: strokeColor === c ? '#6366f1' : '#cbd5e1' }}
             />
           ))}
-          {/* Color picker for full spectrum */}
           <label
             title="Custom color"
             className="w-6 h-6 rounded-full border-2 cursor-pointer overflow-hidden flex items-center justify-center transition-transform hover:scale-110"
@@ -144,13 +241,12 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
           />
         </div>
 
-        <Button size="sm" variant="ghost" onClick={() => { canvasRef.current?.undo(); triggerAutoSave(); }}><Undo className="w-4 h-4" /></Button>
-        <Button size="sm" variant="ghost" onClick={() => { canvasRef.current?.redo(); triggerAutoSave(); }}><Redo className="w-4 h-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={handleUndo}><Undo className="w-4 h-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={handleRedo}><Redo className="w-4 h-4" /></Button>
         <Button size="sm" variant="ghost" onClick={handleClear}>
           <Trash2 className="w-4 h-4 text-destructive" />
         </Button>
 
-        {/* Save status */}
         <div className="ml-auto">
           {saveStatus === 'saving' && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span>}
           {saveStatus === 'saved' && <span className="flex items-center gap-1 text-xs text-emerald-600"><Cloud className="w-3 h-3" /> Saved</span>}
@@ -159,15 +255,18 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
 
       {/* Canvas */}
       <div className="flex-1 border rounded-lg overflow-hidden bg-white" style={{ minHeight: 0 }}>
-        <ReactSketchCanvas
+        <canvas
           ref={canvasRef}
-          strokeColor={tool === 'eraser' ? '#ffffff' : strokeColor}
-          strokeWidth={tool === 'eraser' ? strokeWidth * 3 : strokeWidth}
-          eraserWidth={strokeWidth * 3}
-          canvasColor="white"
-          style={{ width: '100%', height: '100%' }}
-          withTimestamp={false}
-          onStroke={handleStrokeEnd}
+          width={1200}
+          height={800}
+          style={{ width: '100%', height: '100%', touchAction: 'none', cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
         />
       </div>
 
