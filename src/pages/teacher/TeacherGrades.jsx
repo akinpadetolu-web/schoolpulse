@@ -48,7 +48,9 @@ const EMPTY_FORM = {
 export default function TeacherGrades() {
   const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState({ myGrades: [], classGrades: [] });
+  const [allGrades, setAllGrades] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [allClasses, setAllClasses] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +118,9 @@ export default function TeacherGrades() {
       : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
 
     setGrades({ myGrades, classGrades });
+    setAllGrades(allGrades || []);
     setClasses(filteredCls);
+    setAllClasses(cls || []);
     setAllStudents(filteredStudents);
     setAllSubjects(filteredSubjs);
     setLoading(false);
@@ -392,7 +396,7 @@ export default function TeacherGrades() {
         </TabsContent>
 
         <TabsContent value="averages">
-          <TermAverages grades={classGrades} classes={classes} subjects={allSubjects} />
+          <TermAverages grades={allGrades} classes={allClasses} subjects={allSubjects} />
         </TabsContent>
       </Tabs>
 
