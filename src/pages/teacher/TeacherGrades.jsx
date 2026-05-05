@@ -117,10 +117,16 @@ export default function TeacherGrades() {
       ? (allGrades || []).filter(g => classStudentIds.has(g.studentId))
       : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
 
+    // For Term Averages: grades scoped to teacher's exact class+subject assignments
+    const teachingPairs = (user?.teachingAssignments || []).filter(a => a.classId && a.subjectId);
+    const termAveragesGrades = teachingPairs.length
+      ? (allGrades || []).filter(g => teachingPairs.some(a => a.classId === g.classId && a.subjectId === g.subjectId))
+      : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
+
     setGrades({ myGrades, classGrades });
-    setAllGrades(allGrades || []);
+    setAllGrades(termAveragesGrades);
     setClasses(filteredCls);
-    setAllClasses(cls || []);
+    setAllClasses(filteredCls);
     setAllStudents(filteredStudents);
     setAllSubjects(filteredSubjs);
     setLoading(false);
