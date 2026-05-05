@@ -3,6 +3,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { hashPassword, generateTemporaryPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Loader2, ChevronDown, ChevronRight, Upload } from 'lucide-react';
@@ -11,8 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
 import StudentProfileDialog from '@/components/school/StudentProfileDialog';
 import StudentGridCard from '@/components/school/StudentGridCard';
-
-import { toast } from 'sonner';
 
 // Admin Students Page
 export default function AdminStudents() {
@@ -45,7 +44,8 @@ export default function AdminStudents() {
   async function handleReset(u) {
     const pwd = generateTemporaryPassword();
     await base44.entities.SchoolUser.update(u.id, { passwordHash: hashPassword(pwd), mustChangePassword: true });
-    toast.success(`New password: ${pwd}`, { duration: 10000 });
+    await logAudit({ schoolId: user.schoolId, schoolName: user.schoolName, action: "password_reset", entityType: "SchoolUser", entityId: u.id, performedBy: user.id, performedByName: user.fullName, details: `Reset for "${u.fullName}"` });
+    toast.success(`Temporary password for ${u.fullName}: ${pwd}`, { duration: 15000 });
   }
 
   async function handleArchive(u) { await base44.entities.SchoolUser.update(u.id, { isArchived: true }); loadData(); }
@@ -153,6 +153,7 @@ export default function AdminStudents() {
                       student={student}
                       onView={setEditingStudent}
                       onEdit={setEditingStudent}
+                      onReset={handleReset}
                     />
                   ))}
                 </div>

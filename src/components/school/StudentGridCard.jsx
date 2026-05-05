@@ -1,10 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit2 } from 'lucide-react';
+import { Eye, Edit2, KeyRound } from 'lucide-react';
 import UserAvatar from '@/components/common/UserAvatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
-export default function StudentGridCard({ student, onView, onEdit }) {
+export default function StudentGridCard({ student, onView, onEdit, onReset }) {
   return (
     <div className="rounded-lg border bg-card hover:shadow-md transition-shadow">
       <div className="p-4 space-y-3">
@@ -44,6 +46,20 @@ export default function StudentGridCard({ student, onView, onEdit }) {
           >
             <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
           </Button>
+          {onReset && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="px-2">
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onReset(student)}>
+                  <KeyRound className="w-4 h-4 mr-2" /> Reset Password
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </div>
