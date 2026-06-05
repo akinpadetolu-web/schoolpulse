@@ -26,9 +26,9 @@ export default function SchoolLayout() {
   if (!user || user.role !== "admin") return null;
 
   return (
-    <div className="md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row min-h-screen">
+    <div className="flex flex-col md:flex-row bg-background" style={{ height: '100dvh', overflow: 'hidden' }}>
       <SchoolSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 md:overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center px-4 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -45,7 +45,7 @@ export default function SchoolLayout() {
           </div>
           <h2 className="text-sm font-medium text-muted-foreground md:block hidden">{user.schoolName || "School"} — Admin</h2>
         </header>
-        <main className="flex-1 overflow-y-auto min-h-0 w-full max-w-full overflow-x-hidden touch-pan-y" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+        <main className="flex-1 min-h-0 w-full" style={{ overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -53,7 +53,7 @@ export default function SchoolLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="p-4 md:p-6 w-full max-w-full overflow-x-hidden"
+              className="p-4 md:p-6 w-full"
               style={{
                 paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
                 paddingLeft: 'env(safe-area-inset-left)',

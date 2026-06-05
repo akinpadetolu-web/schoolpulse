@@ -129,22 +129,14 @@
 
   /* Smooth native scrolling on Android & iOS */
   html, body {
-    min-height: 100%;
-    overflow-x: hidden;
-    overscroll-behavior-x: none;
-  }
-
-  .overflow-y-auto,
-  .overflow-y-scroll,
-  main {
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    scroll-behavior: smooth;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   /* Allow page to grow on mobile; desktop layouts manage their own scroll containment */
   #root {
-    min-height: 100%;
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
   }
 }
