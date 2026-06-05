@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings, HelpCircle, Share2, BookOpenCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings, HelpCircle, Share2, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
@@ -26,6 +26,7 @@ const teacherNavGroups = [
       { label: "Submissions", path: "/teacher/submissions", icon: NotebookPen },
       { label: "Attendance", path: "/teacher/attendance", icon: UserCheck },
       { label: "Quizzes", path: "/teacher/quizzes", icon: HelpCircle },
+      { label: "Quiz Remarks", path: "/teacher/quiz-remarks", icon: MessageSquare },
       { label: "E-Class", path: "/teacher/e-class", icon: Video },
     ]
   },

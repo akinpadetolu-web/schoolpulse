@@ -34,6 +34,30 @@
         }
       }
     },
+    "shortAnswerGrades": {
+      "type": "array",
+      "description": "AI or teacher grades for short_answer questions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "questionIndex": {
+            "type": "number"
+          },
+          "aiScore": {
+            "type": "number"
+          },
+          "teacherScore": {
+            "type": "number"
+          },
+          "aiFeedback": {
+            "type": "string"
+          },
+          "teacherFeedback": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "score": {
       "type": "number"
     },
@@ -47,10 +71,26 @@
       "type": "boolean",
       "default": false
     },
+    "remarkRequested": {
+      "type": "boolean",
+      "default": false,
+      "description": "Student has requested a remark"
+    },
+    "remarkReason": {
+      "type": "string",
+      "description": "Student's reason for remark request"
+    },
+    "teacherRemark": {
+      "type": "string",
+      "description": "Teacher's overall remark/feedback on the submission"
+    },
+    "remarkResolvedAt": {
+      "type": "string",
+      "description": "When the teacher resolved the remark"
+    },
     "description": {
       "type": "string",
-      "maxLength": 1000,
-      "description": "Additional context or notes about this quiz submission"
+      "maxLength": 1000
     }
   },
   "required": [
