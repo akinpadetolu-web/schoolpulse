@@ -83,5 +83,85 @@
     "schoolId",
     "studentId",
     "month"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "teacher"
+              }
+            },
+            {
+              "data.generatedBy": "{{user.fullName}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.studentId": "{{user.id}}"
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "parent"
+              }
+            },
+            {
+              "data.studentId": {
+                "$in": "{{user.data.linkedStudentIds}}"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "teacher"
+              }
+            },
+            {
+              "data.classId": {
+                "$in": "{{user.data.assignedClasses}}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.generatedBy": "{{user.fullName}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

@@ -129,8 +129,9 @@
 
   /* Smooth native scrolling on Android & iOS */
   html, body {
-    height: 100%;
-    overscroll-behavior: none;
+    min-height: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
   }
 
   .overflow-y-auto,
@@ -141,9 +142,9 @@
     scroll-behavior: smooth;
   }
 
-  /* Prevent double-bounce / scroll trapping on Android WebView */
+  /* Allow page to grow on mobile; desktop layouts manage their own scroll containment */
   #root {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
+    overflow-x: hidden;
   }
 }

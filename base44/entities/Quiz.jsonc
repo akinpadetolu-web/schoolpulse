@@ -11,6 +11,20 @@
     "className": {
       "type": "string"
     },
+    "classIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Multiple class IDs this quiz applies to"
+    },
+    "classNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of targeted classes"
+    },
     "subjectId": {
       "type": "string"
     },

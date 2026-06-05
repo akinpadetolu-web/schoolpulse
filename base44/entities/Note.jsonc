@@ -69,5 +69,6 @@
     "schoolId",
     "studentId",
     "title"
-  ]
+  ],
+  "rls": {}
 }

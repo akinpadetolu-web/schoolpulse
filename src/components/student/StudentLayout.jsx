@@ -28,9 +28,9 @@ export default function StudentLayout() {
   if (!user || user.role !== "student") return null;
 
   return (
-    <div className="h-screen bg-background flex flex-col md:flex-row overflow-hidden">
+    <div className="md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row min-h-screen">
       <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div className="flex-1 flex flex-col min-w-0 md:min-h-0 md:overflow-hidden">
         <header
           className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -48,7 +48,7 @@ export default function StudentLayout() {
           </div>
           <HeaderUserMenu />
         </header>
-        <main className="flex-1 min-h-0 overflow-y-auto" style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
+        <main className="flex-1 md:min-h-0 md:overflow-y-auto w-full max-w-full overflow-x-hidden" style={{ overscrollBehaviorY: 'contain', WebkitOverflowScrolling: 'touch' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
@@ -56,7 +56,12 @@ export default function StudentLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              style={{ minHeight: '100%' }}
+              className="p-4 md:p-6 w-full max-w-full overflow-x-hidden"
+              style={{
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 96px)',
+                paddingLeft: 'env(safe-area-inset-left)',
+                paddingRight: 'env(safe-area-inset-right)',
+              }}
             >
               <Outlet />
             </motion.div>

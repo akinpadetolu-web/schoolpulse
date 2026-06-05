@@ -49,6 +49,20 @@
       "type": "string",
       "maxLength": 1000,
       "description": "A brief description of the assessment or grading context"
+    },
+    "lastUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last update"
+    },
+    "syncStatus": {
+      "type": "string",
+      "enum": [
+        "synced",
+        "pending"
+      ],
+      "default": "synced",
+      "description": "Grade sync status across portals"
     }
   },
   "required": [
