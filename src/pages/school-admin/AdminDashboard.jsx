@@ -1,129 +1,273 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Users, GraduationCap, BookOpen, ClipboardList, Loader2, AlertTriangle, Plus, Tag, Zap, Calendar, Wand2 } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, TrendingUp, Activity } from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 export default function AdminDashboard() {
   const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
-  const [stats, setStats] = useState({ teachers: 0, students: 0, classes: 0, subjects: 0, categories: 0 });
-  const [warnings, setWarnings] = useState([]);
+
+  const [stats, setStats] = useState({ students: 0, avgScore: 0, passRate: 0, activeClasses: 0 });
+  const [subjectScores, setSubjectScores] = useState([]);
+  const [trendData, setTrendData] = useState([]);
+  const [topStudents, setTopStudents] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Store raw data so subscriptions can trigger recompute without re-fetching everything
+  const rawRef = useRef({ students: [], grades: [], classes: [], subjects: [] });
+
+  const computeStats = useCallback((students, grades, classes, subjects) => {
+    rawRef.current = { students, grades, classes, subjects };
+
+    const passMark = 40;
+    const totalStudents = students.length;
+    const activeClasses = classes.length;
+
+    const gradeScores = grades.map(g => (g.score / (g.maxScore || 100)) * 100);
+    const avgScore = gradeScores.length > 0
+      ? gradeScores.reduce((a, b) => a + b, 0) / gradeScores.length
+      : 0;
+    const passRate = gradeScores.length > 0
+      ? (gradeScores.filter(s => s >= passMark).length / gradeScores.length) * 100
+      : 0;
+
+    setStats({
+      students: totalStudents,
+      avgScore: parseFloat(avgScore.toFixed(1)),
+      passRate: parseFloat(passRate.toFixed(1)),
+      activeClasses,
+    });
+
+    // Subject average scores
+    const subjectMap = {};
+    grades.forEach(g => {
+      if (!g.subjectId) return;
+      const name = g.subjectName || subjects.find(s => s.id === g.subjectId)?.name || 'Unknown';
+      if (!subjectMap[g.subjectId]) subjectMap[g.subjectId] = { name, scores: [] };
+      subjectMap[g.subjectId].scores.push((g.score / (g.maxScore || 100)) * 100);
+    });
+    const subjectData = Object.values(subjectMap).map(s => ({
+      name: s.name.length > 8 ? s.name.slice(0, 8) : s.name,
+      score: parseFloat((s.scores.reduce((a, b) => a + b, 0) / s.scores.length).toFixed(1)),
+    })).slice(0, 7);
+    setSubjectScores(subjectData);
+
+    // Pass rate trend — last 6 months
+    const now = new Date();
+    const trend = Array.from({ length: 6 }, (_, i) => {
+      const d = subMonths(now, 5 - i);
+      const start = startOfMonth(d);
+      const end = endOfMonth(d);
+      const monthGrades = grades.filter(g => {
+        const at = g.lastUpdatedAt ? new Date(g.lastUpdatedAt) : null;
+        return at && at >= start && at <= end;
+      });
+      const monthScores = monthGrades.map(g => (g.score / (g.maxScore || 100)) * 100);
+      const rate = monthScores.length > 0
+        ? parseFloat(((monthScores.filter(s => s >= passMark).length / monthScores.length) * 100).toFixed(1))
+        : null;
+      return { month: format(d, 'MMM'), rate };
+    });
+    setTrendData(trend);
+
+    // Top students by average grade score
+    const studentScoreMap = {};
+    grades.forEach(g => {
+      if (!g.studentId) return;
+      const name = g.studentName || students.find(s => s.id === g.studentId)?.fullName || 'Unknown';
+      if (!studentScoreMap[g.studentId]) studentScoreMap[g.studentId] = { name, scores: [] };
+      studentScoreMap[g.studentId].scores.push((g.score / (g.maxScore || 100)) * 100);
+    });
+    const top = Object.entries(studentScoreMap)
+      .map(([id, v]) => ({
+        id,
+        name: v.name,
+        avg: parseFloat((v.scores.reduce((a, b) => a + b, 0) / v.scores.length).toFixed(1)),
+      }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 4);
+    setTopStudents(top);
+
+    setLastUpdated(new Date());
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     if (!schoolId) { setLoading(false); return; }
+
     async function load() {
-      try {
-        const [teachers, students, classes, subjects, categories, timetableEntries] = await Promise.all([
-          base44.entities.SchoolUser.filter({ schoolId, role: "teacher", isArchived: false }),
-          base44.entities.SchoolUser.filter({ schoolId, role: "student", isArchived: false }),
-          base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
-          base44.entities.Subject.filter({ schoolId, isArchived: false }),
-          base44.entities.SubjectCategory.filter({ schoolId, isArchived: false }),
-          base44.entities.TimetableEntry.filter({ schoolId }),
-        ]);
-        setStats({
-          teachers: (teachers || []).length,
-          students: (students || []).length,
-          classes: (classes || []).length,
-          subjects: (subjects || []).length,
-          categories: (categories || []).length,
-        });
-
-        // Build smart warnings
-        const warns = [];
-        const classIds = (classes || []).map(c => c.id);
-        const classesWithNoSubjects = (classes || []).filter(c =>
-          !(subjects || []).some(s => (s.applicableClasses || []).includes(c.id))
-        );
-        if (classesWithNoSubjects.length > 0) warns.push(`${classesWithNoSubjects.length} class${classesWithNoSubjects.length > 1 ? "es" : ""} have no subjects mapped`);
-
-        const timetabledClasses = [...new Set((timetableEntries || []).map(e => e.classId))];
-        const noTimetable = (classes || []).filter(c => !timetabledClasses.includes(c.id));
-        if (noTimetable.length > 0) warns.push(`${noTimetable.length} class${noTimetable.length > 1 ? "es" : ""} have no timetable`);
-
-        const noTeacherEntries = (timetableEntries || []).filter(e => !e.teacherId).length;
-        if (noTeacherEntries > 0) warns.push(`${noTeacherEntries} timetable entries have no teacher`);
-
-        const teachersNoAssignment = (teachers || []).filter(t => !(t.teachingAssignments || []).length).length;
-        if (teachersNoAssignment > 0) warns.push(`${teachersNoAssignment} teacher${teachersNoAssignment > 1 ? "s" : ""} have no class assignment`);
-
-        setWarnings(warns);
-      } catch { /* ignore */ }
-      setLoading(false);
+      const [students, grades, classes, subjects] = await Promise.all([
+        base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
+        base44.entities.Grade.filter({ schoolId }),
+        base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
+        base44.entities.Subject.filter({ schoolId, isArchived: false }),
+      ]);
+      computeStats(students || [], grades || [], classes || [], subjects || []);
     }
     load();
-  }, [schoolId]);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    // Real-time subscriptions
+    const unsubGrade = base44.entities.Grade.subscribe(() => {
+      base44.entities.Grade.filter({ schoolId }).then(grades => {
+        computeStats(rawRef.current.students, grades || [], rawRef.current.classes, rawRef.current.subjects);
+      });
+    });
+    const unsubStudent = base44.entities.SchoolUser.subscribe(() => {
+      base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }).then(students => {
+        computeStats(students || [], rawRef.current.grades, rawRef.current.classes, rawRef.current.subjects);
+      });
+    });
+
+    return () => { unsubGrade(); unsubStudent(); };
+  }, [schoolId, computeStats]);
 
   const statCards = [
-    { label: "Teachers", value: stats.teachers, icon: Users, color: "text-emerald-600 bg-emerald-100" },
-    { label: "Students", value: stats.students, icon: GraduationCap, color: "text-amber-600 bg-amber-100" },
-    { label: "Classes", value: stats.classes, icon: BookOpen, color: "text-blue-600 bg-blue-100" },
-    { label: "Subjects", value: stats.subjects, icon: ClipboardList, color: "text-purple-600 bg-purple-100" },
-    { label: "Categories", value: stats.categories, icon: Tag, color: "text-rose-600 bg-rose-100" },
+    { label: 'Total Students', value: stats.students, icon: Users, trend: null },
+    { label: 'Avg. Score', value: `${stats.avgScore}%`, icon: TrendingUp, trend: null },
+    { label: 'Pass Rate', value: `${stats.passRate}%`, icon: Activity, trend: null },
+    { label: 'Active Classes', value: stats.activeClasses, icon: BookOpen, trend: null },
   ];
 
-  const quickActions = [
-    { label: "Add Subject", icon: Plus, to: "/school-admin/subjects" },
-    { label: "Add Class", icon: BookOpen, to: "/school-admin/classes" },
-    { label: "Add Category", icon: Tag, to: "/school-admin/categories" },
-    { label: "Generate Timetable", icon: Wand2, to: "/school-admin/timetable" },
-    { label: "Bulk Assign Subjects", icon: Zap, to: "/school-admin/bulk-assign" },
-    { label: "Teacher Assignments", icon: Users, to: "/school-admin/teacher-assignments" },
-  ];
+  const avatarColors = ['#6366f1', '#8b5cf6', '#ec4899', '#06b6d4'];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-1">Welcome, {user?.fullName || "Admin"}</h1>
-      <p className="text-muted-foreground mb-6">{user?.schoolName || "Your School"}</p>
-
-      {/* Smart warnings */}
-      {warnings.length > 0 && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <div className="flex items-center gap-2 mb-2 text-amber-700 font-semibold text-sm"><AlertTriangle className="w-4 h-4" /> Action Required</div>
-          <ul className="space-y-1">
-            {warnings.map((w, i) => <li key={i} className="text-sm text-amber-700 flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />{w}</li>)}
-          </ul>
+    <div className="min-h-full bg-[#12152a] text-white p-4 md:p-6 rounded-xl">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Academic Performance Overview</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            {user?.schoolName || 'Your School'} &nbsp;·&nbsp;
+            {lastUpdated ? `Updated ${format(lastUpdated, 'h:mm:ss a')}` : 'Loading…'}
+          </p>
         </div>
-      )}
+        <div className="flex items-center gap-2 bg-[#1e2340] rounded-full px-3 py-1.5 text-sm text-emerald-400 font-medium shrink-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          Live
+        </div>
+      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        {statCards.map(c => (
-          <Card key={c.label} className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{c.label}</p>
-                  <p className="text-2xl font-bold mt-0.5">{c.value}</p>
-                </div>
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${c.color}`}>
-                  <c.icon className="w-4 h-4" />
-                </div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {statCards.map((card, i) => (
+          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                <card.icon className="w-4 h-4 text-indigo-400" />
               </div>
-            </CardContent>
-          </Card>
+              <span className="text-emerald-400 text-xs font-semibold">
+                {loading ? '...' : '● Live'}
+              </span>
+            </div>
+            <p className="text-3xl font-bold">
+              {loading ? <span className="w-16 h-8 bg-slate-700 rounded animate-pulse inline-block" /> : card.value}
+            </p>
+            <p className="text-slate-400 text-sm mt-1">{card.label}</p>
+          </div>
         ))}
       </div>
 
-      {/* Quick actions */}
-      <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Quick Actions</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {quickActions.map(a => (
-          <Link key={a.to} to={a.to}>
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
-                  <a.icon className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
+        {/* Pass Rate Trend */}
+        <div className="lg:col-span-3 bg-[#1e2340] rounded-2xl p-5">
+          <p className="font-semibold mb-1">Pass Rate Trend</p>
+          <p className="text-slate-400 text-xs mb-4">Monthly pass rate across all classes</p>
+          {trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2f4a" />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: '#12152a', border: '1px solid #2a2f4a', borderRadius: 8 }}
+                  labelStyle={{ color: '#fff' }}
+                  itemStyle={{ color: '#6366f1' }}
+                  formatter={v => v !== null ? [`${v}%`, 'Pass Rate'] : ['No data', 'Pass Rate']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="rate"
+                  stroke="#6366f1"
+                  strokeWidth={2.5}
+                  dot={false}
+                  connectNulls
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-slate-500 text-sm">No grade data yet</div>
+          )}
+        </div>
+
+        {/* Subject Scores */}
+        <div className="lg:col-span-2 bg-[#1e2340] rounded-2xl p-5">
+          <p className="font-semibold mb-1">Subject Scores</p>
+          <p className="text-slate-400 text-xs mb-4">Average score by subject</p>
+          {subjectScores.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={subjectScores} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2f4a" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ background: '#12152a', border: '1px solid #2a2f4a', borderRadius: 8 }}
+                  labelStyle={{ color: '#fff' }}
+                  itemStyle={{ color: '#6366f1' }}
+                  formatter={v => [`${v}%`, 'Avg Score']}
+                />
+                <Bar dataKey="score" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-slate-500 text-sm">No grade data yet</div>
+          )}
+        </div>
+      </div>
+
+      {/* Top Performing Students */}
+      <div className="bg-[#1e2340] rounded-2xl p-5">
+        <p className="font-semibold mb-4">Top Performing Students</p>
+        {topStudents.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {topStudents.map((s, i) => (
+              <div key={s.id} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                  style={{ background: avatarColors[i % avatarColors.length] }}>
+                  {i + 1}
                 </div>
-                <span className="text-sm font-medium">{a.label}</span>
-              </CardContent>
-            </Card>
+                <div>
+                  <p className="font-medium text-sm leading-tight">{s.name}</p>
+                  <p className="text-emerald-400 text-xs font-semibold mt-0.5">↑ {s.avg}%</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm text-center py-4">No grade data yet</p>
+        )}
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4">
+        {[
+          { label: 'Students', to: '/school-admin/students' },
+          { label: 'Teachers', to: '/school-admin/teachers' },
+          { label: 'Classes', to: '/school-admin/classes' },
+          { label: 'Grades', to: '/school-admin/grade-weighting' },
+          { label: 'Timetable', to: '/school-admin/timetable' },
+          { label: 'Reports', to: '/school-admin/report-cards' },
+        ].map(l => (
+          <Link key={l.to} to={l.to}>
+            <div className="bg-[#1e2340] hover:bg-[#252b48] transition-colors rounded-xl px-3 py-2.5 text-center text-sm text-slate-300 hover:text-white cursor-pointer">
+              {l.label}
+            </div>
           </Link>
         ))}
       </div>
