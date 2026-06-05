@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, BookOpen, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, FileText } from 'lucide-react';
+import { Loader2, BookOpen, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, FileText, ExternalLink } from 'lucide-react';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
 
 export default function StudentLessonPlans() {
@@ -186,16 +186,17 @@ export default function StudentLessonPlans() {
                       {plan.pdfFileUrl && (
                         <div>
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-blue-600" /> Attached Notes
+                            <FileText className="w-3.5 h-3.5 text-red-500" /> PDF Attachment
                           </p>
                           <a
                             href={plan.pdfFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                            className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700 hover:bg-red-100 transition-colors"
                           >
-                            <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                            <span className="text-sm font-medium text-blue-700">View PDF Notes</span>
+                            <FileText className="w-4 h-4 flex-shrink-0" />
+                            <span className="flex-1 font-medium">View PDF Document</span>
+                            <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
                           </a>
                         </div>
                       )}
