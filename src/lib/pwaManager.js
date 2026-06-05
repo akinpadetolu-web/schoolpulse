@@ -2,10 +2,36 @@
  * PWA Manager - Handles service worker registration, install prompts, and offline features
  */
 
+// Unregister all service workers and clear caches in dev to prevent stale JS issues
+async function clearDevServiceWorkers() {
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) {
+      await reg.unregister();
+      console.log('[PWA] Unregistered stale SW in dev');
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        await caches.delete(key);
+        console.log('[PWA] Cleared cache in dev:', key);
+      }
+    }
+  } catch (e) {
+    console.log('[PWA] Dev SW cleanup failed:', e);
+  }
+}
+
 // Register Service Worker
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
     console.log('[PWA] Service Worker not supported');
+    return;
+  }
+
+  // Never register a SW in dev — it causes stale JS/React cache issues
+  if (import.meta.env.DEV) {
+    await clearDevServiceWorkers();
     return;
   }
 
