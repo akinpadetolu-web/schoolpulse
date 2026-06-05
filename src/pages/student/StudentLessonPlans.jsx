@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, BookOpen, Target, Activity, Package, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { Loader2, BookOpen, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, FileText } from 'lucide-react';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
 
 export default function StudentLessonPlans() {
@@ -179,6 +179,24 @@ export default function StudentLessonPlans() {
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                           <p className="text-xs font-semibold text-amber-700 mb-1">📝 Homework / Follow-up</p>
                           <p className="text-sm">{plan.homework}</p>
+                        </div>
+                      )}
+
+                      {/* PDF Attachment */}
+                      {plan.pdfFileUrl && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-blue-600" /> Attached Notes
+                          </p>
+                          <a
+                            href={plan.pdfFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                            <span className="text-sm font-medium text-blue-700">View PDF Notes</span>
+                          </a>
                         </div>
                       )}
                     </div>
