@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Loader2, UserPlus, TrendingUp, TrendingDown, AlertCircle, BookOpen, Calendar, FileText, FlaskConical, ClipboardList } from 'lucide-react';
+import { GraduationCap, Loader2, UserPlus, TrendingUp, TrendingDown, AlertCircle, BookOpen, Calendar, FileText, FlaskConical, ClipboardList, AlertTriangle } from 'lucide-react';
 import UserAvatar from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -369,16 +369,25 @@ export default function ParentDashboard() {
                           <p className="text-sm text-slate-600">No assignments assigned</p>
                         ) : (
                           <div className="space-y-2">
-                            {childAssignments.slice(0, 5).map(a => (
-                              <div key={a.id} className="flex items-start gap-2 p-2 bg-white rounded border border-slate-300">
-                                <FileText className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-700 truncate">{a.title}</p>
-                                  <p className="text-xs text-slate-600">Due: {a.dueDate ? format(new Date(a.dueDate), 'MMM d') : 'No date'}</p>
-                                </div>
-                              </div>
-                            ))}
-                            {childAssignments.length > 5 && <p className="text-xs text-slate-600">+{childAssignments.length - 5} more</p>}
+                           {childAssignments.slice(0, 5).map(a => {
+                             const today = new Date().toISOString().slice(0, 10);
+                             const isLate = a.dueDate && a.dueDate < today;
+                             return (
+                               <div key={a.id} className={`flex items-start gap-2 p-2 bg-white rounded border ${isLate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`}>
+                                 <FileText className={`w-4 h-4 mt-0.5 shrink-0 ${isLate ? 'text-red-500' : 'text-blue-600'}`} />
+                                 <div className="flex-1 min-w-0">
+                                   <p className="text-sm font-medium text-slate-700 truncate">{a.title}</p>
+                                   <p className={`text-xs ${isLate ? 'text-red-500' : 'text-slate-600'}`}>Due: {a.dueDate ? format(new Date(a.dueDate), 'MMM d') : 'No date'}</p>
+                                 </div>
+                                 {isLate && (
+                                   <Badge className="text-xs bg-red-100 text-red-700 border border-red-300 flex items-center gap-1 shrink-0">
+                                     <AlertTriangle className="w-3 h-3" /> Late
+                                   </Badge>
+                                 )}
+                               </div>
+                             );
+                           })}
+                           {childAssignments.length > 5 && <p className="text-xs text-slate-600">+{childAssignments.length - 5} more</p>}
                           </div>
                         )}
                       </TabsContent>

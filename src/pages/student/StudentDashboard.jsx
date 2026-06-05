@@ -6,7 +6,7 @@ import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award } from 'lucide-react';
+import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import TermProgressTab from '@/components/student/TermProgressTab';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
@@ -229,10 +229,15 @@ export default function StudentDashboard() {
                               <p className="text-sm font-medium truncate">{a.title}</p>
                               <p className="text-xs text-muted-foreground truncate">{a.subjectName}</p>
                             </div>
-                            <div className="shrink-0">
+                            <div className="shrink-0 flex flex-col items-end gap-1">
+                              {isOverdue && (
+                                <Badge className="text-xs bg-red-100 text-red-700 border border-red-300 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> Late
+                                </Badge>
+                              )}
                               {a.dueDate ? (
-                                <Badge variant="outline" className={`text-xs ${isOverdue ? 'border-red-400 text-red-600' : 'text-muted-foreground'}`}>
-                                  {isOverdue ? '⚠ ' : ''}{a.dueDate}
+                                <Badge variant="outline" className={`text-xs ${isOverdue ? 'border-red-300 text-red-500' : 'text-muted-foreground'}`}>
+                                  {a.dueDate}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="text-xs">No due date</Badge>
