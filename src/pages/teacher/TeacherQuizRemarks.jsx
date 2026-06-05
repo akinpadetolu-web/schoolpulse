@@ -168,13 +168,20 @@ Return a JSON with:
       lastUpdatedAt: new Date().toISOString(),
       syncStatus: 'synced',
     };
-    const existingGrade = await base44.entities.Grade.filter({
+    // Look up existing grade by description (new format) OR by assessmentType+subjectId+quizTitle comment (legacy)
+    const allStudentQuizGrades = await base44.entities.Grade.filter({
       schoolId: submission.schoolId,
       studentId: submission.studentId,
-      description: `Quiz: ${quiz.id}`,
+      assessmentType: 'quiz',
+      subjectId: quiz.subjectId,
     });
-    if (existingGrade.length > 0) {
-      await base44.entities.Grade.update(existingGrade[0].id, gradePayload);
+    const existingGrade = allStudentQuizGrades.find(g =>
+      g.description === `Quiz: ${quiz.id}` ||
+      g.comment === `Quiz: ${quiz.title}` ||
+      (!g.description && g.comment?.includes(quiz.title))
+    );
+    if (existingGrade) {
+      await base44.entities.Grade.update(existingGrade.id, gradePayload);
     } else {
       await base44.entities.Grade.create(gradePayload);
     }
