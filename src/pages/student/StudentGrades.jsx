@@ -36,14 +36,22 @@ export default function StudentGrades() {
     }
     load();
 
-    // Subscribe to grade updates
-    const unsubscribe = base44.entities.Grade.subscribe((event) => {
+    // Subscribe to grade updates (real-time push)
+    const unsubGrade = base44.entities.Grade.subscribe((event) => {
       if (event.data?.studentId === user?.id && event.data?.schoolId === user?.schoolId) {
-        load(); // Refresh grades on any update
+        load();
       }
     });
+    // Subscribe to quiz submission updates (remark resolved)
+    const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
+      if (event.data?.studentId === user?.id && event.data?.schoolId === user?.schoolId) {
+        load();
+      }
+    });
+    // Poll every second so grading system is always up-to-date
+    const poll = setInterval(load, 1000);
 
-    return () => unsubscribe();
+    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
   }, [user?.id, user?.schoolId]);
 
   // Load grade labels for all unique percentages using school rubric

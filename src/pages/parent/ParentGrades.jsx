@@ -51,13 +51,16 @@ export default function ParentGrades() {
 
     // Subscribe to grade updates for linked children
     const linkedIds = user?.linkedStudentIds || [];
-    const unsubscribe = base44.entities.Grade.subscribe((event) => {
-      if (linkedIds.includes(event.data?.studentId)) {
-        load(); // Refresh on any grade change
-      }
+    const unsubGrade = base44.entities.Grade.subscribe((event) => {
+      if (linkedIds.includes(event.data?.studentId)) load();
     });
-
-    return () => unsubscribe();
+    // Subscribe to quiz submission updates (remark resolved)
+    const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
+      if (linkedIds.includes(event.data?.studentId)) load();
+    });
+    // Poll every second for proactive live updates
+    const poll = setInterval(load, 1000);
+    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
   }, [user?.id, user?.linkedStudentIds, user?.schoolId]);
 
   async function downloadReport(child) {

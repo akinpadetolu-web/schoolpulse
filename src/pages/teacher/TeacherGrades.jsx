@@ -69,12 +69,16 @@ export default function TeacherGrades() {
   useEffect(() => { 
     loadData(); 
     // Subscribe to grade updates for real-time sync
-    const unsubscribe = base44.entities.Grade.subscribe((event) => {
-      if (event.data?.schoolId === user?.schoolId) {
-        loadData();
-      }
+    const unsubGrade = base44.entities.Grade.subscribe((event) => {
+      if (event.data?.schoolId === user?.schoolId) loadData();
     });
-    return unsubscribe;
+    // Subscribe to quiz submission updates (remark resolved → grade upserted)
+    const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
+      if (event.data?.schoolId === user?.schoolId) loadData();
+    });
+    // Poll every second so grading is always live
+    const poll = setInterval(loadData, 1000);
+    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
   }, [user?.id, user?.schoolId]);
 
   async function loadData() {

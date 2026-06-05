@@ -149,6 +149,36 @@ Return a JSON with:
       remarkResolvedAt: new Date().toISOString(),
     });
 
+    // Upsert a Grade record so all grading views update immediately
+    const quizMaxScore = (quiz.questions || []).reduce((sum, q) => sum + (q.points || 1), 0);
+    const gradePayload = {
+      schoolId: submission.schoolId,
+      studentId: submission.studentId,
+      studentName: submission.studentName,
+      classId: submission.classId || '',
+      subjectId: quiz.subjectId,
+      subjectName: quiz.subjectName,
+      teacherId: user.id,
+      assessmentType: 'quiz',
+      score: totalScore,
+      maxScore: quizMaxScore,
+      term: '',
+      comment: remarkText.trim() || `Quiz: ${quiz.title}`,
+      description: `Quiz: ${quiz.id}`,
+      lastUpdatedAt: new Date().toISOString(),
+      syncStatus: 'synced',
+    };
+    const existingGrade = await base44.entities.Grade.filter({
+      schoolId: submission.schoolId,
+      studentId: submission.studentId,
+      description: `Quiz: ${quiz.id}`,
+    });
+    if (existingGrade.length > 0) {
+      await base44.entities.Grade.update(existingGrade[0].id, gradePayload);
+    } else {
+      await base44.entities.Grade.create(gradePayload);
+    }
+
     toast.success('Submission graded & remark saved!');
     setSaving(false);
     setReviewing(null);
