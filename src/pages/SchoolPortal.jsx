@@ -166,21 +166,15 @@ export default function SchoolPortal() {
     setError("");
 
     if (!selectedSchool) {setError("Please select a school");return;}
-    if (!role) {setError("Please select a role");return;}
     if (!username) {setError("Please enter your username or email");return;}
     if (!password) {setError("Please enter your password");return;}
-
-    if (role === "admin" && isMobile) {
-      setError("School Admin login is only available on laptop or desktop");
-      return;
-    }
 
     setLoading(true);
     try {
       const school = schools.find((s) => s.id === selectedSchool);
       if (!school) {setError("Invalid school selected");setLoading(false);return;}
 
-      const users = await base44.entities.SchoolUser.filter({ schoolId: school.id, role: role });
+      const users = await base44.entities.SchoolUser.filter({ schoolId: school.id });
       if (!users) {setError("Could not reach server. Please check your connection and try again.");setLoading(false);return;}
       await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -192,16 +186,22 @@ export default function SchoolPortal() {
       if (!user) {setError("Invalid username or password");setLoading(false);return;}
       if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
 
+      if (user.role === "admin" && isMobile) {
+        setError("School Admin login is only available on laptop or desktop");
+        setLoading(false);
+        return;
+      }
+
       // Save school on successful login
       localStorage.setItem('lastSchoolId', school.id);
       localStorage.setItem('lastSchoolName', school.schoolName);
 
       login(user);
 
-      if (role === "admin") navigate("/school-admin");else
-      if (role === "teacher") navigate("/teacher");else
-      if (role === "student") navigate("/student");else
-      if (role === "parent") navigate("/parent");
+      if (user.role === "admin") navigate("/school-admin");else
+      if (user.role === "teacher") navigate("/teacher");else
+      if (user.role === "student") navigate("/student");else
+      if (user.role === "parent") navigate("/parent");
     } catch (err) {
       console.error('Login error:', err);
       setError("Sign in failed. Please check your connection and try again.");
@@ -352,16 +352,6 @@ export default function SchoolPortal() {
 
                   {selectedSchool && (
                     <>
-                      <div className="space-y-2">
-                        <Label>Role</Label>
-                        <Select value={role} onValueChange={setRole}>
-                          <SelectTrigger className="bg-transparent px-3 py-2 text-sm rounded-3xl flex h-9 w-full items-center justify-between whitespace-nowrap border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"><SelectValue placeholder="Select your role" /></SelectTrigger>
-                          <SelectContent>
-                            {roles.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
                       <div className="space-y-2">
                         <Label htmlFor="username">Username or Email</Label>
                         <Input id="username" name="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username or email" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
