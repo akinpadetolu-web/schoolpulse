@@ -57,6 +57,7 @@ export default function ParentLayout() {
               transition={{ duration: 0.15, ease: 'easeInOut' }}
               className="p-4 md:p-6 w-full"
               style={{
+                touchAction: 'pan-y',
                 paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',
                 paddingLeft: 'env(safe-area-inset-left)',
                 paddingRight: 'env(safe-area-inset-right)',
