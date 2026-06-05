@@ -8,6 +8,7 @@ import {
   Loader2, Upload, FileText, CheckCircle2, X,
   Bold, Italic, Underline, List, ListOrdered,
   AlignLeft, AlignCenter, AlignRight, Heading1, Heading2,
+  Camera, ImagePlus, Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -91,16 +92,60 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
   const [tab, setTab] = useState('type');
   const [richContent, setRichContent] = useState('');
   const [file, setFile] = useState(null);
+  const [images, setImages] = useState([]); // array of File objects
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [existingSubmission, setExistingSubmission] = useState(null);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraActive, setCameraActive] = useState(false);
+
+  // Stop camera on tab change or close
+  useEffect(() => {
+    if (tab !== 'images' || !open) stopCamera();
+  }, [tab, open]);
+
+  function stopCamera() {
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); }
+    setCameraActive(false);
+  }
+
+  async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    setCameraStream(stream);
+    setCameraActive(true);
+    setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    canvas.toBlob(blob => {
+      const f = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setImages(prev => [...prev, f]);
+    }, 'image/jpeg', 0.9);
+  }
+
+  function handleImageFiles(e) {
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter(f => f.type.startsWith('image/') && f.size <= 20 * 1024 * 1024);
+    if (valid.length !== files.length) toast.error('Some files were skipped (images only, max 20MB each)');
+    setImages(prev => [...prev, ...valid]);
+    e.target.value = '';
+  }
 
   // Load any existing submission
   useEffect(() => {
     if (!open || !assignment?.id) return;
     setRichContent('');
     setFile(null);
+    setImages([]);
     setExistingSubmission(null);
     base44.entities.Submission.filter({ assignmentId: assignment.id, studentId: user.id })
       .then(res => {
@@ -119,14 +164,24 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
   async function handleSubmit() {
     if (tab === 'type' && !richContent.trim()) { toast.error('Please write something before submitting'); return; }
     if (tab === 'upload' && !file) { toast.error('Please select a PDF file'); return; }
+    if (tab === 'images' && images.length === 0) { toast.error('Please add at least one image'); return; }
 
     setSubmitting(true);
     try {
       let fileUrl = null;
+      let imageUrls = [];
+
       if (tab === 'upload' && file) {
         setUploading(true);
         const res = await base44.integrations.Core.UploadFile({ file });
         fileUrl = res.file_url;
+        setUploading(false);
+      }
+
+      if (tab === 'images' && images.length > 0) {
+        setUploading(true);
+        const uploads = await Promise.all(images.map(img => base44.integrations.Core.UploadFile({ file: img })));
+        imageUrls = uploads.map(r => r.file_url);
         setUploading(false);
       }
 
@@ -137,6 +192,7 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
         studentName: user.fullName,
         content: tab === 'type' ? richContent : null,
         fileUrl: fileUrl || null,
+        imageUrls: imageUrls.length > 0 ? imageUrls : null,
         submittedAt: new Date().toISOString(),
       };
 
@@ -194,13 +250,71 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
         {/* Submission tabs */}
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
-            <TabsTrigger value="type" className="flex-1">Type your answer</TabsTrigger>
-            <TabsTrigger value="upload" className="flex-1">Upload PDF</TabsTrigger>
+            <TabsTrigger value="type" className="flex-1 text-xs sm:text-sm">Type answer</TabsTrigger>
+            <TabsTrigger value="upload" className="flex-1 text-xs sm:text-sm">Upload PDF</TabsTrigger>
+            <TabsTrigger value="images" className="flex-1 text-xs sm:text-sm">Images / Camera</TabsTrigger>
           </TabsList>
 
           {/* Rich text */}
           <TabsContent value="type" className="mt-3">
             <RichEditor content={richContent} onChange={setRichContent} />
+          </TabsContent>
+
+          {/* Images / Camera */}
+          <TabsContent value="images" className="mt-3 space-y-3">
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1 gap-2" onClick={() => imageInputRef.current?.click()}>
+                <ImagePlus className="w-4 h-4" /> Upload Images
+              </Button>
+              <Button type="button" variant="outline" className="flex-1 gap-2" onClick={cameraActive ? stopCamera : startCamera}>
+                <Camera className="w-4 h-4" /> {cameraActive ? 'Stop Camera' : 'Take Photo'}
+              </Button>
+              <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageFiles} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageFiles} />
+            </div>
+
+            {/* Live camera */}
+            {cameraActive && (
+              <div className="relative rounded-lg overflow-hidden border bg-black">
+                <video ref={videoRef} autoPlay playsInline className="w-full max-h-64 object-contain" />
+                <Button
+                  type="button"
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 gap-2 shadow-lg"
+                  onClick={capturePhoto}
+                >
+                  <Camera className="w-4 h-4" /> Capture
+                </Button>
+              </div>
+            )}
+
+            {/* Image previews */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {images.map((img, i) => (
+                  <div key={i} className="relative rounded-lg overflow-hidden border aspect-[4/3] bg-muted">
+                    <img src={URL.createObjectURL(img)} alt={`img-${i}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white hover:bg-red-600 transition-colors"
+                      onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {images.length === 0 && !cameraActive && (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground cursor-pointer hover:border-primary transition-colors"
+                onClick={() => imageInputRef.current?.click()}>
+                <ImagePlus className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-sm font-medium">Upload photos or take a picture</p>
+                <p className="text-xs mt-1">JPEG, PNG etc. — max 20MB each</p>
+              </div>
+            )}
           </TabsContent>
 
           {/* PDF upload */}

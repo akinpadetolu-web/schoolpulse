@@ -337,7 +337,7 @@ export default function TeacherSubmissions() {
                                 {submission.score}/{selectedAssignment.maxScore} ({pct}%)
                               </Badge>
                             )}
-                            {submission && (submission.content || submission.fileUrl) && (
+                            {submission && (submission.content || submission.fileUrl || submission.imageUrls?.length > 0) && (
                               <Button size="sm" variant="ghost" onClick={() => setViewingContent(submission)}>
                                 <ExternalLink className="w-3.5 h-3.5 mr-1" /> View
                               </Button>
@@ -422,8 +422,20 @@ export default function TeacherSubmissions() {
           {viewingContent?.fileUrl && (
             <a href={viewingContent.fileUrl} target="_blank" rel="noreferrer"
               className="flex items-center gap-2 text-primary underline text-sm mt-2">
-              <ExternalLink className="w-4 h-4" /> Open Submitted File
+              <ExternalLink className="w-4 h-4" /> Open Submitted PDF
             </a>
+          )}
+          {viewingContent?.imageUrls?.length > 0 && (
+            <div className="space-y-2 mt-2">
+              <p className="text-sm font-semibold text-muted-foreground">Submitted Images ({viewingContent.imageUrls.length})</p>
+              <div className="grid grid-cols-2 gap-2">
+                {viewingContent.imageUrls.map((url, i) => (
+                  <a key={i} href={url} target="_blank" rel="noreferrer">
+                    <img src={url} alt={`submission-img-${i+1}`} className="w-full rounded-lg border object-cover hover:opacity-80 transition-opacity" />
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

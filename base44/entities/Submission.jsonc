@@ -20,6 +20,13 @@
     "fileUrl": {
       "type": "string"
     },
+    "imageUrls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of submitted images (photos/camera captures)"
+    },
     "submittedAt": {
       "type": "string"
     },
