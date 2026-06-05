@@ -73,8 +73,8 @@ export default function ParentSidebar({ isOpen, onClose }) {
       )}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-sidebar-primary" />
-            <div><span className="font-bold text-sm">Parent Portal</span><p className="text-xs text-sidebar-foreground/60">{user?.schoolName}</p></div>
+            <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
+            <div><span className="font-bold text-sm">SchoolEduPulse</span><p className="text-xs text-sidebar-foreground/60">{user?.schoolName}</p></div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
