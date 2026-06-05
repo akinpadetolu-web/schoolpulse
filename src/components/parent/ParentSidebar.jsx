@@ -58,7 +58,7 @@ export default function ParentSidebar({ isOpen, onClose }) {
         "fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "md:relative md:translate-x-0 md:z-auto md:flex-shrink-0"
-      )}>
+      )} style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <Users className="w-6 h-6 text-sidebar-primary" />
