@@ -31,6 +31,17 @@ export default function StudentNotes() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Real-time: update notes in-place when teacher sends feedback
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = base44.entities.Note.subscribe((event) => {
+      if (event.type === 'update' && event.data?.studentId === user.id) {
+        setNotes(prev => prev.map(n => n.id === event.id ? { ...n, ...event.data } : n));
+      }
+    });
+    return unsub;
+  }, [user?.id]);
+
   // Create a new note (called by NoteEditor on first auto-save of a new note)
   const handleSaveText = async ({ title, content, subject, mode }) => {
     const created = await base44.entities.Note.create({

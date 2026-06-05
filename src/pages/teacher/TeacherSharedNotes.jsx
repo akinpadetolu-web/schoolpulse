@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, FileText, ImageIcon, Loader2, MessageSquare, Users, Download } from 'lucide-react';
+import { Search, FileText, ImageIcon, Loader2, MessageSquare, Users, Download, Send, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import JSZip from 'jszip';
@@ -19,6 +20,8 @@ export default function TeacherSharedNotes() {
   const [viewing, setViewing] = useState(null);
   const [filterSubject, setFilterSubject] = useState('');
   const [zipping, setZipping] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [savingFeedback, setSavingFeedback] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -29,6 +32,27 @@ export default function TeacherSharedNotes() {
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // When opening a note, pre-fill existing feedback
+  const handleViewNote = (note) => {
+    setFeedbackText(note.teacherFeedback || '');
+    setViewing(note);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!viewing || !feedbackText.trim()) return;
+    setSavingFeedback(true);
+    const updated = await base44.entities.Note.update(viewing.id, {
+      teacherFeedback: feedbackText.trim(),
+      feedbackBy: user.fullName,
+      feedbackAt: new Date().toISOString(),
+      feedbackRequested: false, // mark as resolved
+    });
+    setSavingFeedback(false);
+    setViewing(prev => ({ ...prev, teacherFeedback: feedbackText.trim(), feedbackBy: user.fullName, feedbackRequested: false }));
+    // Refresh list so card badge updates
+    load();
+  };
 
   const subjects = [...new Set(notes.map(n => n.subject).filter(Boolean))].sort();
 
@@ -121,13 +145,13 @@ export default function TeacherSharedNotes() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(note => (
-            <SharedNoteCard key={note.id} note={note} onView={setViewing} />
+            <SharedNoteCard key={note.id} note={note} onView={handleViewNote} />
           ))}
         </div>
       )}
 
       {/* View note dialog */}
-      <Dialog open={!!viewing} onOpenChange={v => !v && setViewing(null)}>
+      <Dialog open={!!viewing} onOpenChange={v => { if (!v) { setViewing(null); setFeedbackText(''); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewing?.title}</DialogTitle>
@@ -145,6 +169,7 @@ export default function TeacherSharedNotes() {
                   {viewing.updated_date ? format(new Date(viewing.updated_date), 'MMM d, yyyy') : ''}
                 </span>
               </div>
+
               {viewing.mode === 'drawing' && viewing.drawingUrl ? (
                 <img src={viewing.drawingUrl} alt="drawing" className="w-full rounded-lg border bg-white" />
               ) : (
@@ -153,6 +178,38 @@ export default function TeacherSharedNotes() {
                   dangerouslySetInnerHTML={{ __html: viewing.content || '<p class="text-muted-foreground italic">No content</p>' }}
                 />
               )}
+
+              {/* Feedback section */}
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-primary" />
+                  {viewing.teacherFeedback ? 'Edit Feedback' : 'Add Feedback'}
+                </p>
+                {viewing.teacherFeedback && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                    <p className="font-medium text-xs text-green-600 mb-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Feedback sent
+                      {viewing.feedbackAt && ` · ${format(new Date(viewing.feedbackAt), 'MMM d, yyyy')}`}
+                    </p>
+                    {viewing.teacherFeedback}
+                  </div>
+                )}
+                <Textarea
+                  placeholder="Write your feedback for the student..."
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+                <Button
+                  onClick={handleSubmitFeedback}
+                  disabled={savingFeedback || !feedbackText.trim()}
+                  className="gap-2"
+                >
+                  {savingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {viewing.teacherFeedback ? 'Update Feedback' : 'Send Feedback'}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

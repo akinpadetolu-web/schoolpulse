@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, ImageIcon, Pencil, Trash2, Share2, Users, Download, Loader2 } from 'lucide-react';
+import { FileText, ImageIcon, Pencil, Trash2, Share2, Users, Download, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 
@@ -98,6 +98,21 @@ export default function NoteCard({ note, onEdit, onDelete, onShare }) {
               )}
               {isDrawing && note.drawingUrl && (
                 <img src={note.drawingUrl} alt="drawing preview" className="mt-2 h-16 rounded border object-contain bg-white" />
+              )}
+              {note.teacherFeedback && (
+                <div className="mt-2 bg-green-50 border border-green-200 rounded-lg px-2.5 py-2">
+                  <p className="text-xs font-medium text-green-700 flex items-center gap-1 mb-0.5">
+                    <CheckCircle2 className="w-3 h-3" /> Teacher Feedback
+                  </p>
+                  <p className="text-xs text-green-800 line-clamp-2">{note.teacherFeedback}</p>
+                </div>
+              )}
+              {note.feedbackRequested && !note.teacherFeedback && (
+                <div className="mt-2">
+                  <Badge className="text-xs gap-1 bg-amber-100 text-amber-700 border-0">
+                    <MessageSquare className="w-3 h-3" /> Awaiting feedback
+                  </Badge>
+                </div>
               )}
             </div>
           </div>

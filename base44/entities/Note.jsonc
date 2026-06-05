@@ -63,6 +63,19 @@
       "type": "boolean",
       "default": false,
       "description": "Whether feedback was requested"
+    },
+    "teacherFeedback": {
+      "type": "string",
+      "description": "Teacher's written feedback on the note"
+    },
+    "feedbackBy": {
+      "type": "string",
+      "description": "Name of the teacher who gave feedback"
+    },
+    "feedbackAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When feedback was given"
     }
   },
   "required": [
