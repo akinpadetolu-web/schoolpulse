@@ -1,0 +1,124 @@
+{
+  "name": "ExamTimetable",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "sessionName": {
+      "type": "string",
+      "description": "e.g. 'Term 2 Exams 2026'"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published"
+      ],
+      "default": "draft"
+    },
+    "isVisible": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin toggle: shows/hides from all user sidebars"
+    },
+    "enableAIStudyPlan": {
+      "type": "boolean",
+      "default": true
+    },
+    "enableAIExamTips": {
+      "type": "boolean",
+      "default": true
+    },
+    "enableAIChatbot": {
+      "type": "boolean",
+      "default": true
+    },
+    "enableAIParentInsights": {
+      "type": "boolean",
+      "default": true
+    },
+    "entries": {
+      "type": "array",
+      "description": "Exam schedule entries",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "dayOfWeek": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "classIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "classNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "venue": {
+            "type": "string"
+          },
+          "invigilatorId": {
+            "type": "string"
+          },
+          "invigilatorName": {
+            "type": "string"
+          },
+          "examType": {
+            "type": "string"
+          },
+          "maxMarks": {
+            "type": "number"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schoolId",
+    "sessionName"
+  ]
+}

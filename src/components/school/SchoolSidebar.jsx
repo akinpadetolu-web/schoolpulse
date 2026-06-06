@@ -4,14 +4,15 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck
 } from 'lucide-react';
+import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
 import { getFeatures } from '@/lib/featureToggleManager';
 
-const adminNavGroups = [
+const baseAdminNavGroups = [
   {
     label: 'MAIN',
     items: [
@@ -26,6 +27,7 @@ const adminNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/school-admin/timetable", icon: Calendar },
+      { label: "Exam Timetable", path: "/school-admin/exam-timetable", icon: BookOpenCheck },
       { label: "Calendar & Events", path: "/school-admin/events", icon: CalendarDays },
       { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
       { label: "Grades", path: "/school-admin/grade-weighting", icon: Award },
@@ -113,6 +115,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
   const { schoolUser: user, logout } = useSchoolAuth();
   const [features, setFeatures] = useState({});
   const [loading, setLoading] = useState(true);
+  const { examTimetable } = useExamTimetable(user?.schoolId);
 
   useEffect(() => {
     async function loadFeatures() {
@@ -122,6 +125,9 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     }
     if (user?.schoolId) loadFeatures();
   }, [user?.schoolId, user?.role, user?.id]);
+
+  // Admin always sees Exam Timetable (they manage it); build dynamic groups
+  const adminNavGroups = baseAdminNavGroups;
 
   useEffect(() => {
     if (isOpen) {

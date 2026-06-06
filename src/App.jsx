@@ -72,8 +72,10 @@ const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
 const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
 const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
+const AdminExamTimetable = lazy(() => import('./pages/school-admin/AdminExamTimetable'));
 const AdminReportCardTemplates = lazy(() => import('./pages/school-admin/AdminReportCardTemplates'));
 const StudentReportCards = lazy(() => import('./pages/student/StudentReportCards'));
+const StudentExamTimetable = lazy(() => import('./pages/student/StudentExamTimetable'));
 
 // Teacher
 const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
@@ -91,6 +93,7 @@ const TeacherSubmissions = lazy(() => import('./pages/teacher/TeacherSubmissions
 const TeacherNotifications = lazy(() => import('./pages/teacher/TeacherNotifications'));
 const TeacherProgressDashboard = lazy(() => import('./pages/teacher/TeacherProgressDashboard'));
 const TeacherExamResults = lazy(() => import('./pages/teacher/TeacherExamResults'));
+const TeacherExamTimetable = lazy(() => import('./pages/teacher/TeacherExamTimetable'));
 const TeacherProfile = lazy(() => import('./pages/teacher/TeacherProfile'));
 const TeacherSharedNotes = lazy(() => import('./pages/teacher/TeacherSharedNotes'));
 const SchoolCalendar = lazy(() => import('./pages/shared/SchoolCalendar'));
@@ -120,6 +123,7 @@ const ParentNotifications = lazy(() => import('./pages/parent/ParentNotification
 const ParentProfile = lazy(() => import('./pages/parent/ParentProfile'));
 const ParentMessaging = lazy(() => import('./pages/parent/ParentMessaging'));
 const ParentReportCards = lazy(() => import('./pages/parent/ParentReportCards'));
+const ParentExamTimetable = lazy(() => import('./pages/parent/ParentExamTimetable'));
 const ParentAttendance = lazy(() => import('./pages/parent/ParentAttendance'));
 const ParentLessonPlans = lazy(() => import('./pages/parent/ParentLessonPlans'));
 const ParentSettings = lazy(() => import('./pages/parent/ParentSettings'));
@@ -196,6 +200,7 @@ const AuthenticatedApp = () => {
           <Route path="staff-attendance" element={<AdminStaffAttendance />} />
           <Route path="leave-requests" element={<AdminLeaveRequests />} />
           <Route path="email-campaign" element={<FeatureGuard path="/school-admin/email-campaign"><AdminEmailCampaign /></FeatureGuard>} />
+          <Route path="exam-timetable" element={<AdminExamTimetable />} />
           <Route path="e-class" element={<FeatureGuard path="/school-admin/e-class"><AdminEClass /></FeatureGuard>} />
           <Route path="messages" element={<FeatureGuard path="/school-admin/messages"><AdminMessaging /></FeatureGuard>} />
           <Route path="events" element={<AdminCalendar />} />
@@ -219,6 +224,7 @@ const AuthenticatedApp = () => {
           <Route path="notifications" element={<TeacherNotifications />} />
           <Route path="progress" element={<TeacherProgressDashboard />} />
           <Route path="exam-results" element={<TeacherExamResults />} />
+          <Route path="exam-timetable" element={<TeacherExamTimetable />} />
           <Route path="calendar" element={<TeacherCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="profile" element={<TeacherProfile />} />
@@ -240,6 +246,7 @@ const AuthenticatedApp = () => {
           <Route path="e-class" element={<StudentEClass />} />
           <Route path="calendar" element={<StudentCalendar />} />
           <Route path="report-cards" element={<StudentReportCards />} />
+          <Route path="exam-timetable" element={<StudentExamTimetable />} />
           <Route path="notes" element={<StudentNotes />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="settings" element={<StudentSettings />} />
@@ -254,6 +261,7 @@ const AuthenticatedApp = () => {
           <Route path="notifications" element={<ParentNotifications />} />
           <Route path="messages" element={<ParentMessaging />} />
           <Route path="report-cards" element={<ParentReportCards />} />
+          <Route path="exam-timetable" element={<ParentExamTimetable />} />
           <Route path="attendance" element={<ParentAttendance />} />
           <Route path="lesson-plans" element={<ParentLessonPlans />} />
           <Route path="e-class" element={<ParentEClass />} />

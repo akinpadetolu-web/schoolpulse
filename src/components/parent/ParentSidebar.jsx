@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare, BookOpen } from 'lucide-react';
+import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
 
-const parentNavGroups = [
+const baseParentNavGroups = [
   {
     label: 'MAIN',
     items: [
@@ -18,6 +19,7 @@ const parentNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/parent/timetable", icon: Calendar },
+      { label: "Exam Timetable", path: "/parent/exam-timetable", icon: Calendar, examOnly: true },
       { label: "School Calendar", path: "/parent/calendar", icon: CalendarDays },
       { label: "Lesson Plans", path: "/parent/lesson-plans", icon: BookOpen },
       { label: "Assignments", path: "/parent/assignments", icon: FileText },
@@ -46,6 +48,13 @@ export default function ParentSidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { schoolUser: user, logout } = useSchoolAuth();
+  const { examTimetable } = useExamTimetable(user?.schoolId);
+
+  const parentNavGroups = baseParentNavGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !item.examOnly || !!examTimetable),
+  }));
+
   const isActive = (path) => path === "/parent" ? location.pathname === "/parent" : location.pathname.startsWith(path);
 
   useEffect(() => {

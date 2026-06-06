@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings, HelpCircle, Share2, BookOpenCheck, MessageSquare } from 'lucide-react';
+import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
 import UserAvatar from '@/components/common/UserAvatar';
 
-const teacherNavGroups = [
+const baseTeacherNavGroups = [
   {
     label: 'MAIN',
     items: [
@@ -19,6 +20,7 @@ const teacherNavGroups = [
     label: 'ACADEMIC',
     items: [
       { label: "Timetable", path: "/teacher/timetable", icon: Calendar },
+      { label: "Exam Timetable", path: "/teacher/exam-timetable", icon: Calendar, examOnly: true },
       { label: "School Calendar", path: "/teacher/calendar", icon: CalendarDays },
       { label: "Lesson Plans", path: "/teacher/lesson-plans", icon: BookOpen },
       { label: "Assignments", path: "/teacher/assignments", icon: FileText },
@@ -51,6 +53,12 @@ export default function TeacherSidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { schoolUser: user, logout } = useSchoolAuth();
+  const { examTimetable } = useExamTimetable(user?.schoolId);
+
+  const teacherNavGroups = baseTeacherNavGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !item.examOnly || !!examTimetable),
+  }));
 
   const isActive = (path) => path === "/teacher" ? location.pathname === "/teacher" : location.pathname.startsWith(path);
 
