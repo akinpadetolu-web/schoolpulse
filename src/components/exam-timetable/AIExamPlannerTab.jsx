@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Loader2, Wand2, RefreshCw, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp,
-  Users, Plus, Trash2, History, Clock
+  History, Clock, BookOpen, RotateCcw, Wrench
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -23,7 +23,56 @@ const STORAGE_KEY_PROMPT = 'adminExamPlannerPrompt';
 const STORAGE_KEY_TOGGLES = 'adminExamPlannerToggles';
 const STORAGE_KEY_HISTORY = 'adminExamPlannerHistory';
 
-export default function AIExamPlannerTab({ classes, subjects, teachers, examTimetable, onApply }) {
+export default function AIExamPlannerTab({ classes, subjects, teachers, examTimetable, onApply, schoolId }) {
+  // ── Subject-per-class map (fetched live from DB) ──────────────────
+  const [classSubjectMap, setClassSubjectMap] = useState({}); // { classId: [subject, ...] }
+  const [syncingSubjects, setSyncingSubjects] = useState(false);
+  const [subjectOverviewOpen, setSubjectOverviewOpen] = useState(true);
+  const [excludedSubjects, setExcludedSubjects] = useState({}); // { "classId__subjectId": true }
+  const [combineClasses, setCombineClasses] = useState(false);
+
+  async function fetchClassSubjects() {
+    if (!schoolId) return;
+    setSyncingSubjects(true);
+    try {
+      // Fetch subjects assigned to each class via assignedClasses field on Subject
+      const allSubjects = subjects.length > 0 ? subjects : await base44.entities.Subject.filter({ schoolId, isArchived: false }).catch(() => []);
+      const map = {};
+      for (const cls of classes) {
+        // Subject is assigned to a class if cls.id is in subject.assignedClasses array
+        const classSubjs = allSubjects.filter(s =>
+          (s.assignedClasses || []).includes(cls.id) ||
+          (s.classId === cls.id)
+        );
+        map[cls.id] = classSubjs;
+      }
+      setClassSubjectMap(map);
+      const totalSubjects = Object.values(map).reduce((acc, arr) => acc + arr.length, 0);
+      toast.success(`Synced: ${classes.length} classes, ${totalSubjects} total subjects found`);
+    } finally {
+      setSyncingSubjects(false);
+    }
+  }
+
+  // Auto-fetch on mount / when classes or subjects change
+  useEffect(() => {
+    if (classes.length > 0) fetchClassSubjects();
+  }, [classes.length, subjects.length, schoolId]);
+
+  // Toggle exclude for a subject in a class
+  function toggleExclude(classId, subjectId) {
+    const key = `${classId}__${subjectId}`;
+    setExcludedSubjects(p => ({ ...p, [key]: !p[key] }));
+  }
+  function isExcluded(classId, subjectId) {
+    return !!excludedSubjects[`${classId}__${subjectId}`];
+  }
+
+  // Total exam slots needed
+  const totalSlotsNeeded = Object.entries(classSubjectMap).reduce((acc, [cid, subjs]) => {
+    return acc + subjs.filter(s => !isExcluded(cid, s.id)).length;
+  }, 0);
+
   const [form, setForm] = useState({
     examDays: 10,
     startDate: '',
@@ -70,42 +119,58 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   function buildPrompt() {
-    const subjectList = subjects.map(s => s.name).join(', ');
-    const classList = classes.map(c => c.className).join(', ');
     const teacherList = teachers.map(t => t.fullName).join(', ');
     const quickRules = QUICK_TOGGLES.filter(t => toggles[t.key]).map(t => t.label).join('\n');
 
-    return `You are an expert school exam timetable scheduler.
-Generate a complete, conflict-free exam timetable.
+    // Build explicit per-class subject list
+    const classSubjectLines = classes.map(cls => {
+      const subjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      if (subjs.length === 0) return null;
+      return `  ${cls.className} (${subjs.length} subjects): ${subjs.map(s => s.name).join(', ')}`;
+    }).filter(Boolean).join('\n');
 
-Settings:
-- Exam period: ${form.startDate || 'starting soon'} to ${form.endDate || `${form.examDays} days`}
-- Subjects: ${subjectList}
-- Classes/Grades: ${classList}
-- Available venues: ${form.venues}
-- Exam hours: ${form.startTime} to ${form.endTime}
+    const totalSlots = Object.entries(classSubjectMap).reduce((acc, [cid, subjs]) => {
+      return acc + subjs.filter(s => !isExcluded(cid, s.id)).length;
+    }, 0);
+
+    return `You are an expert school exam timetable scheduler.
+Generate a COMPLETE, conflict-free exam timetable covering EVERY subject for EVERY class listed below.
+
+CRITICAL REQUIREMENT: You MUST generate exactly one exam slot for EVERY subject listed for EVERY class.
+Do NOT skip any subject. Do NOT add subjects not in the list. Total exam slots to generate: ${totalSlots}.
+
+Exam Period Settings:
+- Start date: ${form.startDate || 'TBD'}
+- End date: ${form.endDate || `approximately ${form.examDays} days from start`}
+- Exam hours each day: ${form.startTime} to ${form.endTime}
+- Duration per exam: ${form.examDurationMinutes} minutes
 - Max exams per class per day: ${form.maxExamsPerDay}
-- Exam duration: ${form.examDurationMinutes} minutes
-- Break/rest days: ${form.breakDays || 'none'}
+- Available venues: ${form.venues}
+- Rest/break days (skip these): ${form.breakDays || 'none'}
 - Subjects that must NOT be on the same day: ${form.conflictSubjects || 'none'}
 - Fixed slots: ${form.fixedSlots || 'none'}
+- ${combineClasses ? 'Combine classes with the same subject into one exam slot (list all class names in className field separated by comma).' : 'Schedule each class separately even if they share the same subject name.'}
 
-${quickRules ? `Quick Rules:\n${quickRules}` : ''}
+COMPLETE SUBJECT LIST PER CLASS (you MUST schedule every single one):
+${classSubjectLines || classes.map(c => `  ${c.className}: ${subjects.map(s => s.name).join(', ')}`).join('\n')}
+
+${quickRules ? `Scheduling Rules:\n${quickRules}` : ''}
 
 ${autoAssignOnGenerate ? `Invigilator Assignment:
 - Teachers available: ${teacherList}
 - Maximum duties per teacher: ${maxDutiesPerTeacher}
 - Minimum invigilators per exam: ${minInvigilatorsPerExam}
-- Assign invigilators fairly to each exam following the rules above.` : ''}
+- Assign invigilators fairly.` : ''}
 
 ${additionalInfo ? `Additional Instructions:\n${additionalInfo}` : ''}
 
-Rules:
-1. No class has more than ${form.maxExamsPerDay} exams per day
-2. No two exams for the same class clash at the same time
-3. No venue is double-booked
-4. Space difficult subjects at least 1 day apart
-5. Return the full timetable as JSON.`;
+MANDATORY RULES:
+1. Every subject in the list above for every class MUST appear in the output.
+2. No class has more than ${form.maxExamsPerDay} exams per day.
+3. No two exams for the same class clash at the same time.
+4. No venue is double-booked at the same time.
+5. Return the full timetable as JSON with all ${totalSlots} exam slots.
+6. The "completenessReport" field must list each class and count of scheduled vs expected subjects.`;
   }
 
   async function generate() {
@@ -115,6 +180,7 @@ Rules:
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
+      model: 'claude_sonnet_4_6',
       response_json_schema: {
         type: 'object',
         properties: {
@@ -137,11 +203,37 @@ Rules:
           summary: { type: 'string' },
           warnings: { type: 'array', items: { type: 'string' } },
           invigilatorSummary: { type: 'string' },
+          completenessReport: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                className: { type: 'string' },
+                scheduled: { type: 'number' },
+                expected: { type: 'number' },
+                missing: { type: 'array', items: { type: 'string' } },
+              }
+            }
+          },
         }
       }
     });
 
-    setResult(res);
+    // Post-generation completeness check: find any subjects missing from output
+    const missingSlots = [];
+    for (const cls of classes) {
+      const expectedSubjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      for (const subj of expectedSubjs) {
+        const found = (res?.timetable || []).some(row => {
+          const classMatch = (row.className || '').toLowerCase().includes(cls.className.toLowerCase());
+          const subjMatch = (row.subject || '').toLowerCase().includes(subj.name.toLowerCase());
+          return classMatch && subjMatch;
+        });
+        if (!found) missingSlots.push({ className: cls.className, subject: subj.name });
+      }
+    }
+
+    setResult({ ...res, missingSlots });
     setLoading(false);
 
     // Save to history
@@ -154,6 +246,39 @@ Rules:
     const newHistory = [entry, ...history].slice(0, 10);
     setHistory(newHistory);
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(newHistory));
+  }
+
+  async function fixMissingSlots() {
+    if (!result?.missingSlots?.length) return;
+    setLoading(true);
+    const missingLines = result.missingSlots.map(m => `${m.className}: ${m.subject}`).join('\n');
+    const lastDate = result.timetable?.slice().sort((a, b) => a.date > b.date ? 1 : -1).pop()?.date || form.endDate;
+    const fixPrompt = `Add exam slots for the following missing subjects. Fit them into the existing schedule without creating clashes.
+Existing schedule runs until: ${lastDate}
+Available venues: ${form.venues}
+Exam hours: ${form.startTime} to ${form.endTime}
+Duration: ${form.examDurationMinutes} minutes
+
+Missing subjects to schedule:
+${missingLines}
+
+Return ONLY the new exam slots as JSON timetable array (same format as before). Do not repeat existing slots.`;
+
+    const fixRes = await base44.integrations.Core.InvokeLLM({
+      prompt: fixPrompt,
+      model: 'claude_sonnet_4_6',
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          timetable: { type: 'array', items: { type: 'object', properties: { day: { type: 'string' }, date: { type: 'string' }, subject: { type: 'string' }, className: { type: 'string' }, startTime: { type: 'string' }, endTime: { type: 'string' }, venue: { type: 'string' }, invigilator: { type: 'string' } } } },
+        }
+      }
+    });
+
+    const combined = [...(result.timetable || []), ...(fixRes?.timetable || [])];
+    setResult(prev => ({ ...prev, timetable: combined, missingSlots: [] }));
+    setLoading(false);
+    toast.success(`Added ${fixRes?.timetable?.length || 0} missing exam slots`);
   }
 
   function applyToSchedule() {
@@ -198,6 +323,100 @@ Rules:
 
   return (
     <div className="space-y-6">
+
+      {/* Subject Overview */}
+      <Card>
+        <CardContent className="p-0">
+          <button
+            onClick={() => setSubjectOverviewOpen(v => !v)}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors rounded-xl"
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm">📚 Subjects to be Examined</span>
+              <Badge variant="secondary" className="text-xs">{classes.length} classes · {totalSlotsNeeded} exam slots</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm" variant="outline"
+                className="h-7 text-xs gap-1"
+                onClick={e => { e.stopPropagation(); fetchClassSubjects(); }}
+                disabled={syncingSubjects}
+              >
+                {syncingSubjects ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                Sync Subjects
+              </Button>
+              {subjectOverviewOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+
+          {subjectOverviewOpen && (
+            <div className="px-4 pb-4 border-t space-y-3 pt-3">
+              {/* Combine classes option */}
+              <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg border bg-muted/20">
+                <div
+                  onClick={() => setCombineClasses(v => !v)}
+                  className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${combineClasses ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                >
+                  <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${combineClasses ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Combine classes with same subject into one session</p>
+                  <p className="text-xs text-muted-foreground">e.g. JS1A + JS1B Math in one slot (default: separate per class)</p>
+                </div>
+              </label>
+
+              {classes.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No classes found for this school.</p>
+              )}
+
+              <div className="grid gap-2">
+                {classes.map(cls => {
+                  const subjs = classSubjectMap[cls.id] || [];
+                  const activeCount = subjs.filter(s => !isExcluded(cls.id, s.id)).length;
+                  return (
+                    <div key={cls.id} className="border rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                        <span className="font-medium text-sm">{cls.className}</span>
+                        <Badge variant={subjs.length === 0 ? 'destructive' : 'secondary'} className="text-xs">
+                          {syncingSubjects ? '…' : subjs.length === 0 ? '⚠️ No subjects' : `${activeCount}/${subjs.length} subjects`}
+                        </Badge>
+                      </div>
+                      {subjs.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-red-600 bg-red-50">
+                          No subjects assigned to this class. <a href="/school-admin/subjects" className="underline font-medium">Go to Subject Management →</a>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                          {subjs.map(s => (
+                            <button
+                              key={s.id}
+                              onClick={() => toggleExclude(cls.id, s.id)}
+                              className={`px-2 py-0.5 rounded text-xs border transition-colors ${
+                                isExcluded(cls.id, s.id)
+                                  ? 'bg-slate-100 text-slate-400 line-through border-slate-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                              }`}
+                            >
+                              {isExcluded(cls.id, s.id) ? '✗' : '✓'} {s.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Click any subject badge to exclude it from this exam session only. Changes do not affect the admin's subject list.
+                <strong> Total: {totalSlotsNeeded} exam slots to generate.</strong>
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Section A: Generation Settings */}
       <Card>
         <CardContent className="p-5 space-y-4">
@@ -324,9 +543,36 @@ Rules:
               ))}
             </div>
           )}
+          {/* Completeness Report */}
+          {result.missingSlots?.length > 0 ? (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
+                <AlertTriangle className="w-4 h-4" /> ⚠️ Missing exam slots detected ({result.missingSlots.length})
+              </div>
+              <ul className="space-y-0.5">
+                {result.missingSlots.map((m, i) => (
+                  <li key={i} className="text-xs text-red-600">• {m.className}: {m.subject} not scheduled</li>
+                ))}
+              </ul>
+              <Button size="sm" variant="destructive" onClick={fixMissingSlots} disabled={loading} className="gap-1 h-7 text-xs">
+                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wrench className="w-3 h-3" />}
+                Fix Missing Slots Automatically
+              </Button>
+            </div>
+          ) : result.timetable?.length > 0 && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+              ✅ <strong>All subjects accounted for.</strong> {result.timetable.length} exam slots generated.
+              {result.completenessReport?.map(r => (
+                <span key={r.className} className="ml-2 text-xs">
+                  {r.className}: {r.scheduled}/{r.expected} ✓
+                </span>
+              ))}
+            </div>
+          )}
+
           {result.timetable?.length > 0 && (
             <div>
-              <h4 className="font-semibold text-sm mb-2">Generated Timetable Preview</h4>
+              <h4 className="font-semibold text-sm mb-2">Generated Timetable Preview ({result.timetable.length} exam slots)</h4>
               <div className="overflow-x-auto rounded-xl border">
                 <table className="w-full text-sm min-w-[700px]">
                   <thead className="bg-muted/60 border-b">

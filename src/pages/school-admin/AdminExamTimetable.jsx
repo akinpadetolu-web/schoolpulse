@@ -454,6 +454,7 @@ export default function AdminExamTimetable() {
                 teachers={teachers}
                 examTimetable={examTimetable}
                 onApply={handlePlannerApply}
+                schoolId={schoolId}
               />
             </TabsContent>
 
