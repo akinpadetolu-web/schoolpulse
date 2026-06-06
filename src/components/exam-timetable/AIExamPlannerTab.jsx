@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Loader2, Wand2, RefreshCw, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp,
-  History, Clock, BookOpen, RotateCcw, Wrench
+  History, Clock, BookOpen, Wrench
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -24,41 +24,20 @@ const STORAGE_KEY_TOGGLES = 'adminExamPlannerToggles';
 const STORAGE_KEY_HISTORY = 'adminExamPlannerHistory';
 
 export default function AIExamPlannerTab({ classes, subjects, teachers, examTimetable, onApply, schoolId }) {
-  // ── Subject-per-class map (fetched live from DB) ──────────────────
-  const [classSubjectMap, setClassSubjectMap] = useState({}); // { classId: [subject, ...] }
-  const [syncingSubjects, setSyncingSubjects] = useState(false);
+
+  // ── Same logic as AdminTimetable.jsx: derive subjects per class synchronously ──
+  const classSubjectMap = useMemo(() => {
+    const map = {};
+    for (const cls of classes) {
+      map[cls.id] = subjects.filter(s => (s.applicableClasses || []).includes(cls.id));
+    }
+    return map;
+  }, [classes, subjects]);
+
   const [subjectOverviewOpen, setSubjectOverviewOpen] = useState(true);
-  const [excludedSubjects, setExcludedSubjects] = useState({}); // { "classId__subjectId": true }
+  const [excludedSubjects, setExcludedSubjects] = useState({});
   const [combineClasses, setCombineClasses] = useState(false);
 
-  async function fetchClassSubjects() {
-    if (!schoolId) return;
-    setSyncingSubjects(true);
-    try {
-      // Fetch subjects assigned to each class via assignedClasses field on Subject
-      const allSubjects = subjects.length > 0 ? subjects : await base44.entities.Subject.filter({ schoolId, isArchived: false }).catch(() => []);
-      const map = {};
-      for (const cls of classes) {
-        // Subject is assigned to a class if cls.id is in subject.assignedClasses array
-        const classSubjs = allSubjects.filter(s =>
-          (s.applicableClasses || []).includes(cls.id)
-        );
-        map[cls.id] = classSubjs;
-      }
-      setClassSubjectMap(map);
-      const totalSubjects = Object.values(map).reduce((acc, arr) => acc + arr.length, 0);
-      toast.success(`Synced: ${classes.length} classes, ${totalSubjects} total subjects found`);
-    } finally {
-      setSyncingSubjects(false);
-    }
-  }
-
-  // Auto-fetch on mount / when classes or subjects change
-  useEffect(() => {
-    if (classes.length > 0) fetchClassSubjects();
-  }, [classes.length, subjects.length, schoolId]);
-
-  // Toggle exclude for a subject in a class
   function toggleExclude(classId, subjectId) {
     const key = `${classId}__${subjectId}`;
     setExcludedSubjects(p => ({ ...p, [key]: !p[key] }));
@@ -67,12 +46,11 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
     return !!excludedSubjects[`${classId}__${subjectId}`];
   }
 
-  // Total exam slots needed — if a class has no mapped subjects, count all school subjects for it
-  const totalSlotsNeeded = classes.reduce((acc, cls) => {
-    const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
-    const effective = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
-    return acc + effective.length;
-  }, 0);
+  const totalSlotsNeeded = useMemo(() => {
+    return classes.reduce((acc, cls) => {
+      return acc + (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id)).length;
+    }, 0);
+  }, [classSubjectMap, excludedSubjects]);
 
   const [form, setForm] = useState({
     examDays: 10,
@@ -96,26 +74,19 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
   });
   const [maxDutiesPerTeacher, setMaxDutiesPerTeacher] = useState(5);
   const [minInvigilatorsPerExam, setMinInvigilatorsPerExam] = useState(2);
+  const [autoAssignOnGenerate, setAutoAssignOnGenerate] = useState(false);
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [autoAssignOnGenerate, setAutoAssignOnGenerate] = useState(false);
+  const [manualAssignments, setManualAssignments] = useState({});
 
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY) || '[]'); } catch { return []; }
   });
 
-  // Manual invigilator assignment table (per generated entry)
-  const [manualAssignments, setManualAssignments] = useState({});
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_PROMPT, additionalInfo);
-  }, [additionalInfo]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_TOGGLES, JSON.stringify(toggles));
-  }, [toggles]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY_PROMPT, additionalInfo); }, [additionalInfo]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY_TOGGLES, JSON.stringify(toggles)); }, [toggles]);
 
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -123,26 +94,20 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
     const teacherList = teachers.map(t => t.fullName).join(', ');
     const quickRules = QUICK_TOGGLES.filter(t => toggles[t.key]).map(t => t.label).join('\n');
 
-    // Build explicit per-class subject list — always include ALL classes
-    // If a class has no subjects in applicableClasses, fall back to all school subjects
     const classSubjectLines = classes.map(cls => {
-      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
-      const subjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
+      const subjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
       if (subjs.length === 0) return null;
       return `  ${cls.className} (${subjs.length} subjects): ${subjs.map(s => s.name).join(', ')}`;
     }).filter(Boolean).join('\n');
 
-    const totalSlots = classes.reduce((acc, cls) => {
-      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
-      const subjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
-      return acc + subjs.length;
-    }, 0);
+    const totalSlots = classes.reduce((acc, cls) =>
+      acc + (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id)).length, 0);
 
     return `You are an expert school exam timetable scheduler.
 Generate a COMPLETE, conflict-free exam timetable covering EVERY subject for EVERY class listed below.
 
-CRITICAL REQUIREMENT: You MUST generate exactly one exam slot for EVERY subject listed for EVERY class.
-Do NOT skip any subject. Do NOT add subjects not in the list. Total exam slots to generate: ${totalSlots}.
+CRITICAL: Generate exactly one exam slot for EVERY subject listed for EVERY class. Do NOT skip any.
+Total exam slots to generate: ${totalSlots}.
 
 Exam Period Settings:
 - Start date: ${form.startDate || 'TBD'}
@@ -154,38 +119,34 @@ Exam Period Settings:
 - Rest/break days (skip these): ${form.breakDays || 'none'}
 - Subjects that must NOT be on the same day: ${form.conflictSubjects || 'none'}
 - Fixed slots: ${form.fixedSlots || 'none'}
-- ${combineClasses ? 'Combine classes with the same subject into one exam slot (list all class names in className field separated by comma).' : 'Schedule each class separately even if they share the same subject name.'}
+- ${combineClasses ? 'Combine classes with the same subject into one slot (list all class names in className field, comma-separated).' : 'Schedule each class separately even if they share the same subject name.'}
 
 COMPLETE SUBJECT LIST PER CLASS (you MUST schedule every single one):
-${classSubjectLines || classes.map(c => `  ${c.className}: ${subjects.map(s => s.name).join(', ')}`).join('\n')}
+${classSubjectLines || 'No subjects assigned to classes yet.'}
 
 ${quickRules ? `Scheduling Rules:\n${quickRules}` : ''}
+${autoAssignOnGenerate ? `\nInvigilator Assignment:\n- Teachers available: ${teacherList}\n- Max duties per teacher: ${maxDutiesPerTeacher}\n- Min invigilators per exam: ${minInvigilatorsPerExam}` : ''}
+${additionalInfo ? `\nAdditional Instructions:\n${additionalInfo}` : ''}
 
-${autoAssignOnGenerate ? `Invigilator Assignment:
-- Teachers available: ${teacherList}
-- Maximum duties per teacher: ${maxDutiesPerTeacher}
-- Minimum invigilators per exam: ${minInvigilatorsPerExam}
-- Assign invigilators fairly.` : ''}
-
-${additionalInfo ? `Additional Instructions:\n${additionalInfo}` : ''}
-
-MANDATORY RULES:
-1. Every subject in the list above for every class MUST appear in the output.
+RULES:
+1. Every subject above MUST appear in the output.
 2. No class has more than ${form.maxExamsPerDay} exams per day.
 3. No two exams for the same class clash at the same time.
 4. No venue is double-booked at the same time.
-5. Return the full timetable as JSON with all ${totalSlots} exam slots.
-6. The "completenessReport" field must list each class and count of scheduled vs expected subjects.`;
+5. Return all ${totalSlots} exam slots.`;
   }
 
   async function generate() {
+    const hasAnySubjects = classes.some(cls => (classSubjectMap[cls.id] || []).length > 0);
+    if (!hasAnySubjects) {
+      return toast.error('No subjects are assigned to any class. Go to Subject Management and set the applicable classes for each subject.');
+    }
     setLoading(true);
     setResult(null);
     const prompt = buildPrompt();
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
-      model: 'claude_sonnet_4_6',
       response_json_schema: {
         type: 'object',
         properties: {
@@ -207,33 +168,18 @@ MANDATORY RULES:
           },
           summary: { type: 'string' },
           warnings: { type: 'array', items: { type: 'string' } },
-          invigilatorSummary: { type: 'string' },
-          completenessReport: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                className: { type: 'string' },
-                scheduled: { type: 'number' },
-                expected: { type: 'number' },
-                missing: { type: 'array', items: { type: 'string' } },
-              }
-            }
-          },
         }
       }
     });
 
-    // Post-generation completeness check: find any subjects missing from output
+    // Completeness check — same normalization approach
     const norm = s => (s || '').toLowerCase().replace(/\s+/g, '');
     const missingSlots = [];
     for (const cls of classes) {
-      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
-      const expectedSubjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
+      const expectedSubjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
       for (const subj of expectedSubjs) {
         const found = (res?.timetable || []).some(row => {
-          // Match class: check any segment of a combined class name like "JS1A, JS1B"
-          const rowClasses = (row.className || '').split(/[,/&]+/).map(s => norm(s.trim()));
+          const rowClasses = (row.className || '').split(/[,/&]+/).map(s => norm(s));
           const classMatch = rowClasses.some(rc => rc === norm(cls.className));
           const subjMatch = norm(row.subject) === norm(subj.name) || norm(row.subject).includes(norm(subj.name));
           return classMatch && subjMatch;
@@ -245,13 +191,7 @@ MANDATORY RULES:
     setResult({ ...res, missingSlots });
     setLoading(false);
 
-    // Save to history
-    const entry = {
-      prompt: additionalInfo,
-      toggles: { ...toggles },
-      at: new Date().toISOString(),
-      summary: res?.summary || '',
-    };
+    const entry = { prompt: additionalInfo, toggles: { ...toggles }, at: new Date().toISOString(), summary: res?.summary || '' };
     const newHistory = [entry, ...history].slice(0, 10);
     setHistory(newHistory);
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(newHistory));
@@ -262,20 +202,18 @@ MANDATORY RULES:
     setLoading(true);
     const missingLines = result.missingSlots.map(m => `${m.className}: ${m.subject}`).join('\n');
     const lastDate = result.timetable?.slice().sort((a, b) => a.date > b.date ? 1 : -1).pop()?.date || form.endDate;
-    const fixPrompt = `Add exam slots for the following missing subjects. Fit them into the existing schedule without creating clashes.
-Existing schedule runs until: ${lastDate}
+
+    const fixRes = await base44.integrations.Core.InvokeLLM({
+      prompt: `Add exam slots for these missing subjects without creating clashes.
+Existing schedule ends: ${lastDate}
 Available venues: ${form.venues}
 Exam hours: ${form.startTime} to ${form.endTime}
 Duration: ${form.examDurationMinutes} minutes
 
-Missing subjects to schedule:
+Missing subjects:
 ${missingLines}
 
-Return ONLY the new exam slots as JSON timetable array (same format as before). Do not repeat existing slots.`;
-
-    const fixRes = await base44.integrations.Core.InvokeLLM({
-      prompt: fixPrompt,
-      model: 'claude_sonnet_4_6',
+Return ONLY the new exam slots as JSON (same format). Do not repeat existing slots.`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -293,7 +231,6 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
   function applyToSchedule() {
     if (!result?.timetable?.length) return;
     onApply && onApply(result.timetable, manualAssignments);
-    toast.success('Timetable saved to Exam Schedule!');
     setResult(null);
   }
 
@@ -304,13 +241,17 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
     toast.success('Prompt loaded from history');
   }
 
-  // Teacher duty count for manual assignment
   const dutyCount = {};
   Object.values(manualAssignments).forEach(row => {
     if (row.teacherId) dutyCount[row.teacherId] = (dutyCount[row.teacherId] || 0) + 1;
   });
 
-  // Conflict check for manual assignment
+  function timesOverlap(s1, e1, s2, e2) {
+    if (!s1 || !e1 || !s2 || !e2) return false;
+    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    return toMin(s1) < toMin(e2) && toMin(s2) < toMin(e1);
+  }
+
   function hasConflict(rowKey, teacherId) {
     if (!teacherId) return false;
     const row = result?.timetable?.[rowKey];
@@ -322,13 +263,10 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
     });
   }
 
-  function timesOverlap(s1, e1, s2, e2) {
-    if (!s1 || !e1 || !s2 || !e2) return false;
-    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    return toMin(s1) < toMin(e2) && toMin(s2) < toMin(e1);
-  }
-
   const charLeft = 2000 - additionalInfo.length;
+
+  // Check if any class has subjects assigned
+  const classesWithNoSubjects = classes.filter(cls => (classSubjectMap[cls.id] || []).length === 0);
 
   return (
     <div className="space-y-6">
@@ -345,22 +283,19 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
               <span className="font-semibold text-sm">📚 Subjects to be Examined</span>
               <Badge variant="secondary" className="text-xs">{classes.length} classes · {totalSlotsNeeded} exam slots</Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm" variant="outline"
-                className="h-7 text-xs gap-1"
-                onClick={e => { e.stopPropagation(); fetchClassSubjects(); }}
-                disabled={syncingSubjects}
-              >
-                {syncingSubjects ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                Sync Subjects
-              </Button>
-              {subjectOverviewOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
+            {subjectOverviewOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
           {subjectOverviewOpen && (
             <div className="px-4 pb-4 border-t space-y-3 pt-3">
+              {classesWithNoSubjects.length > 0 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  <strong>{classesWithNoSubjects.map(c => c.className).join(', ')}</strong> have no subjects assigned.
+                  Go to <a href="/school-admin/subjects" className="underline font-medium">Subject Management →</a> and set "Applicable Classes" for each subject.
+                </div>
+              )}
+
               {/* Combine classes option */}
               <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg border bg-muted/20">
                 <div
@@ -375,10 +310,6 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
                 </div>
               </label>
 
-              {classes.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No classes found for this school.</p>
-              )}
-
               <div className="grid gap-2">
                 {classes.map(cls => {
                   const subjs = classSubjectMap[cls.id] || [];
@@ -388,12 +319,12 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
                       <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
                         <span className="font-medium text-sm">{cls.className}</span>
                         <Badge variant={subjs.length === 0 ? 'destructive' : 'secondary'} className="text-xs">
-                          {syncingSubjects ? '…' : subjs.length === 0 ? '⚠️ No subjects' : `${activeCount}/${subjs.length} subjects`}
+                          {subjs.length === 0 ? '⚠️ No subjects' : `${activeCount}/${subjs.length} subjects`}
                         </Badge>
                       </div>
                       {subjs.length === 0 ? (
                         <div className="px-3 py-2 text-xs text-red-600 bg-red-50">
-                          No subjects assigned to this class. <a href="/school-admin/subjects" className="underline font-medium">Go to Subject Management →</a>
+                          No subjects assigned. <a href="/school-admin/subjects" className="underline font-medium">Go to Subject Management →</a>
                         </div>
                       ) : (
                         <div className="px-3 py-2 flex flex-wrap gap-1.5">
@@ -416,10 +347,8 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
                   );
                 })}
               </div>
-
               <p className="text-xs text-muted-foreground">
-                Click any subject badge to exclude it from this exam session only. Changes do not affect the admin's subject list.
-                <strong> Total: {totalSlotsNeeded} exam slots to generate.</strong>
+                Click any subject to exclude it from this exam session only. <strong>Total: {totalSlotsNeeded} exam slots to generate.</strong>
               </p>
             </div>
           )}
@@ -449,25 +378,19 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
       {/* Section B: Invigilator Assignment */}
       <Card>
         <CardContent className="p-5 space-y-4">
-          <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">B — Invigilator Assignment</h3>
-            <p className="text-xs text-muted-foreground mt-1">Assign invigilators to exams. You can use the prompt box, auto bulk assignment, or manually assign after generation.</p>
-          </div>
-
-          {/* Option 1 & 2 */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors flex-1 ${autoAssignOnGenerate ? 'border-primary bg-primary/5' : 'hover:bg-muted/30'}`}
-              onClick={() => setAutoAssignOnGenerate(v => !v)}>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${autoAssignOnGenerate ? 'border-primary bg-primary' : 'border-muted-foreground'}`}>
-                {autoAssignOnGenerate && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
-              </div>
-              <div>
-                <p className="text-sm font-medium">AI Auto-Assign During Generation</p>
-                <p className="text-xs text-muted-foreground">AI will assign invigilators to all exams when generating the timetable</p>
-              </div>
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">B — Invigilator Assignment</h3>
+          <div
+            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${autoAssignOnGenerate ? 'border-primary bg-primary/5' : 'hover:bg-muted/30'}`}
+            onClick={() => setAutoAssignOnGenerate(v => !v)}
+          >
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${autoAssignOnGenerate ? 'border-primary bg-primary' : 'border-muted-foreground'}`}>
+              {autoAssignOnGenerate && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+            </div>
+            <div>
+              <p className="text-sm font-medium">AI Auto-Assign Invigilators During Generation</p>
+              <p className="text-xs text-muted-foreground">AI will assign invigilators to all exams when generating</p>
             </div>
           </div>
-
           {autoAssignOnGenerate && (
             <div className="grid grid-cols-2 gap-3 pl-2">
               <div>
@@ -480,41 +403,30 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
               </div>
             </div>
           )}
-
-          <p className="text-xs text-muted-foreground">
-            Or add invigilator preferences in the Additional Information box below (e.g. "Assign Mr. Smith to all Science exams").
-            After generation, you can also manually assign in the table below.
-          </p>
         </CardContent>
       </Card>
 
-      {/* Section C: Additional Information */}
+      {/* Section C: Additional Instructions */}
       <Card>
         <CardContent className="p-5 space-y-4">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">C — Additional Information & Special Instructions</h3>
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">C — Additional Instructions</h3>
           <div>
             <textarea
               value={additionalInfo}
               onChange={e => e.target.value.length <= 2000 && setAdditionalInfo(e.target.value)}
-              placeholder={`Add any special instructions or additional information for the AI to consider when generating the timetable. Examples:
+              placeholder={`Add any special instructions. Examples:
 - Assign Mr. John Smith to all Science exams
 - Do not schedule Mathematics and Physics on consecutive days
 - Class JS3A must have their exams in Hall B
-- Assign female invigilators to female classes
-- Schedule difficult subjects early in the exam period
-- Add 30 minute gaps between morning and afternoon exams
-- Reserve Hall A only for SS3 classes
-- Teachers who teach a subject should not invigilate that subject's exam`}
-              className="w-full min-h-[160px] text-sm rounded-lg border border-input bg-background px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+- Schedule difficult subjects early in the exam period`}
+              className="w-full min-h-[140px] text-sm rounded-lg border border-input bg-background px-3 py-2 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
             />
             <p className={`text-xs mt-1 ${charLeft < 100 ? 'text-amber-600' : 'text-muted-foreground'}`}>{charLeft} characters remaining</p>
           </div>
-
-          {/* Quick toggles */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick Options</p>
             {QUICK_TOGGLES.map(t => (
-              <label key={t.key} className="flex items-center gap-3 cursor-pointer group">
+              <label key={t.key} className="flex items-center gap-3 cursor-pointer">
                 <div
                   onClick={() => setToggles(p => ({ ...p, [t.key]: !p[t.key] }))}
                   className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${toggles[t.key] ? 'bg-primary' : 'bg-muted-foreground/30'}`}
@@ -529,9 +441,9 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
       </Card>
 
       {/* Generate Button */}
-      <Button onClick={generate} disabled={loading} size="lg" className="w-full gap-2 text-base h-12">
+      <Button onClick={generate} disabled={loading || totalSlotsNeeded === 0} size="lg" className="w-full gap-2 text-base h-12">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-        {loading ? 'Generating AI Timetable…' : '✨ Generate Timetable with AI'}
+        {loading ? 'Generating AI Timetable…' : `✨ Generate Timetable with AI (${totalSlotsNeeded} exam slots)`}
       </Button>
 
       {/* Result Preview */}
@@ -540,11 +452,6 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
           {result.summary && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">{result.summary}</div>
           )}
-          {result.invigilatorSummary && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
-              <strong>Invigilator Assignment:</strong> {result.invigilatorSummary}
-            </div>
-          )}
           {result.warnings?.length > 0 && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-1">
               {result.warnings.map((w, i) => (
@@ -552,15 +459,15 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
               ))}
             </div>
           )}
-          {/* Completeness Report */}
+
           {result.missingSlots?.length > 0 ? (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-2">
               <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
-                <AlertTriangle className="w-4 h-4" /> ⚠️ Missing exam slots detected ({result.missingSlots.length})
+                <AlertTriangle className="w-4 h-4" /> Missing exam slots ({result.missingSlots.length})
               </div>
               <ul className="space-y-0.5">
                 {result.missingSlots.map((m, i) => (
-                  <li key={i} className="text-xs text-red-600">• {m.className}: {m.subject} not scheduled</li>
+                  <li key={i} className="text-xs text-red-600">• {m.className}: {m.subject}</li>
                 ))}
               </ul>
               <Button size="sm" variant="destructive" onClick={fixMissingSlots} disabled={loading} className="gap-1 h-7 text-xs">
@@ -571,11 +478,6 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
           ) : result.timetable?.length > 0 && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
               ✅ <strong>All subjects accounted for.</strong> {result.timetable.length} exam slots generated.
-              {result.completenessReport?.map(r => (
-                <span key={r.className} className="ml-2 text-xs">
-                  {r.className}: {r.scheduled}/{r.expected} ✓
-                </span>
-              ))}
             </div>
           )}
 
@@ -616,8 +518,7 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
                                 {teachers.map(t => (
                                   <SelectItem key={t.id} value={t.id}>
                                     <span className={hasConflict(i, t.id) ? 'text-red-600' : ''}>
-                                      {t.fullName} ({dutyCount[t.id] || 0} duties)
-                                      {hasConflict(i, t.id) && ' ⚠️'}
+                                      {t.fullName} ({dutyCount[t.id] || 0} duties){hasConflict(i, t.id) && ' ⚠️'}
                                     </span>
                                   </SelectItem>
                                 ))}
@@ -632,15 +533,13 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
               </div>
             </div>
           )}
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={applyToSchedule} className="gap-2">
               <CheckCircle2 className="w-4 h-4" /> Accept & Save to Exam Schedule
             </Button>
             <Button variant="outline" onClick={generate} className="gap-2" disabled={loading}>
               <RefreshCw className="w-4 h-4" /> Regenerate
-            </Button>
-            <Button variant="outline" onClick={applyToSchedule} className="gap-2">
-              Accept & Manually Edit
             </Button>
           </div>
         </div>
@@ -666,15 +565,11 @@ Return ONLY the new exam slots as JSON timetable array (same format as before). 
                       {item.at ? format(new Date(item.at), 'MMM d, yyyy h:mm a') : ''}
                     </span>
                     <Button size="sm" variant="outline" onClick={() => reuseHistory(item)} className="h-6 text-xs px-2">
-                      Reuse This Prompt
+                      Reuse
                     </Button>
                   </div>
-                  {item.prompt && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{item.prompt}</p>
-                  )}
-                  {item.summary && (
-                    <p className="text-xs text-blue-700 italic">{item.summary}</p>
-                  )}
+                  {item.prompt && <p className="text-xs text-muted-foreground line-clamp-2">{item.prompt}</p>}
+                  {item.summary && <p className="text-xs text-blue-700 italic">{item.summary}</p>}
                 </div>
               ))}
             </div>
