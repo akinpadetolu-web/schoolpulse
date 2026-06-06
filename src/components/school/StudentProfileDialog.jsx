@@ -27,6 +27,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
   const [fullName, setFullName] = useState(student?.fullName || "");
   const [email, setEmail] = useState(student?.email || "");
   const [phone, setPhone] = useState(student?.phone || "");
+  const [gender, setGender] = useState(student?.gender || "");
   const [classId, setClassId] = useState(student?.classId || "");
   const [subsetName, setSubsetName] = useState(student?.subsetName || "");
   const [subjects, setSubjects] = useState([]);
@@ -43,6 +44,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     setFullName(student?.fullName || "");
     setEmail(student?.email || "");
     setPhone(student?.phone || "");
+    setGender(student?.gender || "");
     setClassId(student?.classId || "");
     setSubsetName(student?.subsetName || "");
     setAssignedSubjects(student?.assignedSubjects || []);
@@ -93,6 +95,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
       fullName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
+      gender: gender || "",
       classId: classId || "",
       className: cls?.className || "",
       baseLevel: cls?.baseLevel || "",
@@ -139,6 +142,18 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
             <div className="space-y-2">
               <Label>Phone Number</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+            </div>
+
+            {/* Gender */}
+            <div className="space-y-2">
+              <Label>Gender</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Class */}

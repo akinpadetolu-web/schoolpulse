@@ -24,6 +24,14 @@
         "parent"
       ]
     },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ],
+      "description": "Student gender"
+    },
     "schoolId": {
       "type": "string"
     },

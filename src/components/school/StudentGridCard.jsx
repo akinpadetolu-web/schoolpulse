@@ -21,11 +21,16 @@ export default function StudentGridCard({ student, onView, onEdit, onReset }) {
           <p className="text-xs text-muted-foreground mt-0.5">{student.username || 'No username'}</p>
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
+        {/* Status + Gender Badges */}
+        <div className="flex justify-center gap-1.5 flex-wrap">
           <Badge variant={student.isArchived ? 'destructive' : 'default'} className="text-xs">
             {student.isArchived ? 'Inactive' : 'Active'}
           </Badge>
+          {student.gender && (
+            <Badge variant="outline" className={`text-xs ${student.gender === 'Female' ? 'border-pink-300 text-pink-600' : 'border-blue-300 text-blue-600'}`}>
+              {student.gender}
+            </Badge>
+          )}
         </div>
 
         {/* Actions */}

@@ -12,7 +12,7 @@ import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
 export default function CreateUserDialog({ open, onOpenChange, role, school, classes, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("form");
-  const [form, setForm] = useState({ fullName: "", email: "", classId: "" });
+  const [form, setForm] = useState({ fullName: "", email: "", classId: "", gender: "" });
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -20,7 +20,7 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
 
   function reset() {
     setStep("form");
-    setForm({ fullName: "", email: "", classId: "" });
+    setForm({ fullName: "", email: "", classId: "", gender: "" });
     setCredentials(null);
     setCopied(false);
   }
@@ -49,6 +49,7 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
 
       let parentLinkCode = "";
       if (role === "student") {
+        if (form.gender) userData.gender = form.gender;
         // Generate a unique 8-char alphanumeric link code
         parentLinkCode = Math.random().toString(36).substring(2, 6).toUpperCase() +
                          Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -115,6 +116,18 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
             <div className="space-y-2"><Label>Full Name *</Label><Input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
             
+            {role === "student" && (
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {role === "student" && (classes || []).length > 0 && (
               <div className="space-y-2">
                 <Label>Class</Label>
