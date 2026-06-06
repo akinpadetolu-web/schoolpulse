@@ -5,27 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Edit, Copy, Trash2, Eye, FileText, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Plus, Edit, Copy, Trash2, Eye, Search, Monitor, Smartphone, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import EmailEditorModal from './EmailEditorModal';
-
-const CATEGORY_LABELS = {
-  welcome: 'Welcome', report_card: 'Report Card', fee_reminder: 'Fee Reminder',
-  exam_timetable: 'Exam Timetable', event_invitation: 'Event', emergency: 'Emergency',
-  newsletter: 'Newsletter', parent_teacher_meeting: 'Parent-Teacher Meeting', custom: 'Custom',
-};
-
-const DEFAULT_TEMPLATES = [
-  { name: 'Welcome to New Term', category: 'welcome', description: 'Warm welcome message for the start of a new academic term', isDefault: true },
-  { name: 'Report Card Available', category: 'report_card', description: 'Notify parents that report cards are ready to view', isDefault: true },
-  { name: 'School Fees Reminder', category: 'fee_reminder', description: 'Friendly reminder about outstanding school fees', isDefault: true },
-  { name: 'Exam Timetable Released', category: 'exam_timetable', description: 'Share the upcoming exam schedule with students and parents', isDefault: true },
-  { name: 'Event Invitation', category: 'event_invitation', description: 'Invite school community to an upcoming event', isDefault: true },
-  { name: 'Emergency Notice', category: 'emergency', description: 'Urgent communication to parents and staff', isDefault: true },
-  { name: 'General Newsletter', category: 'newsletter', description: 'Monthly school newsletter template', isDefault: true },
-  { name: 'Parent-Teacher Meeting', category: 'parent_teacher_meeting', description: 'Invitation for parent-teacher conference', isDefault: true },
-];
+import { DEFAULT_TEMPLATES_CONFIG, CATEGORY_LABELS_ALL } from './defaultTemplateBlocks';
 
 export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
   const [templates, setTemplates] = useState([]);
@@ -33,8 +18,10 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editingOriginalBlocks, setEditingOriginalBlocks] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState(null);
+  const [previewItem, setPreviewItem] = useState(null); // { blocks, name, bgGradient }
+  const [previewMode, setPreviewMode] = useState('desktop');
 
   useEffect(() => { load(); }, []);
 
@@ -44,31 +31,56 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
     setLoading(false);
   }
 
-  async function handleCreate() {
+  function handleCreate() {
     setEditingTemplate({ name: '', category: 'custom', description: '', emailBody: '', blocks: [], schoolId: schoolUser.schoolId, isDefault: false });
+    setEditingOriginalBlocks(null);
     setShowEditor(true);
   }
 
-  async function handleEdit(t) {
+  function handleEdit(t) {
     setEditingTemplate(t);
+    setEditingOriginalBlocks(t.blocks || null);
+    setShowEditor(true);
+  }
+
+  // "Edit & Use" a default template — opens editor with original blocks so user can reset
+  function handleEditDefault(dt) {
+    setEditingTemplate({
+      name: dt.name, category: dt.category, description: dt.description,
+      emailBody: '', blocks: JSON.parse(JSON.stringify(dt.blocks)), schoolId: schoolUser.schoolId, isDefault: false,
+    });
+    setEditingOriginalBlocks(JSON.parse(JSON.stringify(dt.blocks)));
     setShowEditor(true);
   }
 
   async function handleSaveTemplate(templateData) {
-    if (editingTemplate?.id) {
+    // If forceNew, always create new
+    if (templateData.forceNew || !editingTemplate?.id) {
+      const { forceNew, ...rest } = templateData;
+      await base44.entities.EmailTemplate.create({ ...rest, schoolId: schoolUser.schoolId });
+      toast.success('Template saved');
+    } else {
       await base44.entities.EmailTemplate.update(editingTemplate.id, templateData);
       toast.success('Template updated');
-    } else {
-      await base44.entities.EmailTemplate.create({ ...templateData, schoolId: schoolUser.schoolId });
-      toast.success('Template created');
     }
     setShowEditor(false);
     setEditingTemplate(null);
+    setEditingOriginalBlocks(null);
+    load();
+  }
+
+  async function handleAddDefaultToLibrary(dt) {
+    await base44.entities.EmailTemplate.create({
+      schoolId: schoolUser.schoolId, name: dt.name, category: dt.category, description: dt.description,
+      emailBody: '', blocks: JSON.parse(JSON.stringify(dt.blocks)), isDefault: false, timesUsed: 0,
+    });
+    toast.success('Template added to your library — fully editable!');
     load();
   }
 
   async function handleDuplicate(t) {
-    await base44.entities.EmailTemplate.create({ ...t, id: undefined, name: `${t.name} (Copy)`, schoolId: schoolUser.schoolId, isDefault: false });
+    const { id, created_date, updated_date, ...rest } = t;
+    await base44.entities.EmailTemplate.create({ ...rest, name: `${t.name} (Copy)`, schoolId: schoolUser.schoolId, isDefault: false });
     toast.success('Template duplicated');
     load();
   }
@@ -80,27 +92,25 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
     load();
   }
 
-  async function handleUseDefault(dt) {
-    const created = await base44.entities.EmailTemplate.create({
-      schoolId: schoolUser.schoolId, name: dt.name, category: dt.category, description: dt.description,
-      emailBody: getDefaultBody(dt.category), isDefault: false, timesUsed: 0,
-    });
-    toast.success('Template added to your library');
-    load();
+  function handleUseMyTemplate(t) {
+    onUseTemplate(t);
   }
 
-  function getDefaultBody(category) {
-    const bodies = {
-      welcome: '<h1 style="color:#1e40af">Welcome to the New Term!</h1><p>Dear {{first_name}},</p><p>We are delighted to welcome you to the new academic term at <strong>{{school_name}}</strong>. We look forward to a productive and enriching term ahead.</p><p>Best regards,<br/>{{school_name}} Administration</p>',
-      report_card: '<h1 style="color:#1e40af">Report Card Now Available</h1><p>Dear {{first_name}},</p><p>We are pleased to inform you that the report card for <strong>{{student_name}}</strong> is now available for viewing.</p><p>Please log in to your parent portal to access the report.</p><p>Regards,<br/>{{school_name}}</p>',
-      fee_reminder: '<h1 style="color:#dc2626">Fee Payment Reminder</h1><p>Dear {{first_name}},</p><p>This is a friendly reminder that school fees for <strong>{{student_name}}</strong> are due. Please make your payment at the earliest convenience to avoid any disruption to your child\'s education.</p><p>Thank you,<br/>{{school_name}} Accounts Office</p>',
-      exam_timetable: '<h1 style="color:#1e40af">Exam Timetable Released</h1><p>Dear {{first_name}},</p><p>The examination timetable for <strong>{{class_name}}</strong> has been released. Please find the schedule attached or log in to the portal to view it.</p><p>We wish all students the very best.<br/>{{school_name}}</p>',
-      event_invitation: '<h1 style="color:#7c3aed">You\'re Invited!</h1><p>Dear {{first_name}},</p><p>We cordially invite you to join us for an upcoming event at <strong>{{school_name}}</strong>. Please see the details below and RSVP at your earliest convenience.</p><p>We look forward to seeing you.<br/>{{school_name}}</p>',
-      emergency: '<h1 style="color:#dc2626">⚠ Important Notice</h1><p>Dear {{first_name}},</p><p>This is an urgent message from <strong>{{school_name}}</strong> requiring your immediate attention. Please read the information below carefully and take any necessary action.</p><p>{{school_name}} Management</p>',
-      newsletter: '<h1 style="color:#1e40af">{{school_name}} Newsletter</h1><p>Dear {{first_name}},</p><p>Welcome to our latest school newsletter! Here are the highlights from this period:</p><ul><li>Academic Updates</li><li>Upcoming Events</li><li>Student Achievements</li><li>Important Notices</li></ul><p>Best regards,<br/>{{school_name}}</p>',
-      parent_teacher_meeting: '<h1 style="color:#1e40af">Parent-Teacher Meeting Invitation</h1><p>Dear {{first_name}},</p><p>We would like to invite you to attend the upcoming Parent-Teacher Meeting at <strong>{{school_name}}</strong> to discuss <strong>{{student_name}}\'s</strong> academic progress.</p><p>Please confirm your attendance.<br/>{{school_name}}</p>',
-    };
-    return bodies[category] || '<h1>Email Title</h1><p>Dear {{first_name}},</p><p>Your message here.</p><p>Regards,<br/>{{school_name}}</p>';
+  // Preview rendered HTML from blocks
+  function getPreviewHTML(blocks) {
+    if (!blocks?.length) return '<div style="padding:24px;color:#6b7280;text-align:center">No preview available</div>';
+    return blocks.map(b => {
+      const c = b.content;
+      if (b.type === 'header') return `<div style="background-color:${c.bgColor};color:${c.textColor};text-align:${c.align||'center'};padding:${c.paddingV||32}px 24px;font-size:${c.fontSize||28}px;font-weight:bold;line-height:1.2">${c.text}${c.subtext?`<div style="font-size:${Math.round((c.fontSize||28)*0.55)}px;color:${c.subtextColor};margin-top:8px;font-weight:400">${c.subtext}</div>`:''}</div>`;
+      if (b.type === 'text') return `<div style="background-color:${c.bgColor};color:${c.textColor};padding:${c.padding||20}px">${c.text}</div>`;
+      if (b.type === 'cards') return `<div style="background-color:${c.bgColor||'#f8fafc'};padding:16px"><table style="width:100%"><tr>${(c.cards||[]).map(card=>`<td style="width:${Math.round(100/(c.cards?.length||3))}%;padding:6px;vertical-align:top"><div style="background-color:${card.bgColor};border-radius:10px;padding:14px 10px;text-align:center"><div style="font-size:24px;margin-bottom:6px">${card.icon}</div><div style="font-weight:700;color:${card.textColor};font-size:13px;margin-bottom:3px">${card.title}</div><div style="color:${card.textColor};font-size:11px;opacity:0.8">${card.text}</div></div></td>`).join('')}</tr></table></div>`;
+      if (b.type === 'button') return `<div style="text-align:${c.align||'center'};padding:${c.paddingV||12}px 16px"><span style="background-color:${c.bgColor};color:${c.textColor};padding:${c.paddingV||12}px ${c.paddingH||28}px;border-radius:${c.borderRadius||6}px;display:inline-block;font-weight:700;font-size:${c.fontSize||15}px">${c.text}</span></div>`;
+      if (b.type === 'footer') return `<div style="background-color:${c.bgColor};color:${c.textColor};text-align:${c.align||'center'};padding:16px 24px;font-size:12px">${c.text}</div>`;
+      if (b.type === 'quote') return `<div style="background-color:${c.bgColor};border-left:4px solid ${c.borderColor};padding:16px 20px"><p style="color:${c.textColor};font-size:${c.fontSize||14}px;font-style:italic;margin:0">${c.text}</p></div>`;
+      if (b.type === 'spacer') return `<div style="height:${c.height||20}px"></div>`;
+      if (b.type === 'divider') return `<div style="padding:6px 16px"><hr style="border:none;border-top:${c.thickness||1}px solid ${c.color}" /></div>`;
+      return '';
+    }).join('');
   }
 
   const myTemplates = templates.filter(t => {
@@ -109,14 +119,22 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
     return matchSearch && matchCat;
   });
 
+  const filteredDefaults = DEFAULT_TEMPLATES_CONFIG.filter(t =>
+    (categoryFilter === 'all' || t.category === categoryFilter) &&
+    (!search || t.name.toLowerCase().includes(search.toLowerCase()))
+  );
+
   if (showEditor) {
     return (
-      <EmailEditorModal
-        template={editingTemplate}
-        onSave={handleSaveTemplate}
-        onCancel={() => { setShowEditor(false); setEditingTemplate(null); }}
-        mode="template"
-      />
+      <div className="h-full">
+        <EmailEditorModal
+          template={editingTemplate}
+          originalBlocks={editingOriginalBlocks}
+          onSave={handleSaveTemplate}
+          onCancel={() => { setShowEditor(false); setEditingTemplate(null); setEditingOriginalBlocks(null); }}
+          mode="template"
+        />
+      </div>
     );
   }
 
@@ -142,7 +160,7 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
           <SelectTrigger className="h-9 w-44"><SelectValue placeholder="All Categories" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {Object.entries(CATEGORY_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+            {Object.entries(CATEGORY_LABELS_ALL).filter(([v]) => v !== 'custom').map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -152,56 +170,73 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
         <div>
           <h3 className="font-semibold text-sm mb-3">My Templates ({myTemplates.length})</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {myTemplates.map(t => (
-              <Card key={t.id} className="border shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-0">
-                  {/* Preview thumbnail */}
-                  <div className="h-32 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-t-xl flex items-center justify-center">
-                    <FileText className="w-10 h-10 text-indigo-300" />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-semibold text-sm leading-tight">{t.name}</p>
-                      <Badge className="bg-slate-100 text-slate-600 text-[10px] shrink-0">{CATEGORY_LABELS[t.category] || t.category}</Badge>
+            {myTemplates.map(t => {
+              const defMatch = DEFAULT_TEMPLATES_CONFIG.find(d => d.category === t.category);
+              return (
+                <Card key={t.id} className="border shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className={`h-28 bg-gradient-to-br ${defMatch?.gradient || 'from-slate-500 to-slate-700'} flex items-center justify-center relative cursor-pointer`}
+                      onClick={() => setPreviewItem({ blocks: t.blocks, name: t.name, gradient: defMatch?.gradient })}>
+                      <span className="text-4xl">{defMatch?.emoji || '📧'}</span>
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                        <span className="text-white text-xs font-semibold bg-black/40 px-2 py-1 rounded">Preview</span>
+                      </div>
                     </div>
-                    {t.description && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{t.description}</p>}
-                    <p className="text-[10px] text-muted-foreground mb-3">
-                      Used {t.timesUsed || 0} times{t.updated_date ? ` · ${format(parseISO(t.updated_date), 'MMM d, yyyy')}` : ''}
-                    </p>
-                    <div className="flex gap-1 flex-wrap">
-                      <Button size="sm" className="h-7 text-xs flex-1" onClick={() => onUseTemplate(t)}>Use</Button>
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleEdit(t)} title="Edit"><Edit className="w-3 h-3" /></Button>
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(t)} title="Duplicate"><Copy className="w-3 h-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDelete(t)} title="Delete"><Trash2 className="w-3 h-3" /></Button>
+                    <div className="p-3">
+                      <div className="flex items-start justify-between gap-1 mb-1">
+                        <p className="font-semibold text-sm leading-tight">{t.name}</p>
+                        <Badge className="bg-slate-100 text-slate-600 text-[9px] shrink-0">{CATEGORY_LABELS_ALL[t.category] || t.category}</Badge>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mb-2">Used {t.timesUsed || 0} times{t.updated_date ? ` · ${format(parseISO(t.updated_date), 'MMM d')}` : ''}</p>
+                      <div className="flex gap-1">
+                        <Button size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => handleUseMyTemplate(t)}>Use</Button>
+                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPreviewItem({ blocks: t.blocks, name: t.name })} title="Preview"><Eye className="w-3 h-3" /></Button>
+                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleEdit(t)} title="Edit"><Edit className="w-3 h-3" /></Button>
+                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(t)} title="Duplicate"><Copy className="w-3 h-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDelete(t)} title="Delete"><Trash2 className="w-3 h-3" /></Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Default Templates */}
-      {(categoryFilter === 'all' || DEFAULT_TEMPLATES.some(t => t.category === categoryFilter)) && (
+      {filteredDefaults.length > 0 && (
         <div>
-          <h3 className="font-semibold text-sm mb-3">Default Templates</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="font-semibold text-sm">Default Templates ({filteredDefaults.length})</h3>
+            <Badge variant="outline" className="text-xs">All fully editable — no locks</Badge>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {DEFAULT_TEMPLATES.filter(t => categoryFilter === 'all' || t.category === categoryFilter).map(t => (
-              <Card key={t.name} className="border border-dashed shadow-sm hover:shadow-md transition-shadow opacity-80 hover:opacity-100">
+            {filteredDefaults.map(dt => (
+              <Card key={dt.name} className="border shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="h-32 bg-gradient-to-br from-slate-50 to-slate-100 rounded-t-xl flex items-center justify-center">
-                    <FileText className="w-10 h-10 text-slate-300" />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="font-semibold text-sm">{t.name}</p>
-                      <Badge variant="outline" className="text-[10px] shrink-0">{CATEGORY_LABELS[t.category]}</Badge>
+                  <div className={`h-28 bg-gradient-to-br ${dt.gradient} flex items-center justify-center relative cursor-pointer`}
+                    onClick={() => setPreviewItem({ blocks: dt.blocks, name: dt.name, gradient: dt.gradient })}>
+                    <span className="text-4xl">{dt.emoji}</span>
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                      <span className="text-white text-xs font-semibold bg-black/40 px-2 py-1 rounded">Preview</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{t.description}</p>
-                    <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => handleUseDefault(t)}>
-                      Add to My Templates
-                    </Button>
+                    <div className="absolute bottom-2 right-2">
+                      <Badge className="bg-white/20 text-white text-[9px] border-white/30">Default</Badge>
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-1 mb-0.5">
+                      <p className="font-semibold text-sm leading-tight">{dt.name}</p>
+                      <Badge variant="outline" className="text-[9px] shrink-0">{CATEGORY_LABELS_ALL[dt.category]}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{dt.description}</p>
+                    <div className="flex gap-1">
+                      <Button size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => handleEditDefault(dt)}>
+                        <Pencil className="w-3 h-3" /> Edit & Use
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleAddDefaultToLibrary(dt)}>Add to Library</Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -210,11 +245,52 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
         </div>
       )}
 
-      {myTemplates.length === 0 && templates.length === 0 && !loading && (
-        <div className="text-center py-12 text-muted-foreground text-sm">
-          No templates yet. Create one or add from the Default Templates above.
-        </div>
+      {myTemplates.length === 0 && filteredDefaults.length === 0 && !loading && (
+        <div className="text-center py-12 text-muted-foreground text-sm">No templates match your search.</div>
       )}
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewItem} onOpenChange={() => setPreviewItem(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle>{previewItem?.name}</DialogTitle>
+              <div className="flex gap-1 mr-8">
+                <Button variant={previewMode === 'desktop' ? 'default' : 'ghost'} size="sm" className="h-7 text-xs gap-1" onClick={() => setPreviewMode('desktop')}>
+                  <Monitor className="w-3 h-3" /> Desktop
+                </Button>
+                <Button variant={previewMode === 'mobile' ? 'default' : 'ghost'} size="sm" className="h-7 text-xs gap-1" onClick={() => setPreviewMode('mobile')}>
+                  <Smartphone className="w-3 h-3" /> Mobile
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 bg-slate-100 p-4 rounded-xl">
+            <div className={`mx-auto bg-white rounded-lg shadow overflow-hidden transition-all ${previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'}`}>
+              <div dangerouslySetInnerHTML={{ __html: getPreviewHTML(previewItem?.blocks) }} />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2 shrink-0 justify-end">
+            {(() => {
+              const dt = DEFAULT_TEMPLATES_CONFIG.find(d => d.name === previewItem?.name);
+              const myT = templates.find(t => t.name === previewItem?.name);
+              if (dt) return (
+                <>
+                  <Button variant="outline" onClick={() => { setPreviewItem(null); handleAddDefaultToLibrary(dt); }}>Add to Library</Button>
+                  <Button onClick={() => { setPreviewItem(null); handleEditDefault(dt); }} className="gap-1.5"><Pencil className="w-3.5 h-3.5" /> Edit & Use</Button>
+                </>
+              );
+              if (myT) return (
+                <>
+                  <Button variant="outline" onClick={() => { setPreviewItem(null); handleEdit(myT); }} className="gap-1.5"><Edit className="w-3.5 h-3.5" /> Edit Template</Button>
+                  <Button onClick={() => { setPreviewItem(null); handleUseMyTemplate(myT); }}>Use Without Editing</Button>
+                </>
+              );
+              return null;
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
