@@ -45,11 +45,22 @@ export default function StudentTimetable() {
         </TabsContent>
 
         <TabsContent value="study-plan">
-          <AIStudyPlanGenerator entries={entries} grades={grades} studentName={user?.fullName} />
+          <AIStudyPlanGenerator
+            entries={entries}
+            grades={grades}
+            studentName={user?.fullName}
+            studentId={user?.id}
+            schoolId={user?.schoolId}
+          />
         </TabsContent>
 
         <TabsContent value="tips">
-          <AIExamPreparationTips entries={entries} />
+          <AIExamPreparationTips
+            entries={entries}
+            studentId={user?.id}
+            schoolId={user?.schoolId}
+            studentName={user?.fullName}
+          />
         </TabsContent>
       </Tabs>
 

@@ -1,0 +1,45 @@
+{
+  "name": "AIExamTips",
+  "type": "object",
+  "properties": {
+    "studentId": {
+      "type": "string"
+    },
+    "schoolId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "sessionLabel": {
+      "type": "string"
+    },
+    "tipsContent": {
+      "type": "object",
+      "description": "Full tips object from AI (subjectTips array + generalWellnessTips)"
+    },
+    "highlightedTips": {
+      "type": "object",
+      "description": "Map of subjectIndex-tipIndex -> boolean highlighted"
+    },
+    "studentNotes": {
+      "type": "object",
+      "description": "Map of subjectIndex-tipIndex -> note string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "timetableEntryCount": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "studentId",
+    "schoolId"
+  ]
+}

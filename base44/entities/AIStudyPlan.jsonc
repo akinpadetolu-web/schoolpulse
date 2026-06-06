@@ -1,0 +1,57 @@
+{
+  "name": "AIStudyPlan",
+  "type": "object",
+  "properties": {
+    "studentId": {
+      "type": "string"
+    },
+    "schoolId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "sessionLabel": {
+      "type": "string",
+      "description": "e.g. 'Term 2 Exams 2026'"
+    },
+    "planContent": {
+      "type": "object",
+      "description": "Full structured plan from AI"
+    },
+    "progress": {
+      "type": "object",
+      "description": "Map of task index -> boolean completed"
+    },
+    "completionPercentage": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    },
+    "timetableEntryCount": {
+      "type": "number"
+    },
+    "studyHours": {
+      "type": "string"
+    },
+    "hoursPerDay": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "studentId",
+    "schoolId"
+  ]
+}
