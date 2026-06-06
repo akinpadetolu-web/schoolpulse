@@ -41,8 +41,7 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
       for (const cls of classes) {
         // Subject is assigned to a class if cls.id is in subject.assignedClasses array
         const classSubjs = allSubjects.filter(s =>
-          (s.assignedClasses || []).includes(cls.id) ||
-          (s.classId === cls.id)
+          (s.applicableClasses || []).includes(cls.id)
         );
         map[cls.id] = classSubjs;
       }
