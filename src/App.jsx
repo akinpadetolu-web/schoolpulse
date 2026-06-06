@@ -40,7 +40,7 @@ const BackendSettings = lazy(() => import('./pages/backend/BackendSettings'));
 const FeatureToggles = lazy(() => import('./pages/backend/FeatureToggles'));
 
 // School Admin
-const AdminDashboard = lazy(() => import('./pages/school-admin/AdminDashboard'));
+const AdminDashboard = lazy(() => import('./pages/school-admin/AdminDashboard.jsx'));
 const AdminTeachers = lazy(() => import('./pages/school-admin/AdminTeachers'));
 const AdminStudents = lazy(() => import('./pages/school-admin/AdminStudents'));
 const AdminBulkStudentImport = lazy(() => import('./pages/school-admin/AdminBulkStudentImport'));
