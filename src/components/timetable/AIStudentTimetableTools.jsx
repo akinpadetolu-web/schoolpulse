@@ -12,19 +12,15 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 // ─── No Timetable Empty State ────────────────────────────────────
-function NoTimetableState({ feature }) {
+function NoTimetableState() {
   return (
-    <div className="text-center py-12 text-muted-foreground">
-      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-        {feature === 'study-plan' ? <Calendar className="w-6 h-6 opacity-40" /> : <Lightbulb className="w-6 h-6 opacity-40" />}
+    <div className="text-center py-12">
+      <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-3">
+        <Calendar className="w-6 h-6 text-red-400" />
       </div>
-      <p className="font-medium text-foreground mb-1">
-        {feature === 'study-plan' ? 'AI Study Plan Not Available Yet' : 'AI Exam Tips Not Available Yet'}
-      </p>
-      <p className="text-sm max-w-xs mx-auto">
-        {feature === 'study-plan'
-          ? 'Your school admin has not created an exam timetable for this session. Please check back later.'
-          : 'Your school admin has not set up the exam timetable for this session. Please check back later.'}
+      <p className="font-medium text-foreground mb-1">Not Available Outside Exam Period</p>
+      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+        You can only generate this during the exam period. Please check back when your school admin has published an exam timetable.
       </p>
     </div>
   );
@@ -140,7 +136,7 @@ Generate a practical study plan for the next 14 days. Prioritise subjects with l
 
   if (loading) return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  if (!hasEntries) return <NoTimetableState feature="study-plan" />;
+  if (!hasEntries) return <NoTimetableState />;
 
   const plan = savedPlan?.planContent;
   const progress = savedPlan?.progress || {};
@@ -372,7 +368,7 @@ Keep tips practical, encouraging and specific.`,
 
   if (loading) return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  if (!hasEntries) return <NoTimetableState feature="tips" />;
+  if (!hasEntries) return <NoTimetableState />;
 
   const tipsData = savedTips?.tipsContent;
   const highlighted = savedTips?.highlightedTips || {};
