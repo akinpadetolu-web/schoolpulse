@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download } from 'lucide-react';
+import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download, Brain, BarChart2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import TimetableGenerator from '@/components/timetable/TimetableGenerator';
+import { AIExamTimetableGenerator, AITimetableInsights, AIPerformancePrediction, AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
@@ -77,6 +78,7 @@ export default function AdminTimetable() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [manualClashes, setManualClashes] = useState([]);
+  const [grades, setGrades] = useState([]);
 
   // AI state
   const [activeTab, setActiveTab] = useState("view");
@@ -106,18 +108,20 @@ export default function AdminTimetable() {
   }, [manualForm, entries]);
 
   async function loadData() {
-    const [e, c, s, t, cat] = await Promise.all([
+    const [e, c, s, t, cat, g] = await Promise.all([
       base44.entities.TimetableEntry.filter({ schoolId }),
       base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
       base44.entities.Subject.filter({ schoolId, isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId, role: "teacher", isArchived: false }),
       base44.entities.SubjectCategory.filter({ schoolId, isArchived: false }),
+      base44.entities.Grade.filter({ schoolId }).catch(() => []),
     ]);
     setEntries(e || []);
     setClasses(c || []);
     setSubjects(s || []);
     setTeachers(t || []);
     setCategories(cat || []);
+    setGrades(g || []);
     setLoading(false);
   }
 
@@ -366,11 +370,12 @@ export default function AdminTimetable() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 flex-wrap h-auto gap-1">
           <TabsTrigger value="view">Weekly Grid</TabsTrigger>
-          <TabsTrigger value="ai">
-            <Wand2 className="w-4 h-4 mr-1.5" /> Generator
-          </TabsTrigger>
+          <TabsTrigger value="ai"><Wand2 className="w-4 h-4 mr-1.5" />Generator</TabsTrigger>
+          <TabsTrigger value="ai-exam"><Brain className="w-4 h-4 mr-1.5" />AI Exam Planner</TabsTrigger>
+          <TabsTrigger value="ai-insights"><BarChart2 className="w-4 h-4 mr-1.5" />AI Insights</TabsTrigger>
+          <TabsTrigger value="ai-predict"><Wand2 className="w-4 h-4 mr-1.5" />Predictions</TabsTrigger>
         </TabsList>
 
         {/* ── Weekly Grid ── */}
@@ -451,7 +456,25 @@ export default function AdminTimetable() {
             onGenerated={() => { loadData(); setActiveTab("view"); }}
           />
         </TabsContent>
+
+        {/* ── AI Exam Planner ── */}
+        <TabsContent value="ai-exam">
+          <AIExamTimetableGenerator classes={classes} subjects={subjects} onApply={() => {}} />
+        </TabsContent>
+
+        {/* ── AI Insights ── */}
+        <TabsContent value="ai-insights">
+          <AITimetableInsights entries={entries} subjects={subjects} teachers={teachers} classes={classes} />
+        </TabsContent>
+
+        {/* ── AI Predictions ── */}
+        <TabsContent value="ai-predict">
+          <AIPerformancePrediction entries={entries} subjects={subjects} classes={classes} grades={grades} />
+        </TabsContent>
       </Tabs>
+
+      {/* AI Chatbot */}
+      <AITimetableChatbot entries={entries} userRole="admin" userName={user?.fullName} subjects={subjects} grades={grades} />
 
       {/* Manual Create Dialog */}
       <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
