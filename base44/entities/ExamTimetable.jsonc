@@ -36,6 +36,15 @@
       "default": false,
       "description": "Admin toggle: shows/hides from all user sidebars"
     },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when timetable was last published"
+    },
+    "publishedBy": {
+      "type": "string",
+      "description": "Name of admin who published"
+    },
     "enableAIStudyPlan": {
       "type": "boolean",
       "default": true

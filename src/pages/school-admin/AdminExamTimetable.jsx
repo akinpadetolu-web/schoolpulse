@@ -97,18 +97,72 @@ export default function AdminExamTimetable() {
 
   async function togglePublish() {
     if (!examTimetable) return;
-    const newStatus = examTimetable.status === 'published' ? 'draft' : 'published';
-    await base44.entities.ExamTimetable.update(examTimetable.id, { status: newStatus });
-    setExamTimetable(prev => ({ ...prev, status: newStatus }));
-    toast.success(newStatus === 'published' ? 'Timetable published!' : 'Timetable moved to draft');
+    const isPublished = examTimetable.status === 'published';
+    if (isPublished) {
+      // Move back to draft — hide from all users
+      const updates = { status: 'draft', isVisible: false };
+      await base44.entities.ExamTimetable.update(examTimetable.id, updates);
+      setExamTimetable(prev => ({ ...prev, ...updates }));
+      toast.success('Timetable moved to draft and hidden from users');
+    } else {
+      // Publish — make visible to all users immediately
+      const updates = {
+        status: 'published',
+        isVisible: true,
+        publishedAt: new Date().toISOString(),
+        publishedBy: user?.fullName || user?.email || 'Admin',
+      };
+      await base44.entities.ExamTimetable.update(examTimetable.id, updates);
+      setExamTimetable(prev => ({ ...prev, ...updates }));
+      // Send in-app notification to students, teachers and parents
+      try {
+        await Promise.all([
+          base44.entities.Notification.create({
+            schoolId,
+            type: 'announcement',
+            title: '📅 Exam Timetable Published!',
+            message: `Your exam timetable for "${examTimetable.sessionName}" is now available. Click here to view your exam schedule.`,
+            targetRole: 'student',
+            targetClassIds: [],
+            targetUserIds: [],
+          }),
+          base44.entities.Notification.create({
+            schoolId,
+            type: 'announcement',
+            title: '📅 Exam Timetable Published!',
+            message: `The exam timetable for "${examTimetable.sessionName}" is now live. View the full schedule and your invigilation duties.`,
+            targetRole: 'teacher',
+            targetClassIds: [],
+            targetUserIds: [],
+          }),
+          base44.entities.Notification.create({
+            schoolId,
+            type: 'announcement',
+            title: '📅 Exam Timetable Published!',
+            message: `Your child's exam timetable for "${examTimetable.sessionName}" is now available. Click here to view the schedule.`,
+            targetRole: 'parent',
+            targetClassIds: [],
+            targetUserIds: [],
+          }),
+        ]);
+      } catch (e) {
+        // Notifications are best-effort — don't block publish
+      }
+      toast.success('✅ Timetable published and now visible to all users!');
+    }
   }
 
   async function toggleVisibility() {
     if (!examTimetable) return;
+    // Only allow visibility toggle when published
+    if (examTimetable.status !== 'published') {
+      toast.error('Publish the timetable first before changing visibility');
+      return;
+    }
     const newVisible = !examTimetable.isVisible;
     await base44.entities.ExamTimetable.update(examTimetable.id, { isVisible: newVisible });
     setExamTimetable(prev => ({ ...prev, isVisible: newVisible }));
-    toast.success(newVisible ? 'Exam Timetable is now VISIBLE to all users' : 'Exam Timetable hidden from users');
+    toast.success(newVisible ? '✅ Exam Timetable is now VISIBLE to all users' : '🔒 Exam Timetable hidden from users');
   }
 
   async function toggleAI(field) {
@@ -261,18 +315,29 @@ export default function AdminExamTimetable() {
         <div className="flex gap-2 flex-wrap">
           {examTimetable && (
             <>
-              <Button variant="outline" size="sm" onClick={togglePublish}>
-                {examTimetable.status === 'published' ? 'Move to Draft' : 'Publish'}
-              </Button>
               <Button
+                variant={examTimetable.status === 'published' ? 'outline' : 'default'}
                 size="sm"
-                variant={examTimetable.isVisible ? 'default' : 'outline'}
-                onClick={toggleVisibility}
-                className="gap-2"
+                onClick={togglePublish}
+                className={examTimetable.status !== 'published' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
               >
-                {examTimetable.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                {examTimetable.isVisible ? 'Visible to Users' : 'Hidden from Users'}
+                {examTimetable.status === 'published' ? (
+                  <><EyeOff className="w-4 h-4 mr-1" /> Unpublish</>
+                ) : (
+                  <><Eye className="w-4 h-4 mr-1" /> Publish & Make Visible</>
+                )}
               </Button>
+              {examTimetable.status === 'published' && (
+                <Button
+                  size="sm"
+                  variant={examTimetable.isVisible ? 'default' : 'outline'}
+                  onClick={toggleVisibility}
+                  className="gap-2"
+                >
+                  {examTimetable.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {examTimetable.isVisible ? 'Visible' : 'Hidden'}
+                </Button>
+              )}
               <Button size="sm" onClick={() => setShowEntryDialog(true)}>
                 <Plus className="w-4 h-4 mr-1" /> Add Exam
               </Button>
@@ -298,9 +363,9 @@ export default function AdminExamTimetable() {
 
       {examTimetable && (
         <>
-          {/* Session info */}
+          {/* Session info + Visibility Status */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-4 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -309,7 +374,13 @@ export default function AdminExamTimetable() {
                       {examTimetable.status}
                     </Badge>
                     {examTimetable.isVisible && examTimetable.status === 'published' && (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">🟢 LIVE</Badge>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">🟢 LIVE — Visible to all users</Badge>
+                    )}
+                    {examTimetable.status === 'published' && !examTimetable.isVisible && (
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">🟡 Published but Hidden</Badge>
+                    )}
+                    {examTimetable.status !== 'published' && (
+                      <Badge className="bg-slate-100 text-slate-600 border-slate-200">🔒 Draft — Not visible to users</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">
@@ -322,6 +393,30 @@ export default function AdminExamTimetable() {
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={deleteSession}>
                   <Trash2 className="w-4 h-4 mr-1" /> Delete Session
                 </Button>
+              </div>
+              {/* Visibility info bar */}
+              <div className={`rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 ${
+                examTimetable.isVisible && examTimetable.status === 'published'
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                  : 'bg-slate-50 border border-slate-200 text-slate-600'
+              }`}>
+                {examTimetable.isVisible && examTimetable.status === 'published' ? (
+                  <>
+                    <Eye className="w-4 h-4 shrink-0" />
+                    <span><strong>Visible to:</strong> Students, Teachers, Parents of this school</span>
+                    {examTimetable.publishedAt && (
+                      <span className="ml-auto text-xs text-emerald-600">
+                        Published {format(new Date(examTimetable.publishedAt), 'MMM d, yyyy h:mm a')}
+                        {examTimetable.publishedBy && ` by ${examTimetable.publishedBy}`}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-4 h-4 shrink-0" />
+                    <span><strong>Hidden from:</strong> Students, Teachers, Parents — {examTimetable.status === 'draft' ? 'Publish this timetable to make it visible.' : 'Toggle visibility ON to show it.'}</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
