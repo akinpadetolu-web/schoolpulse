@@ -143,7 +143,9 @@ export default function AdminDashboard() {
 
   const filtered = React.useMemo(() => applyFiltersToData(raw, appliedFilters), [raw, appliedFilters]);
 
-  function handleApply() { setAppliedFilters({ ...pendingFilters }); }
+  function handleApply(overrideFilters) {
+    setAppliedFilters(overrideFilters ? { ...overrideFilters } : { ...pendingFilters });
+  }
   function handleReset() { setPendingFilters(DEFAULT_FILTERS); setAppliedFilters(DEFAULT_FILTERS); }
 
   if (loading) return (
