@@ -67,9 +67,11 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
     return !!excludedSubjects[`${classId}__${subjectId}`];
   }
 
-  // Total exam slots needed
-  const totalSlotsNeeded = Object.entries(classSubjectMap).reduce((acc, [cid, subjs]) => {
-    return acc + subjs.filter(s => !isExcluded(cid, s.id)).length;
+  // Total exam slots needed — if a class has no mapped subjects, count all school subjects for it
+  const totalSlotsNeeded = classes.reduce((acc, cls) => {
+    const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+    const effective = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
+    return acc + effective.length;
   }, 0);
 
   const [form, setForm] = useState({
@@ -121,15 +123,19 @@ export default function AIExamPlannerTab({ classes, subjects, teachers, examTime
     const teacherList = teachers.map(t => t.fullName).join(', ');
     const quickRules = QUICK_TOGGLES.filter(t => toggles[t.key]).map(t => t.label).join('\n');
 
-    // Build explicit per-class subject list
+    // Build explicit per-class subject list — always include ALL classes
+    // If a class has no subjects in applicableClasses, fall back to all school subjects
     const classSubjectLines = classes.map(cls => {
-      const subjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      const subjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
       if (subjs.length === 0) return null;
       return `  ${cls.className} (${subjs.length} subjects): ${subjs.map(s => s.name).join(', ')}`;
     }).filter(Boolean).join('\n');
 
-    const totalSlots = Object.entries(classSubjectMap).reduce((acc, [cid, subjs]) => {
-      return acc + subjs.filter(s => !isExcluded(cid, s.id)).length;
+    const totalSlots = classes.reduce((acc, cls) => {
+      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      const subjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
+      return acc + subjs.length;
     }, 0);
 
     return `You are an expert school exam timetable scheduler.
@@ -219,13 +225,17 @@ MANDATORY RULES:
     });
 
     // Post-generation completeness check: find any subjects missing from output
+    const norm = s => (s || '').toLowerCase().replace(/\s+/g, '');
     const missingSlots = [];
     for (const cls of classes) {
-      const expectedSubjs = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      const assigned = (classSubjectMap[cls.id] || []).filter(s => !isExcluded(cls.id, s.id));
+      const expectedSubjs = assigned.length > 0 ? assigned : subjects.filter(s => !isExcluded(cls.id, s.id));
       for (const subj of expectedSubjs) {
         const found = (res?.timetable || []).some(row => {
-          const classMatch = (row.className || '').toLowerCase().includes(cls.className.toLowerCase());
-          const subjMatch = (row.subject || '').toLowerCase().includes(subj.name.toLowerCase());
+          // Match class: check any segment of a combined class name like "JS1A, JS1B"
+          const rowClasses = (row.className || '').split(/[,/&]+/).map(s => norm(s.trim()));
+          const classMatch = rowClasses.some(rc => rc === norm(cls.className));
+          const subjMatch = norm(row.subject) === norm(subj.name) || norm(row.subject).includes(norm(subj.name));
           return classMatch && subjMatch;
         });
         if (!found) missingSlots.push({ className: cls.className, subject: subj.name });

@@ -262,9 +262,12 @@ export default function AdminExamTimetable() {
   // Handle AI Planner apply
   async function handlePlannerApply(aiRows, manualAssignments, onApplyComplete) {
     if (!examTimetable || !aiRows?.length) return;
+    const norm = s => (s || '').toLowerCase().replace(/\s+/g, '');
     const newEntries = aiRows.map((row, i) => {
-      const subj = subjects.find(s => s.name?.toLowerCase() === row.subject?.toLowerCase());
-      const cls = classes.find(c => c.className?.toLowerCase() === row.className?.toLowerCase());
+      const subj = subjects.find(s => norm(s.name) === norm(row.subject) || norm(row.subject).includes(norm(s.name)));
+      // Handle combined class names like "JS1A, JS1B" — use first matched class
+      const rowClassNames = (row.className || '').split(/[,/&]+/).map(s => s.trim());
+      const cls = rowClassNames.map(rcn => classes.find(c => norm(c.className) === norm(rcn))).find(Boolean);
       const manual = manualAssignments?.[i];
       const invTeacher = teachers.find(t => t.fullName?.toLowerCase() === row.invigilator?.toLowerCase());
       return {
