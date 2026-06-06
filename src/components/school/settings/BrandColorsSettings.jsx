@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Loader2, Palette, RotateCcw, Eye, Save } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { applyBrandColors, COLOR_DEFAULTS } from '@/lib/brandColors';
+import { applyBrandColors, clearBrandColors, loadAndApplySchoolBrandColors, COLOR_DEFAULTS } from '@/lib/brandColors';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 
 const COLOR_GROUPS = [
   {
@@ -82,33 +82,53 @@ function buildInitialColors(school) {
 }
 
 export default function BrandColorsSettings({ school, onSaved }) {
+  const { reloadBrandColors } = useSchoolAuth();
+  const savedColors = useRef(buildInitialColors(school));
   const [colors, setColors] = useState(() => buildInitialColors(school));
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
 
   function setColor(key, val) {
-    setColors(c => ({ ...c, [key]: val }));
+    const next = { ...colors, [key]: val };
+    setColors(next);
+    // Live preview: apply immediately as you pick a color
+    applyBrandColors(next);
+    setPreviewing(true);
   }
 
   function resetOne(key) {
-    setColors(c => ({ ...c, [key]: COLOR_DEFAULTS[key] }));
+    const next = { ...colors, [key]: COLOR_DEFAULTS[key] };
+    setColors(next);
+    applyBrandColors(next);
   }
 
   function resetAll() {
     setColors({ ...COLOR_DEFAULTS });
-    toast.info('All colors reset to defaults — click Save to apply.');
+    applyBrandColors({ ...COLOR_DEFAULTS });
+    setPreviewing(false);
+    toast.info('Colors reset to defaults — click Save to persist.');
+  }
+
+  function handleCancelPreview() {
+    // Revert to last saved colors
+    setColors({ ...savedColors.current });
+    applyBrandColors(savedColors.current);
+    setPreviewing(false);
+    toast.info('Preview reverted to saved colors.');
   }
 
   function handlePreview() {
     applyBrandColors(colors);
     setPreviewing(true);
-    toast.success('Preview applied — colors shown live. Save to make permanent.');
+    toast.success('Live preview active. Click Save to persist.');
   }
 
   async function handleSave() {
     setSaving(true);
     await base44.entities.School.update(school.id, colors);
-    applyBrandColors(colors);
+    savedColors.current = { ...colors };
+    // Re-fetch and apply from DB to confirm the save worked
+    await reloadBrandColors(school.id);
     setPreviewing(false);
     toast.success('Brand colors saved and applied!');
     setSaving(false);
@@ -122,13 +142,15 @@ export default function BrandColorsSettings({ school, onSaved }) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Palette className="w-4 h-4" /> Brand Colors
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button type="button" variant="outline" size="sm" onClick={resetAll}>
               <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Reset All
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={handlePreview}>
-              <Eye className="w-3.5 h-3.5 mr-1.5" /> Preview
-            </Button>
+            {previewing && (
+              <Button type="button" variant="outline" size="sm" onClick={handleCancelPreview}>
+                Cancel Preview
+              </Button>
+            )}
             <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
               Save Colors
@@ -137,7 +159,7 @@ export default function BrandColorsSettings({ school, onSaved }) {
         </div>
         {previewing && (
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-1.5 mt-2">
-            Preview mode active — colors applied live. Click "Save Colors" to persist.
+            Live preview active — colors shown as you pick them. Click "Save Colors" to persist, or "Cancel Preview" to revert.
           </p>
         )}
       </CardHeader>

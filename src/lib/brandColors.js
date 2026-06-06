@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 
-/** Convert hex (#rrggbb) to "H S% L%" for Tailwind CSS variable format */
+/** Convert hex (#rrggbb) to "H S% L%" for CSS HSL variable format */
 function hexToHsl(hex) {
   if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return null;
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -17,7 +17,11 @@ function hexToHsl(hex) {
       case b: h = ((r - g) / d + 4) / 6; break;
     }
   }
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function hslString(h, s, l) {
+  return `${h} ${s}% ${l}%`;
 }
 
 // Default hex values for every color token
@@ -47,76 +51,152 @@ export const COLOR_DEFAULTS = {
   dangerColor:           '#ef4444',
 };
 
-// Map each school field to which CSS variables it drives
-// Values can be hex (raw) or hsl (for tailwind tokens)
-const COLOR_MAP = {
-  primaryColor:          (hex) => {
-    const hsl = hexToHsl(hex);
-    if (!hsl) return {};
-    return { '--primary': hsl, '--ring': hsl, '--sidebar-primary': hsl, '--chart-1': hsl };
-  },
-  secondaryColor:        (hex) => {
-    const hsl = hexToHsl(hex);
-    if (!hsl) return {};
-    return { '--secondary': hsl };
-  },
-  sidebarBgColor:        (hex) => ({ '--sb-brand-bg': hex }),
-  sidebarTextColor:      (hex) => ({ '--sb-brand-text': hex }),
-  sidebarActiveColor:    (hex) => ({ '--sb-brand-active': hex }),
-  topbarBgColor:         (hex) => ({ '--topbar-bg': hex }),
-  topbarTextColor:       (hex) => ({ '--topbar-text': hex }),
-  bodyBgColor:           (hex) => {
-    const hsl = hexToHsl(hex);
-    return hsl ? { '--background': hsl, '--body-bg': hex } : {};
-  },
-  cardBgColor:           (hex) => {
-    const hsl = hexToHsl(hex);
-    return hsl ? { '--card': hsl, '--card-bg': hex } : {};
-  },
-  primaryBtnColor:       (hex) => ({ '--btn-primary-bg': hex }),
-  primaryBtnTextColor:   (hex) => ({ '--btn-primary-text': hex }),
-  secondaryBtnColor:     (hex) => ({ '--btn-secondary-bg': hex }),
-  secondaryBtnTextColor: (hex) => ({ '--btn-secondary-text': hex }),
-  headingTextColor:      (hex) => ({ '--heading-color': hex }),
-  bodyTextColor:         (hex) => {
-    const hsl = hexToHsl(hex);
-    return hsl ? { '--foreground': hsl, '--body-text': hex } : {};
-  },
-  linkColor:             (hex) => ({ '--link-color': hex }),
-  borderColor:           (hex) => {
-    const hsl = hexToHsl(hex);
-    return hsl ? { '--border': hsl, '--input': hsl, '--border-color': hex } : {};
-  },
-  tableHeaderBgColor:    (hex) => ({ '--table-header-bg': hex }),
-  tableHeaderTextColor:  (hex) => ({ '--table-header-text': hex }),
-  badgeColor:            (hex) => ({ '--badge-color': hex }),
-  successColor:          (hex) => ({ '--brand-success': hex }),
-  warningColor:          (hex) => ({ '--brand-warning': hex }),
-  dangerColor:           (hex) => {
-    const hsl = hexToHsl(hex);
-    return hsl ? { '--destructive': hsl, '--brand-danger': hex } : {};
-  },
-};
-
-/** Apply a full brand colors object (school record fields) to :root */
+/**
+ * Apply a full brand colors object (school record fields) to :root.
+ *
+ * KEY INSIGHT: Tailwind sidebar tokens use HSL format, e.g.:
+ *   bg-sidebar  → hsl(var(--sidebar-background))
+ *   bg-sidebar-primary → hsl(var(--sidebar-primary))
+ *   hover:bg-sidebar-accent → hsl(var(--sidebar-accent))
+ *
+ * So we MUST write HSL strings (not hex) into these variables.
+ */
 export function applyBrandColors(colors = {}) {
   const root = document.documentElement;
-  const allVars = {};
-  Object.entries(COLOR_MAP).forEach(([field, mapper]) => {
-    const hex = colors[field] || COLOR_DEFAULTS[field];
-    if (hex) Object.assign(allVars, mapper(hex));
-  });
-  Object.entries(allVars).forEach(([prop, val]) => root.style.setProperty(prop, val));
+  const get = (key) => (colors[key] && /^#[0-9a-fA-F]{6}$/.test(colors[key])) ? colors[key] : COLOR_DEFAULTS[key];
+
+  function setProp(prop, value) {
+    root.style.setProperty(prop, value);
+  }
+
+  // ── SIDEBAR ────────────────────────────────────────────────────────────────
+  // These variables are consumed by Tailwind as hsl(var(...))
+  const sbBg = hexToHsl(get('sidebarBgColor'));
+  const sbText = hexToHsl(get('sidebarTextColor'));
+  const sbActive = hexToHsl(get('sidebarActiveColor'));
+  const sbActiveFg = hexToHsl(get('primaryBtnTextColor'));
+
+  if (sbBg) {
+    setProp('--sidebar-background', hslString(sbBg.h, sbBg.s, sbBg.l));
+    // sidebar-accent = slightly lighter than sidebar-bg for hover states
+    const accentL = Math.min(sbBg.l + 8, 95);
+    setProp('--sidebar-accent', hslString(sbBg.h, sbBg.s, accentL));
+    // sidebar-border = slightly lighter variant
+    const borderL = Math.min(sbBg.l + 5, 90);
+    setProp('--sidebar-border', hslString(sbBg.h, sbBg.s, borderL));
+  }
+  if (sbText) {
+    setProp('--sidebar-foreground', hslString(sbText.h, sbText.s, sbText.l));
+    setProp('--sidebar-accent-foreground', hslString(sbText.h, sbText.s, sbText.l));
+  }
+  if (sbActive) {
+    setProp('--sidebar-primary', hslString(sbActive.h, sbActive.s, sbActive.l));
+    setProp('--sidebar-ring', hslString(sbActive.h, sbActive.s, sbActive.l));
+  }
+  if (sbActiveFg) {
+    setProp('--sidebar-primary-foreground', hslString(sbActiveFg.h, sbActiveFg.s, sbActiveFg.l));
+  }
+
+  // ── PRIMARY / RING ─────────────────────────────────────────────────────────
+  const primary = hexToHsl(get('primaryColor'));
+  if (primary) {
+    const ps = hslString(primary.h, primary.s, primary.l);
+    setProp('--primary', ps);
+    setProp('--ring', ps);
+    setProp('--chart-1', ps);
+  }
+  setProp('--brand-primary', get('primaryColor'));
+
+  // ── SECONDARY ──────────────────────────────────────────────────────────────
+  const secondary = hexToHsl(get('secondaryColor'));
+  if (secondary) {
+    setProp('--secondary', hslString(secondary.h, secondary.s, secondary.l));
+    const secFg = hexToHsl(get('secondaryBtnTextColor'));
+    if (secFg) setProp('--secondary-foreground', hslString(secFg.h, secFg.s, secFg.l));
+  }
+  setProp('--brand-secondary', get('secondaryColor'));
+
+  // ── BODY / BACKGROUND ──────────────────────────────────────────────────────
+  const bodyBg = hexToHsl(get('bodyBgColor'));
+  if (bodyBg) {
+    setProp('--background', hslString(bodyBg.h, bodyBg.s, bodyBg.l));
+  }
+  setProp('--body-bg', get('bodyBgColor'));
+
+  // ── CARD ───────────────────────────────────────────────────────────────────
+  const cardBg = hexToHsl(get('cardBgColor'));
+  if (cardBg) {
+    setProp('--card', hslString(cardBg.h, cardBg.s, cardBg.l));
+    setProp('--popover', hslString(cardBg.h, cardBg.s, cardBg.l));
+  }
+  setProp('--card-bg', get('cardBgColor'));
+
+  // ── FOREGROUND / TEXT ──────────────────────────────────────────────────────
+  const bodyText = hexToHsl(get('bodyTextColor'));
+  if (bodyText) {
+    setProp('--foreground', hslString(bodyText.h, bodyText.s, bodyText.l));
+    setProp('--popover-foreground', hslString(bodyText.h, bodyText.s, bodyText.l));
+  }
+  const headingText = hexToHsl(get('headingTextColor'));
+  if (headingText) {
+    setProp('--card-foreground', hslString(headingText.h, headingText.s, headingText.l));
+  }
+  setProp('--body-text', get('bodyTextColor'));
+  setProp('--heading-color', get('headingTextColor'));
+  setProp('--link-color', get('linkColor'));
+
+  // ── TOPBAR ─────────────────────────────────────────────────────────────────
+  setProp('--topbar-bg', get('topbarBgColor'));
+  setProp('--topbar-text', get('topbarTextColor'));
+
+  // ── BORDER / INPUT ─────────────────────────────────────────────────────────
+  const border = hexToHsl(get('borderColor'));
+  if (border) {
+    setProp('--border', hslString(border.h, border.s, border.l));
+    setProp('--input', hslString(border.h, border.s, border.l));
+  }
+  setProp('--border-color', get('borderColor'));
+
+  // ── BUTTONS (raw hex for inline-style consumers) ───────────────────────────
+  setProp('--btn-primary-bg', get('primaryBtnColor'));
+  setProp('--btn-primary-text', get('primaryBtnTextColor'));
+  setProp('--btn-secondary-bg', get('secondaryBtnColor'));
+  setProp('--btn-secondary-text', get('secondaryBtnTextColor'));
+
+  // ── TABLES ─────────────────────────────────────────────────────────────────
+  setProp('--table-header-bg', get('tableHeaderBgColor'));
+  setProp('--table-header-text', get('tableHeaderTextColor'));
+
+  // ── STATUS ─────────────────────────────────────────────────────────────────
+  setProp('--badge-color', get('badgeColor'));
+  setProp('--brand-success', get('successColor'));
+  setProp('--brand-warning', get('warningColor'));
+  const danger = hexToHsl(get('dangerColor'));
+  if (danger) {
+    setProp('--destructive', hslString(danger.h, danger.s, danger.l));
+  }
+  setProp('--brand-danger', get('dangerColor'));
 }
 
 /** Remove all brand color overrides, reverting to stylesheet defaults */
 export function clearBrandColors() {
   const root = document.documentElement;
-  const allProps = new Set();
-  Object.values(COLOR_MAP).forEach(mapper => {
-    Object.keys(mapper('#000000')).forEach(p => allProps.add(p));
-  });
-  allProps.forEach(p => root.style.removeProperty(p));
+  [
+    '--primary', '--ring', '--chart-1', '--brand-primary',
+    '--secondary', '--secondary-foreground', '--brand-secondary',
+    '--sidebar-background', '--sidebar-foreground',
+    '--sidebar-primary', '--sidebar-primary-foreground',
+    '--sidebar-accent', '--sidebar-accent-foreground',
+    '--sidebar-border', '--sidebar-ring',
+    '--topbar-bg', '--topbar-text',
+    '--background', '--card', '--card-foreground', '--popover', '--popover-foreground',
+    '--body-bg', '--card-bg',
+    '--foreground', '--body-text', '--heading-color', '--link-color',
+    '--border', '--input', '--border-color',
+    '--btn-primary-bg', '--btn-primary-text', '--btn-secondary-bg', '--btn-secondary-text',
+    '--table-header-bg', '--table-header-text',
+    '--badge-color', '--brand-success', '--brand-warning', '--destructive', '--brand-danger',
+  ].forEach(p => root.style.removeProperty(p));
 }
 
 /** Load a school record from DB and apply its brand colors */
@@ -127,6 +207,6 @@ export async function loadAndApplySchoolBrandColors(schoolId) {
     const school = (results || [])[0];
     if (school) applyBrandColors(school);
   } catch (e) {
-    console.warn('Brand colors: failed to load', e?.message);
+    console.warn('[BrandColors] Failed to load:', e?.message);
   }
 }

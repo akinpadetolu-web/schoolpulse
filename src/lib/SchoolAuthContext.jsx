@@ -77,8 +77,14 @@ export function SchoolAuthProvider({ children }) {
     clearBrandColors();
   };
 
+  // Exposed so settings pages can trigger a fresh color reload after saving
+  const reloadBrandColors = (schoolId) => {
+    const id = schoolId || schoolUser?.schoolId;
+    if (id) loadAndApplySchoolBrandColors(id);
+  };
+
   return (
-    <SchoolAuthContext.Provider value={{ schoolUser, login, logout, isLoadingSchoolAuth, loadAndApplySchoolBrandColors }}>
+    <SchoolAuthContext.Provider value={{ schoolUser, login, logout, isLoadingSchoolAuth, loadAndApplySchoolBrandColors, reloadBrandColors }}>
       {children}
     </SchoolAuthContext.Provider>
   );
