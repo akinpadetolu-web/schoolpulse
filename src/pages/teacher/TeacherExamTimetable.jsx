@@ -106,7 +106,56 @@ export default function TeacherExamTimetable() {
               <p>You have no invigilation duties assigned.</p>
             </div>
           ) : (
-            <div className="space-y-2">{myInvigilation.map((e, i) => <EntryCard key={i} entry={e} />)}</div>
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                📋 You have <strong>{myInvigilation.length}</strong> invigilation {myInvigilation.length === 1 ? 'duty' : 'duties'} assigned. Please confirm each one below.
+              </div>
+              {myInvigilation.map((entry, i) => {
+                // Find my assignment within invigilators array
+                const myAssignment = (entry.invigilators || []).find(inv => inv.teacherId === user?.id) ||
+                  (entry.invigilatorId === user?.id ? { role: 'primary', confirmed: false, checkinTime: '', instructions: '' } : null);
+                const daysLeft = entry.date ? differenceInDays(new Date(entry.date), today) : null;
+                return (
+                  <Card key={i} className={`border shadow-sm ${myAssignment?.confirmed ? 'border-emerald-200 bg-emerald-50/30' : ''}`}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                        <div className="shrink-0 text-center bg-primary/10 rounded-lg p-2 w-16">
+                          <div className="text-xs text-muted-foreground">{entry.dayOfWeek?.slice(0, 3)}</div>
+                          <div className="font-bold text-primary text-sm">{entry.date ? format(new Date(entry.date), 'MMM d') : '—'}</div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">{entry.subjectName}</span>
+                            {myAssignment?.role && <Badge variant="secondary" className="text-xs capitalize">{myAssignment.role.replace('_', ' ')} Invigilator</Badge>}
+                            {entry.classNames?.length > 0 && <Badge variant="outline" className="text-xs">{entry.classNames.join(', ')}</Badge>}
+                            {daysLeft !== null && daysLeft >= 0 && (
+                              <span className={`text-xs font-semibold ${daysLeft === 0 ? 'text-red-600' : daysLeft <= 3 ? 'text-orange-500' : 'text-emerald-600'}`}>
+                                {daysLeft === 0 ? 'TODAY' : `${daysLeft}d away`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
+                            {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
+                            {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
+                            {myAssignment?.checkinTime && <span className="flex items-center gap-1 text-amber-600">⏰ Check-in: {myAssignment.checkinTime}</span>}
+                          </div>
+                          {myAssignment?.instructions && (
+                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                              <strong>Admin instructions:</strong> {myAssignment.instructions}
+                            </div>
+                          )}
+                        </div>
+                        <div className="shrink-0">
+                          {myAssignment?.confirmed
+                            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Confirmed</Badge>
+                            : <Badge className="bg-amber-100 text-amber-700 border-amber-300">⏳ Pending</Badge>}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </TabsContent>
 

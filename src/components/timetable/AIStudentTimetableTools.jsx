@@ -6,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Wand2, Loader2, BookOpen, Lightbulb, CheckSquare, Square,
-  Calendar, RefreshCw, Star, StarOff, MessageSquare, ChevronDown, ChevronUp, Save, Clock, AlertCircle
+  Calendar, RefreshCw, Star, StarOff, MessageSquare, ChevronDown, ChevronUp, Save, Clock, AlertCircle, History, Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import StudyPlanCustomizer from './StudyPlanCustomizer';
 
 // ─── Availability check helper ────────────────────────────────────
 // Returns { allowed: bool, message: string, lessonPlansBySubject: {} }
@@ -95,13 +96,22 @@ function buildGradesContext(grades) {
 }
 
 // ─── AI Study Plan ────────────────────────────────────────────────
-export function AIStudyPlanGenerator({ entries, grades, lessonPlans, studentId, schoolId, studentName }) {
-  const [studyHours, setStudyHours] = useState('afternoon');
+const DEFAULT_PREFS = {
+  specialInstructions: '', preferredTime: '', sessionDuration: '', blockedDays: [],
+  intensity: '', subjectPrefs: {}, activities: '', concerns: '', focusTopics: '', medicalConsiderations: ''
+};
+
+export function AIStudyPlanGenerator({ entries, grades, lessonPlans, studentId, schoolId, studentName, parentPrompts = [] }) {
   const [hoursPerDay, setHoursPerDay] = useState('3');
   const [savedPlan, setSavedPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [savingProgress, setSavingProgress] = useState(false);
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
+  const [refineText, setRefineText] = useState('');
+  const [refining, setRefining] = useState(false);
+  const [promptHistory, setPromptHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const availability = checkAvailability(entries, lessonPlans);
   const sessionLabel = `Exam Session — ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
@@ -117,8 +127,33 @@ export function AIStudyPlanGenerator({ entries, grades, lessonPlans, studentId, 
     if (plans?.length > 0) {
       const sorted = [...plans].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
       setSavedPlan(sorted[0]);
+      setPromptHistory(sorted[0].promptHistory || []);
     }
     setLoading(false);
+  }
+
+  function buildPrefsContext() {
+    const lines = [];
+    if (prefs.preferredTime) lines.push(`Preferred study time: ${prefs.preferredTime}`);
+    if (prefs.sessionDuration) lines.push(`Session duration preference: ${prefs.sessionDuration}`);
+    if (prefs.intensity) lines.push(`Study intensity: ${prefs.intensity}`);
+    if (prefs.blockedDays?.length) lines.push(`Days NOT available: ${prefs.blockedDays.join(', ')}`);
+    if (prefs.activities) lines.push(`Activities limiting study time: ${prefs.activities}`);
+    if (prefs.concerns) lines.push(`Biggest exam concerns: ${prefs.concerns}`);
+    if (prefs.focusTopics) lines.push(`Topics to focus on most: ${prefs.focusTopics}`);
+    if (prefs.medicalConsiderations) lines.push(`Medical/personal considerations: ${prefs.medicalConsiderations}`);
+    if (prefs.specialInstructions) lines.push(`Special instructions: ${prefs.specialInstructions}`);
+    // Subject preferences
+    const subjectPrefsText = Object.entries(prefs.subjectPrefs || {}).map(([subjId, sp]) => {
+      const entry = entries.find(e => e.subjectId === subjId);
+      const name = entry?.subjectName || subjId;
+      const flags = [sp.extraFocus && 'needs extra focus', sp.difficult && 'student finds difficult', sp.confident && 'student is confident'].filter(Boolean).join(', ');
+      return `${name}: ${flags || 'no preference'}${sp.note ? ` — note: ${sp.note}` : ''}`;
+    }).join('\n');
+    if (subjectPrefsText) lines.push(`Subject-specific preferences:\n${subjectPrefsText}`);
+    // Parent prompts
+    if (parentPrompts?.length) lines.push(`Parent additional requests:\n${parentPrompts.map(p => `- ${p.text}`).join('\n')}`);
+    return lines.join('\n');
   }
 
   async function generate() {
@@ -132,18 +167,18 @@ export function AIStudyPlanGenerator({ entries, grades, lessonPlans, studentId, 
     const lpContext = buildLessonPlanContext(lessonPlansBySubject, coveredEntries);
     const gradeContext = buildGradesContext(grades);
     const examList = coveredEntries.map(e => `${e.subjectName} (${e.dayOfWeek}${e.startTime ? ' at ' + e.startTime : ''})`).join(', ');
-
-    // Subjects missing lesson plans
     const missingSubjects = entries.filter(e => !lessonPlansBySubject[e.subjectId]).map(e => e.subjectName);
+    const prefsContext = buildPrefsContext();
 
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a personalised student study planner. Generate a day-by-day study plan using ONLY the lesson plan content provided below. Do NOT introduce any topic, concept or resource that does not appear in the lesson plans.
+    const prompt = `You are a personalised student study planner. Generate a day-by-day study plan using ONLY the lesson plan content provided below. Do NOT introduce any topic, concept or resource that does not appear in the lesson plans.
 
 Student: ${studentName || 'Student'}
 School: ${schoolId}
-Preferred study time: ${studyHours}
 Available study hours per day: ${hoursPerDay}
 Today: ${new Date().toLocaleDateString()}
+
+STUDENT PREFERENCES AND CONSTRAINTS:
+${prefsContext || 'No special preferences provided.'}
 
 EXAM TIMETABLE (subjects with lesson plans only):
 ${examList}
@@ -157,10 +192,15 @@ ${gradeContext}
 ${missingSubjects.length ? `NOTE: The following subjects have NO lesson plans and must be EXCLUDED: ${missingSubjects.join(', ')}` : ''}
 
 Generate a 14-day study plan. For each day:
+- Respect ALL student preferences and constraints above
 - Reference specific topics from the teacher's lesson plans by name
-- Prioritise topics where the student has low grades
+- Prioritise topics where the student has low grades or marked as difficult
 - Add a revision day before each exam
-- Each task must cite which lesson plan/topic it comes from`,
+- Skip blocked days entirely
+- Each task must cite which lesson plan/topic it comes from`;
+
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -175,9 +215,9 @@ Generate a 14-day study plan. For each day:
                 day: { type: 'number' },
                 date: { type: 'string' },
                 subject: { type: 'string' },
-                topic: { type: 'string', description: 'Specific topic from teacher lesson plan' },
+                topic: { type: 'string' },
                 task: { type: 'string' },
-                lessonPlanRef: { type: 'string', description: 'e.g. "Based on lesson plan uploaded by Mr. Smith"' },
+                lessonPlanRef: { type: 'string' },
                 hours: { type: 'number' },
                 priority: { type: 'string' },
               }
@@ -199,6 +239,9 @@ Generate a 14-day study plan. For each day:
       }
     });
 
+    const newHistoryEntry = { text: prefs.specialInstructions || '(initial generation)', timestamp: new Date().toISOString(), version: (savedPlan?.version || 0) + 1, type: 'generate' };
+    const newHistory = [...promptHistory, newHistoryEntry];
+
     if (savedPlan?.id) {
       await base44.entities.AIStudyPlan.update(savedPlan.id, { status: 'archived' });
     }
@@ -210,12 +253,66 @@ Generate a 14-day study plan. For each day:
       status: 'active',
       version: (savedPlan?.version || 0) + 1,
       timetableEntryCount: entries.length,
-      studyHours, hoursPerDay,
+      hoursPerDay,
+      promptHistory: newHistory,
+      studyPrefs: prefs,
     });
 
     setSavedPlan(newPlan);
+    setPromptHistory(newHistory);
     setGenerating(false);
     toast.success('Study plan generated and saved!');
+  }
+
+  async function refine() {
+    if (!savedPlan || !refineText.trim()) return;
+    setRefining(true);
+    const currentPlan = JSON.stringify(savedPlan.planContent?.plan || []);
+
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are updating an existing student study plan based on a new request.
+
+Current plan (JSON):
+${currentPlan}
+
+Student request: "${refineText}"
+
+Apply ONLY the requested changes. Keep unchanged days identical. Return the full updated plan in the same format.`,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          readinessSummary: { type: 'string' },
+          subjectsCovered: { type: 'array', items: { type: 'string' } },
+          subjectsExcluded: { type: 'array', items: { type: 'string' } },
+          changesSummary: { type: 'string', description: 'Brief summary of what changed, e.g. "Moved 3 Mathematics sessions to mornings"' },
+          plan: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                day: { type: 'number' }, date: { type: 'string' }, subject: { type: 'string' },
+                topic: { type: 'string' }, task: { type: 'string' }, lessonPlanRef: { type: 'string' },
+                hours: { type: 'number' }, priority: { type: 'string' },
+              }
+            }
+          },
+          dataSources: { type: 'array', items: { type: 'object' } },
+        }
+      }
+    });
+
+    const newHistoryEntry = { text: refineText, timestamp: new Date().toISOString(), version: savedPlan.version, type: 'refine', changesSummary: res?.changesSummary };
+    const newHistory = [...promptHistory, newHistoryEntry];
+
+    await base44.entities.AIStudyPlan.update(savedPlan.id, {
+      planContent: res,
+      promptHistory: newHistory,
+    });
+    setSavedPlan(prev => ({ ...prev, planContent: res }));
+    setPromptHistory(newHistory);
+    toast.success(res?.changesSummary || 'Study plan updated!');
+    setRefineText('');
+    setRefining(false);
   }
 
   async function toggleComplete(idx) {
@@ -252,15 +349,6 @@ Generate a 14-day study plan. For each day:
           <p className="text-sm text-muted-foreground">Generated from your teachers' lesson plans</p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
-          <Select value={studyHours} onValueChange={setStudyHours}>
-            <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="morning">Morning</SelectItem>
-              <SelectItem value="afternoon">Afternoon</SelectItem>
-              <SelectItem value="evening">Evening</SelectItem>
-              <SelectItem value="any">Any time</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={hoursPerDay} onValueChange={setHoursPerDay}>
             <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -273,6 +361,17 @@ Generate a 14-day study plan. For each day:
           </Button>
         </div>
       </div>
+
+      {/* Customizer panel */}
+      <StudyPlanCustomizer entries={entries} prefs={prefs} onChange={setPrefs} />
+
+      {/* Parent prompts notice */}
+      {parentPrompts?.length > 0 && (
+        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+          <MessageSquare className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>Your parent has added {parentPrompts.length} preference{parentPrompts.length !== 1 ? 's' : ''} to your study plan: <em>{parentPrompts.map(p => p.text).join('; ')}</em></span>
+        </div>
+      )}
 
       {/* Missing lesson plans warning */}
       {missingSubjects.length > 0 && (
@@ -355,6 +454,54 @@ Generate a 14-day study plan. For each day:
                 ))}
               </ul>
               {grades?.length > 0 && <p className="text-xs text-slate-500 mt-2">Priority levels based on grade data from this school.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Refine My Study Plan */}
+      {savedPlan && (
+        <div className="border rounded-xl p-4 space-y-3">
+          <h4 className="font-semibold text-sm flex items-center gap-2"><RefreshCw className="w-4 h-4 text-primary" />Refine My Study Plan</h4>
+          <p className="text-xs text-muted-foreground">Type a follow-up request to update the plan without regenerating from scratch.</p>
+          <div className="flex gap-2">
+            <textarea
+              className="flex-1 border rounded-lg p-2 text-xs resize-none min-h-[56px] focus:outline-none focus:ring-1 focus:ring-ring bg-background"
+              placeholder={`e.g. Move all Mathematics sessions to mornings\nAdd more revision time before the Physics exam\nI finished all Chemistry topics, remove them\nAdd a full revision day before each exam`}
+              value={refineText}
+              onChange={e => setRefineText(e.target.value)}
+            />
+            <Button size="sm" className="self-end gap-1.5" onClick={refine} disabled={refining || !refineText.trim()}>
+              {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+              {refining ? 'Updating…' : 'Update Plan'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt History */}
+      {promptHistory.length > 0 && (
+        <div className="border rounded-xl overflow-hidden">
+          <button className="w-full flex items-center gap-2 p-3 bg-muted/30 hover:bg-muted/50 text-left transition-colors"
+            onClick={() => setShowHistory(h => !h)}>
+            <History className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-medium flex-1">Prompt History ({promptHistory.length})</span>
+            {showHistory ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+          {showHistory && (
+            <div className="p-3 space-y-2">
+              {[...promptHistory].reverse().map((h, i) => (
+                <div key={i} className="p-2.5 border rounded-lg bg-card text-xs space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={h.type === 'refine' ? 'secondary' : 'default'} className="text-xs">{h.type === 'refine' ? 'Refinement' : 'Generation'}</Badge>
+                    <span className="text-muted-foreground">{h.timestamp ? format(new Date(h.timestamp), 'MMM d, yyyy h:mm a') : ''}</span>
+                    {h.version && <span className="text-muted-foreground">v{h.version}</span>}
+                  </div>
+                  <p className="text-foreground">{h.text}</p>
+                  {h.changesSummary && <p className="text-primary italic">AI: {h.changesSummary}</p>}
+                  <button className="text-primary hover:underline text-xs" onClick={() => setRefineText(h.text)}>Use This Prompt Again</button>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Loader2, Plus, Trash2, Eye, EyeOff, BookOpen, AlertTriangle, 
-  Calendar, Clock, MapPin, User, ToggleLeft, ToggleRight, BookOpenCheck
+  Calendar, Clock, MapPin, User, ToggleLeft, ToggleRight, BookOpenCheck, Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import InvigilatorAssignmentPanel from '@/components/timetable/InvigilatorAssignmentPanel';
+import InvigilatorReport from '@/components/timetable/InvigilatorReport';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -34,6 +36,8 @@ export default function AdminExamTimetable() {
   const [filterClass, setFilterClass] = useState('all');
   const [filterSubject, setFilterSubject] = useState('all');
   const [search, setSearch] = useState('');
+  const [expandedInvEntry, setExpandedInvEntry] = useState(null);
+  const [savingInv, setSavingInv] = useState(false);
 
   const [sessionForm, setSessionForm] = useState({
     sessionName: '', academicYear: '', term: '', startDate: '', endDate: ''
@@ -139,6 +143,36 @@ export default function AdminExamTimetable() {
     toast.success('Exam timetable deleted');
   }
 
+  async function saveInvigilators(entryId, invData) {
+    setSavingInv(true);
+    const updatedEntries = (examTimetable.entries || []).map(e =>
+      e.id === entryId ? { ...e, ...invData } : e
+    );
+    await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
+    setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
+    setSavingInv(false);
+    setExpandedInvEntry(null);
+    toast.success('Invigilator assignment saved');
+  }
+
+  async function handleAutoAssign(assignments, summary) {
+    setSavingInv(true);
+    const updatedEntries = (examTimetable.entries || []).map(entry => {
+      const asgn = assignments.find(a => a.entryId === entry.id);
+      if (!asgn) return entry;
+      return {
+        ...entry,
+        invigilatorId: asgn.teacherId,
+        invigilatorName: asgn.teacherName,
+        invigilators: [{ teacherId: asgn.teacherId, teacherName: asgn.teacherName, role: 'primary', confirmed: false, checkinTime: '', instructions: '' }],
+      };
+    });
+    await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
+    setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
+    setSavingInv(false);
+    toast.success(summary);
+  }
+
   // Lesson plan coverage
   const subjectIds = [...new Set((examTimetable?.entries || []).map(e => e.subjectId))];
   const lpBySubject = {};
@@ -239,6 +273,7 @@ export default function AdminExamTimetable() {
           <Tabs defaultValue="schedule">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="schedule">Exam Schedule</TabsTrigger>
+              <TabsTrigger value="invigilators">Invigilator Report</TabsTrigger>
               <TabsTrigger value="ai-controls">AI Controls</TabsTrigger>
               <TabsTrigger value="lesson-coverage">Lesson Plan Coverage</TabsTrigger>
             </TabsList>
@@ -271,37 +306,73 @@ export default function AdminExamTimetable() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredEntries.map((entry, i) => (
-                    <Card key={entry.id || i} className="border shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="shrink-0 text-center bg-primary/10 rounded-lg p-2 w-16">
-                            <div className="text-xs text-muted-foreground">{entry.dayOfWeek?.slice(0, 3)}</div>
-                            <div className="font-bold text-primary">{entry.date ? format(new Date(entry.date), 'MMM d') : '—'}</div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold">{entry.subjectName}</span>
-                              <Badge variant="outline" className="text-xs">{entry.examType}</Badge>
-                              {entry.maxMarks && <Badge variant="secondary" className="text-xs">{entry.maxMarks} marks</Badge>}
+                  {filteredEntries.map((entry, i) => {
+                    const hasInv = entry.invigilators?.length > 0 || !!entry.invigilatorId;
+                    const isExpanded = expandedInvEntry === entry.id;
+                    return (
+                      <Card key={entry.id || i} className="border shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div className="shrink-0 text-center bg-primary/10 rounded-lg p-2 w-16">
+                              <div className="text-xs text-muted-foreground">{entry.dayOfWeek?.slice(0, 3)}</div>
+                              <div className="font-bold text-primary">{entry.date ? format(new Date(entry.date), 'MMM d') : '—'}</div>
                             </div>
-                            <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
-                              {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
-                              {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
-                              {entry.invigilatorName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{entry.invigilatorName}</span>}
-                              {entry.classNames?.length > 0 && <span>{entry.classNames.join(', ')}</span>}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold">{entry.subjectName}</span>
+                                <Badge variant="outline" className="text-xs">{entry.examType}</Badge>
+                                {entry.maxMarks && <Badge variant="secondary" className="text-xs">{entry.maxMarks} marks</Badge>}
+                                {!hasInv && <Badge className="bg-red-100 text-red-700 text-xs border-red-200">No Invigilator</Badge>}
+                              </div>
+                              <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
+                                {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
+                                {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
+                                {entry.invigilatorName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{entry.invigilatorName}</span>}
+                                {entry.classNames?.length > 0 && <span>{entry.classNames.join(', ')}</span>}
+                              </div>
+                              {entry.notes && <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>}
                             </div>
-                            {entry.notes && <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>}
+                            <div className="flex gap-2 shrink-0">
+                              <button
+                                onClick={() => setExpandedInvEntry(isExpanded ? null : entry.id)}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                              >
+                                <Users className="w-3.5 h-3.5" />
+                                {isExpanded ? 'Close' : 'Invigilators'}
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                              <button onClick={() => deleteEntry(entry.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                          <button onClick={() => deleteEntry(entry.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {isExpanded && (
+                            <div className="mt-3 pt-3 border-t">
+                              <InvigilatorAssignmentPanel
+                                entry={entry}
+                                allEntries={examTimetable.entries || []}
+                                teachers={teachers}
+                                subjects={subjects}
+                                saving={savingInv}
+                                onSave={(invData) => saveInvigilators(entry.id, invData)}
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
+            </TabsContent>
+
+            {/* Invigilator Report tab */}
+            <TabsContent value="invigilators">
+              <InvigilatorReport
+                entries={examTimetable.entries || []}
+                teachers={teachers}
+                onAutoAssign={handleAutoAssign}
+              />
             </TabsContent>
 
             {/* AI Controls tab */}

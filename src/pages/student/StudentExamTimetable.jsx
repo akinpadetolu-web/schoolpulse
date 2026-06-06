@@ -5,7 +5,7 @@ import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, Lightbulb, Clock, MapPin, AlertCircle, BookOpen } from 'lucide-react';
+import { Loader2, Calendar, Lightbulb, Clock, MapPin, AlertCircle, BookOpen, User } from 'lucide-react';
 import { AIStudyPlanGenerator, AIExamPreparationTips } from '@/components/timetable/AIStudentTimetableTools';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
 import { format, differenceInDays } from 'date-fns';
@@ -25,6 +25,7 @@ export default function StudentExamTimetable() {
   const [grades, setGrades] = useState([]);
   const [lessonPlans, setLessonPlans] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [parentPrompts, setParentPrompts] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -34,6 +35,16 @@ export default function StudentExamTimetable() {
     ]).then(([g, lp]) => {
       setGrades(g || []);
       setLessonPlans(lp || []);
+      // Try to load parent prompts - search by linkedStudentIds
+      base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'parent' }).catch(() => []).then(parents => {
+        const myParents = (parents || []).filter(p => (p.linkedStudentIds || []).includes(user.id));
+        const allParentPrompts = [];
+        for (const parent of myParents) {
+          const stored = JSON.parse(localStorage.getItem(`parentPrompts_${parent.id}`) || '[]');
+          allParentPrompts.push(...stored);
+        }
+        setParentPrompts(allParentPrompts);
+      });
       setDataLoading(false);
     });
   }, [user?.id]);
@@ -135,9 +146,10 @@ export default function StudentExamTimetable() {
                             {isPast && <Badge variant="secondary" className="text-xs">Completed</Badge>}
                           </div>
                           <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
-                            {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
-                            {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
-                          </div>
+                             {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
+                             {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
+                             {entry.invigilatorName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{entry.invigilatorName}</span>}
+                           </div>
                           {entry.notes && <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>}
                         </div>
                       </div>
@@ -159,6 +171,7 @@ export default function StudentExamTimetable() {
               studentName={user?.fullName}
               studentId={user?.id}
               schoolId={user?.schoolId}
+              parentPrompts={parentPrompts}
             />
           </TabsContent>
         )}
