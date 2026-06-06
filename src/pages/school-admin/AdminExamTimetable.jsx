@@ -10,15 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Loader2, Plus, Trash2, Eye, EyeOff, BookOpen, AlertTriangle, 
-  Calendar, Clock, MapPin, User, ToggleLeft, ToggleRight, BookOpenCheck, Users, ChevronDown, ChevronUp
+  Loader2, Plus, Trash2, Eye, EyeOff, BookOpen, AlertTriangle,
+  Calendar, ToggleLeft, ToggleRight, BookOpenCheck, Brain, BarChart2, Wand2, ClipboardList
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import InvigilatorAssignmentPanel from '@/components/timetable/InvigilatorAssignmentPanel';
-import InvigilatorReport from '@/components/timetable/InvigilatorReport';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+import ExamScheduleTab from '@/components/exam-timetable/ExamScheduleTab';
+import AIExamPlannerTab from '@/components/exam-timetable/AIExamPlannerTab';
+import InvigilatorReport from '@/components/timetable/InvigilatorReport';
+import { AITimetableInsights, AIPerformancePrediction } from '@/components/timetable/AITimetableAssistant';
 
 export default function AdminExamTimetable() {
   const { schoolUser: user } = useSchoolAuth();
@@ -29,14 +30,11 @@ export default function AdminExamTimetable() {
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [lessonPlans, setLessonPlans] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEntryDialog, setShowEntryDialog] = useState(false);
-  const [filterClass, setFilterClass] = useState('all');
-  const [filterSubject, setFilterSubject] = useState('all');
-  const [search, setSearch] = useState('');
-  const [expandedInvEntry, setExpandedInvEntry] = useState(null);
   const [savingInv, setSavingInv] = useState(false);
 
   const [sessionForm, setSessionForm] = useState({
@@ -48,16 +46,30 @@ export default function AdminExamTimetable() {
     venue: '', invigilatorId: '', examType: 'written', maxMarks: 100, notes: ''
   });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!examTimetable?.id) return;
+    const unsub = base44.entities.ExamTimetable.subscribe((event) => {
+      if (event.id === examTimetable.id && event.type !== 'delete') {
+        setExamTimetable(event.data);
+      }
+    });
+    return unsub;
+  }, [examTimetable?.id]);
 
   async function loadData() {
     setLoading(true);
-    const [et, cls, subj, teach, lp] = await Promise.all([
+    const [et, cls, subj, teach, lp, grd] = await Promise.all([
       base44.entities.ExamTimetable.filter({ schoolId }).catch(() => []),
       base44.entities.SchoolClass.filter({ schoolId, isArchived: false }).catch(() => []),
       base44.entities.Subject.filter({ schoolId, isArchived: false }).catch(() => []),
       base44.entities.SchoolUser.filter({ schoolId, role: 'teacher', isArchived: false }).catch(() => []),
       base44.entities.LessonPlan.filter({ schoolId, isPublished: true }).catch(() => []),
+      base44.entities.Grade.filter({ schoolId }).catch(() => []),
     ]);
     const sorted = (et || []).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     setExamTimetable(sorted[0] || null);
@@ -65,6 +77,7 @@ export default function AdminExamTimetable() {
     setSubjects(subj || []);
     setTeachers(teach || []);
     setLessonPlans(lp || []);
+    setGrades(grd || []);
     setLoading(false);
   }
 
@@ -85,7 +98,7 @@ export default function AdminExamTimetable() {
   async function togglePublish() {
     if (!examTimetable) return;
     const newStatus = examTimetable.status === 'published' ? 'draft' : 'published';
-    const updated = await base44.entities.ExamTimetable.update(examTimetable.id, { status: newStatus });
+    await base44.entities.ExamTimetable.update(examTimetable.id, { status: newStatus });
     setExamTimetable(prev => ({ ...prev, status: newStatus }));
     toast.success(newStatus === 'published' ? 'Timetable published!' : 'Timetable moved to draft');
   }
@@ -111,7 +124,6 @@ export default function AdminExamTimetable() {
     const teacher = teachers.find(t => t.id === entryForm.invigilatorId);
     const classNames = classes.filter(c => (entryForm.classIds || []).includes(c.id)).map(c => c.className);
     const dayOfWeek = entryForm.date ? new Date(entryForm.date).toLocaleDateString('en-US', { weekday: 'long' }) : '';
-
     const newEntry = {
       id: Date.now().toString(),
       ...entryForm,
@@ -120,7 +132,6 @@ export default function AdminExamTimetable() {
       classNames,
       invigilatorName: teacher?.fullName || '',
     };
-
     const updatedEntries = [...(examTimetable.entries || []), newEntry];
     await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
     setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
@@ -134,6 +145,27 @@ export default function AdminExamTimetable() {
     await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
     setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
     toast.success('Entry removed');
+  }
+
+  async function updateEntry(entryId, changes) {
+    const now = new Date().toISOString();
+    const updatedEntries = (examTimetable.entries || []).map(e => {
+      if (e.id !== entryId) return e;
+      // Build change log
+      const logEntries = [];
+      for (const [key, val] of Object.entries(changes)) {
+        if (e[key] !== val && !['invigilatorId'].includes(key)) {
+          logEntries.push({ field: key, from: e[key] || '', to: val, by: user?.fullName || 'Admin', at: now, subject: e.subjectName });
+        }
+      }
+      return {
+        ...e,
+        ...changes,
+        changeLog: [...(e.changeLog || []), ...logEntries],
+      };
+    });
+    await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
+    setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
   }
 
   async function deleteSession() {
@@ -151,7 +183,6 @@ export default function AdminExamTimetable() {
     await base44.entities.ExamTimetable.update(examTimetable.id, { entries: updatedEntries });
     setExamTimetable(prev => ({ ...prev, entries: updatedEntries }));
     setSavingInv(false);
-    setExpandedInvEntry(null);
     toast.success('Invigilator assignment saved');
   }
 
@@ -173,6 +204,38 @@ export default function AdminExamTimetable() {
     toast.success(summary);
   }
 
+  // Handle AI Planner apply
+  async function handlePlannerApply(aiRows, manualAssignments) {
+    if (!examTimetable || !aiRows?.length) return;
+    const newEntries = aiRows.map((row, i) => {
+      const subj = subjects.find(s => s.name?.toLowerCase() === row.subject?.toLowerCase());
+      const cls = classes.find(c => c.className?.toLowerCase() === row.className?.toLowerCase());
+      const manual = manualAssignments?.[i];
+      const invTeacher = teachers.find(t => t.fullName?.toLowerCase() === row.invigilator?.toLowerCase());
+      return {
+        id: `ai_${Date.now()}_${i}`,
+        date: row.date || '',
+        dayOfWeek: row.day || '',
+        subjectId: subj?.id || '',
+        subjectName: row.subject || '',
+        classIds: cls ? [cls.id] : [],
+        classNames: cls ? [cls.className] : [row.className || ''],
+        startTime: row.startTime || '',
+        endTime: row.endTime || '',
+        venue: row.venue || '',
+        examType: 'written',
+        maxMarks: 100,
+        notes: '',
+        invigilatorId: manual?.teacherId || invTeacher?.id || '',
+        invigilatorName: manual?.teacherName || invTeacher?.fullName || row.invigilator || '',
+      };
+    });
+    const combined = [...(examTimetable.entries || []), ...newEntries];
+    await base44.entities.ExamTimetable.update(examTimetable.id, { entries: combined });
+    setExamTimetable(prev => ({ ...prev, entries: combined }));
+    toast.success(`${newEntries.length} exam entries added from AI Planner`);
+  }
+
   // Lesson plan coverage
   const subjectIds = [...new Set((examTimetable?.entries || []).map(e => e.subjectId))];
   const lpBySubject = {};
@@ -183,15 +246,7 @@ export default function AdminExamTimetable() {
   const subjectsWithPlans = subjectIds.filter(id => lpBySubject[id]?.length > 0);
   const subjectsMissingPlans = subjectIds.filter(id => !lpBySubject[id]?.length);
 
-  // Filtered entries
-  const filteredEntries = (examTimetable?.entries || [])
-    .filter(e => {
-      if (filterClass !== 'all' && !(e.classIds || []).includes(filterClass)) return false;
-      if (filterSubject !== 'all' && e.subjectId !== filterSubject) return false;
-      if (search && !e.subjectName?.toLowerCase().includes(search.toLowerCase()) && !e.venue?.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    })
-    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const entries = examTimetable?.entries || [];
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -261,6 +316,7 @@ export default function AdminExamTimetable() {
                     {examTimetable.academicYear && `${examTimetable.academicYear} · `}
                     {examTimetable.term && `${examTimetable.term} · `}
                     {examTimetable.startDate && examTimetable.endDate && `${format(new Date(examTimetable.startDate), 'MMM d')} – ${format(new Date(examTimetable.endDate), 'MMM d, yyyy')}`}
+                    {entries.length > 0 && ` · ${entries.length} exam${entries.length !== 1 ? 's' : ''}`}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={deleteSession}>
@@ -272,138 +328,70 @@ export default function AdminExamTimetable() {
 
           <Tabs defaultValue="schedule">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
-              <TabsTrigger value="schedule">Exam Schedule</TabsTrigger>
-              <TabsTrigger value="invigilators">Invigilator Report</TabsTrigger>
-              <TabsTrigger value="ai-controls">AI Controls</TabsTrigger>
-              <TabsTrigger value="lesson-coverage">Lesson Plan Coverage</TabsTrigger>
+              <TabsTrigger value="schedule"><Calendar className="w-3.5 h-3.5 mr-1" />Exam Schedule</TabsTrigger>
+              <TabsTrigger value="ai-planner"><Wand2 className="w-3.5 h-3.5 mr-1" />AI Exam Planner</TabsTrigger>
+              <TabsTrigger value="ai-insights"><Brain className="w-3.5 h-3.5 mr-1" />AI Insights</TabsTrigger>
+              <TabsTrigger value="predictions"><BarChart2 className="w-3.5 h-3.5 mr-1" />Predictions</TabsTrigger>
+              <TabsTrigger value="invigilators"><ClipboardList className="w-3.5 h-3.5 mr-1" />Invigilator Report</TabsTrigger>
+              <TabsTrigger value="lesson-coverage"><BookOpen className="w-3.5 h-3.5 mr-1" />Lesson Plan Coverage</TabsTrigger>
+              <TabsTrigger value="ai-controls"><ToggleRight className="w-3.5 h-3.5 mr-1" />AI Controls</TabsTrigger>
             </TabsList>
 
-            {/* Schedule tab */}
-            <TabsContent value="schedule" className="space-y-4">
-              {/* Filters */}
-              <div className="flex gap-3 flex-wrap">
-                <Input placeholder="Search subject or venue…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs h-8 text-sm" />
-                <Select value={filterClass} onValueChange={setFilterClass}>
-                  <SelectTrigger className="w-36 h-8 text-sm"><SelectValue placeholder="All Classes" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={filterSubject} onValueChange={setFilterSubject}>
-                  <SelectTrigger className="w-36 h-8 text-sm"><SelectValue placeholder="All Subjects" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Subjects</SelectItem>
-                    {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {filteredEntries.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>No exam entries yet. Click "Add Exam" to get started.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredEntries.map((entry, i) => {
-                    const hasInv = entry.invigilators?.length > 0 || !!entry.invigilatorId;
-                    const isExpanded = expandedInvEntry === entry.id;
-                    return (
-                      <Card key={entry.id || i} className="border shadow-sm">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <div className="shrink-0 text-center bg-primary/10 rounded-lg p-2 w-16">
-                              <div className="text-xs text-muted-foreground">{entry.dayOfWeek?.slice(0, 3)}</div>
-                              <div className="font-bold text-primary">{entry.date ? format(new Date(entry.date), 'MMM d') : '—'}</div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-semibold">{entry.subjectName}</span>
-                                <Badge variant="outline" className="text-xs">{entry.examType}</Badge>
-                                {entry.maxMarks && <Badge variant="secondary" className="text-xs">{entry.maxMarks} marks</Badge>}
-                                {!hasInv && <Badge className="bg-red-100 text-red-700 text-xs border-red-200">No Invigilator</Badge>}
-                              </div>
-                              <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
-                                {entry.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{entry.startTime}–{entry.endTime}</span>}
-                                {entry.venue && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{entry.venue}</span>}
-                                {entry.invigilatorName && <span className="flex items-center gap-1"><User className="w-3 h-3" />{entry.invigilatorName}</span>}
-                                {entry.classNames?.length > 0 && <span>{entry.classNames.join(', ')}</span>}
-                              </div>
-                              {entry.notes && <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>}
-                            </div>
-                            <div className="flex gap-2 shrink-0">
-                              <button
-                                onClick={() => setExpandedInvEntry(isExpanded ? null : entry.id)}
-                                className="flex items-center gap-1 text-xs text-primary hover:underline"
-                              >
-                                <Users className="w-3.5 h-3.5" />
-                                {isExpanded ? 'Close' : 'Invigilators'}
-                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                              </button>
-                              <button onClick={() => deleteEntry(entry.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                          {isExpanded && (
-                            <div className="mt-3 pt-3 border-t">
-                              <InvigilatorAssignmentPanel
-                                entry={entry}
-                                allEntries={examTimetable.entries || []}
-                                teachers={teachers}
-                                subjects={subjects}
-                                saving={savingInv}
-                                onSave={(invData) => saveInvigilators(entry.id, invData)}
-                              />
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+            {/* Tab 1: Exam Schedule */}
+            <TabsContent value="schedule">
+              <ExamScheduleTab
+                entries={entries}
+                classes={classes}
+                subjects={subjects}
+                teachers={teachers}
+                onDeleteEntry={deleteEntry}
+                onUpdateEntry={updateEntry}
+                savingInv={savingInv}
+                onSaveInvigilators={saveInvigilators}
+              />
             </TabsContent>
 
-            {/* Invigilator Report tab */}
+            {/* Tab 2: AI Exam Planner */}
+            <TabsContent value="ai-planner">
+              <AIExamPlannerTab
+                classes={classes}
+                subjects={subjects}
+                teachers={teachers}
+                examTimetable={examTimetable}
+                onApply={handlePlannerApply}
+              />
+            </TabsContent>
+
+            {/* Tab 3: AI Insights */}
+            <TabsContent value="ai-insights">
+              <AITimetableInsights
+                entries={entries}
+                subjects={subjects}
+                teachers={teachers}
+                classes={classes}
+              />
+            </TabsContent>
+
+            {/* Tab 4: Predictions */}
+            <TabsContent value="predictions">
+              <AIPerformancePrediction
+                entries={entries}
+                subjects={subjects}
+                classes={classes}
+                grades={grades}
+              />
+            </TabsContent>
+
+            {/* Tab 5: Invigilator Report */}
             <TabsContent value="invigilators">
               <InvigilatorReport
-                entries={examTimetable.entries || []}
+                entries={entries}
                 teachers={teachers}
                 onAutoAssign={handleAutoAssign}
               />
             </TabsContent>
 
-            {/* AI Controls tab */}
-            <TabsContent value="ai-controls">
-              <Card>
-                <CardContent className="p-6 space-y-4">
-                  <h3 className="font-semibold">AI Feature Controls</h3>
-                  <p className="text-sm text-muted-foreground">Toggle which AI features students and parents can access when the exam timetable is live.</p>
-                  {[
-                    { field: 'enableAIStudyPlan', label: 'AI Study Plan for Students', desc: 'Students can generate a personalised study plan from lesson plans' },
-                    { field: 'enableAIExamTips', label: 'AI Exam Tips for Students', desc: 'Students can generate subject-specific exam tips from lesson plans' },
-                    { field: 'enableAIChatbot', label: 'AI Chatbot for Students', desc: 'Floating AI assistant on the exam timetable page' },
-                    { field: 'enableAIParentInsights', label: 'AI Insights for Parents', desc: 'Parents can view AI analysis of their child\'s exam readiness' },
-                  ].map(({ field, label, desc }) => (
-                    <div key={field} className="flex items-center justify-between p-3 border rounded-lg gap-3">
-                      <div>
-                        <p className="font-medium text-sm">{label}</p>
-                        <p className="text-xs text-muted-foreground">{desc}</p>
-                      </div>
-                      <button onClick={() => toggleAI(field)} className="shrink-0">
-                        {examTimetable[field]
-                          ? <ToggleRight className="w-8 h-8 text-primary" />
-                          : <ToggleLeft className="w-8 h-8 text-muted-foreground" />}
-                      </button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Lesson plan coverage */}
+            {/* Tab 6: Lesson Plan Coverage */}
             <TabsContent value="lesson-coverage">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -420,7 +408,6 @@ export default function AdminExamTimetable() {
                     </CardContent>
                   </Card>
                 </div>
-
                 {subjectsMissingPlans.length > 0 && (
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="flex items-center gap-2 text-amber-800 font-semibold text-sm mb-2">
@@ -435,7 +422,6 @@ export default function AdminExamTimetable() {
                     <p className="text-xs text-amber-600 mt-2">Ask the relevant teachers to upload and publish lesson plans for these subjects.</p>
                   </div>
                 )}
-
                 {subjectsWithPlans.length > 0 && (
                   <div className="space-y-2">
                     {subjectsWithPlans.map(id => {
@@ -455,6 +441,34 @@ export default function AdminExamTimetable() {
                   </div>
                 )}
               </div>
+            </TabsContent>
+
+            {/* Tab 7: AI Controls */}
+            <TabsContent value="ai-controls">
+              <Card>
+                <CardContent className="p-6 space-y-4">
+                  <h3 className="font-semibold">AI Feature Controls</h3>
+                  <p className="text-sm text-muted-foreground">Toggle which AI features students and parents can access when the exam timetable is live.</p>
+                  {[
+                    { field: 'enableAIStudyPlan', label: 'AI Study Plan for Students', desc: 'Students can generate a personalised study plan from lesson plans' },
+                    { field: 'enableAIExamTips', label: 'AI Exam Tips for Students', desc: 'Students can generate subject-specific exam tips from lesson plans' },
+                    { field: 'enableAIChatbot', label: 'AI Chatbot for Students', desc: 'Floating AI assistant on the exam timetable page' },
+                    { field: 'enableAIParentInsights', label: 'AI Insights for Parents', desc: "Parents can view AI analysis of their child's exam readiness" },
+                  ].map(({ field, label, desc }) => (
+                    <div key={field} className="flex items-center justify-between p-3 border rounded-lg gap-3">
+                      <div>
+                        <p className="font-medium text-sm">{label}</p>
+                        <p className="text-xs text-muted-foreground">{desc}</p>
+                      </div>
+                      <button onClick={() => toggleAI(field)} className="shrink-0">
+                        {examTimetable[field]
+                          ? <ToggleRight className="w-8 h-8 text-primary" />
+                          : <ToggleLeft className="w-8 h-8 text-muted-foreground" />}
+                      </button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>
