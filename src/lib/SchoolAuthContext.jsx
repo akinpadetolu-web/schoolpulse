@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { loadAndApplySchoolBrandColors, clearBrandColors } from '@/lib/brandColors';
 
 const SchoolAuthContext = createContext(null);
 
@@ -49,6 +50,7 @@ export function SchoolAuthProvider({ children }) {
         if (user && !user.isArchived) {
           const { passwordHash, ...safe } = user;
           setSchoolUser(safe);
+          loadAndApplySchoolBrandColors(user.schoolId);
         } else {
           clearStoredSession();
         }
@@ -66,15 +68,17 @@ export function SchoolAuthProvider({ children }) {
     const { passwordHash, ...safe } = user;
     setSchoolUser(safe);
     writeStoredSession(user);
+    loadAndApplySchoolBrandColors(user.schoolId);
   };
 
   const logout = () => {
     setSchoolUser(null);
     clearStoredSession();
+    clearBrandColors();
   };
 
   return (
-    <SchoolAuthContext.Provider value={{ schoolUser, login, logout, isLoadingSchoolAuth }}>
+    <SchoolAuthContext.Provider value={{ schoolUser, login, logout, isLoadingSchoolAuth, loadAndApplySchoolBrandColors }}>
       {children}
     </SchoolAuthContext.Provider>
   );

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Upload, Building2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { applyBrandColors } from '@/lib/brandColors';
 
 const TIMEZONES = [
   'Africa/Lagos', 'Africa/Nairobi', 'Africa/Johannesburg', 'Africa/Accra', 'Africa/Cairo',
@@ -46,6 +47,7 @@ export default function GeneralSchoolSettings({ school, onSaved }) {
     e.preventDefault();
     setSaving(true);
     await base44.entities.School.update(school.id, form);
+    applyBrandColors(form.primaryColor, form.secondaryColor);
     toast.success('General settings saved');
     setSaving(false);
     onSaved?.();
