@@ -1,0 +1,60 @@
+{
+  "name": "EmailTemplate",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "welcome",
+        "report_card",
+        "fee_reminder",
+        "exam_timetable",
+        "event_invitation",
+        "emergency",
+        "newsletter",
+        "parent_teacher_meeting",
+        "custom"
+      ],
+      "default": "custom"
+    },
+    "description": {
+      "type": "string"
+    },
+    "emailBody": {
+      "type": "string",
+      "description": "HTML content"
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Block definitions for editor"
+    },
+    "isDefault": {
+      "type": "boolean",
+      "default": false
+    },
+    "timesUsed": {
+      "type": "number",
+      "default": 0
+    },
+    "thumbnailUrl": {
+      "type": "string"
+    },
+    "settings": {
+      "type": "object",
+      "description": "Email styling settings"
+    }
+  },
+  "required": [
+    "schoolId",
+    "name"
+  ]
+}

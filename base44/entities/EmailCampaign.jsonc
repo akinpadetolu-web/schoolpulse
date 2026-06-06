@@ -1,0 +1,174 @@
+{
+  "name": "EmailCampaign",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Internal campaign name"
+    },
+    "campaignType": {
+      "type": "string",
+      "enum": [
+        "newsletter",
+        "announcement",
+        "event_invitation",
+        "report_card_notification",
+        "fee_reminder",
+        "exam_schedule",
+        "emergency_notice",
+        "general_communication",
+        "custom"
+      ],
+      "default": "general_communication"
+    },
+    "fromName": {
+      "type": "string"
+    },
+    "fromEmail": {
+      "type": "string"
+    },
+    "replyToEmail": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "previewText": {
+      "type": "string"
+    },
+    "recipientType": {
+      "type": "string",
+      "enum": [
+        "all_parents",
+        "all_teachers",
+        "all_students",
+        "all_staff",
+        "specific_class",
+        "specific_grade",
+        "specific_teachers",
+        "specific_students",
+        "specific_parents",
+        "custom_group"
+      ],
+      "default": "all_parents"
+    },
+    "recipientClassIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recipientUserIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recipientGrade": {
+      "type": "string"
+    },
+    "recipientCount": {
+      "type": "number"
+    },
+    "personalizationStyle": {
+      "type": "string",
+      "enum": [
+        "first_name",
+        "last_name",
+        "full_name",
+        "title_last_name",
+        "none"
+      ],
+      "default": "first_name"
+    },
+    "greetingText": {
+      "type": "string",
+      "default": "Dear"
+    },
+    "emailBody": {
+      "type": "string",
+      "description": "HTML content of the email"
+    },
+    "templateId": {
+      "type": "string"
+    },
+    "templateName": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "scheduled",
+        "sending",
+        "sent",
+        "failed",
+        "paused"
+      ],
+      "default": "draft"
+    },
+    "scheduledAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "totalSent": {
+      "type": "number",
+      "default": 0
+    },
+    "totalDelivered": {
+      "type": "number",
+      "default": 0
+    },
+    "totalBounced": {
+      "type": "number",
+      "default": 0
+    },
+    "totalOpened": {
+      "type": "number",
+      "default": 0
+    },
+    "totalClicked": {
+      "type": "number",
+      "default": 0
+    },
+    "totalUnsubscribed": {
+      "type": "number",
+      "default": 0
+    },
+    "totalSpamComplaints": {
+      "type": "number",
+      "default": 0
+    },
+    "openRate": {
+      "type": "number",
+      "default": 0
+    },
+    "clickRate": {
+      "type": "number",
+      "default": 0
+    },
+    "deliveryRate": {
+      "type": "number",
+      "default": 0
+    },
+    "recipientActivity": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Per-recipient delivery/open/click data"
+    }
+  },
+  "required": [
+    "schoolId",
+    "name",
+    "subject"
+  ]
+}
