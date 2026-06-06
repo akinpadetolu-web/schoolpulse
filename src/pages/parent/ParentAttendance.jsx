@@ -1,198 +1,187 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, XCircle, Clock, MinusCircle, BookOpen } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
+import { Loader2, LayoutGrid, Calendar, Grid3X3, BarChart3, Filter } from 'lucide-react';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, parseISO } from 'date-fns';
 
-const STATUS_CONFIG = {
-  present:  { label: 'Present',  color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2, iconColor: 'text-emerald-500' },
-  absent:   { label: 'Absent',   color: 'bg-red-100 text-red-700',         icon: XCircle,      iconColor: 'text-red-500' },
-  late:     { label: 'Late',     color: 'bg-amber-100 text-amber-700',     icon: Clock,        iconColor: 'text-amber-500' },
-  excused:  { label: 'Excused',  color: 'bg-blue-100 text-blue-700',       icon: MinusCircle,  iconColor: 'text-blue-500' },
-};
+import AttendanceKPICards from '@/components/parent/attendance/AttendanceKPICards';
+import SubjectBreakdownCard from '@/components/parent/attendance/SubjectBreakdownCard';
+import AttendanceCalendarView from '@/components/parent/attendance/AttendanceCalendarView';
+import WeeklyAttendanceGrid from '@/components/parent/attendance/WeeklyAttendanceGrid';
+import AttendanceCharts from '@/components/parent/attendance/AttendanceCharts';
 
-function getWeekLabel(weekStart) {
-  const now = startOfWeek(new Date(), { weekStartsOn: 1 });
-  if (weekStart.getTime() === now.getTime()) return 'This Week';
-  const prev = startOfWeek(new Date(now.getTime() - 7 * 86400000), { weekStartsOn: 1 });
-  if (weekStart.getTime() === prev.getTime()) return 'Last Week';
-  return `Week of ${format(weekStart, 'MMM d')}`;
+function applyFilters(records, filters) {
+  let r = [...records];
+  // Time period
+  const now = new Date();
+  if (filters.period === 'this_week') {
+    const s = startOfWeek(now, { weekStartsOn: 1 });
+    const e = endOfWeek(now, { weekStartsOn: 1 });
+    r = r.filter(a => { const d = new Date(a.date); return d >= s && d <= e; });
+  } else if (filters.period === 'this_month') {
+    const s = startOfMonth(now); const e = endOfMonth(now);
+    r = r.filter(a => { const d = new Date(a.date); return d >= s && d <= e; });
+  } else if (filters.period === 'last_month') {
+    const s = startOfMonth(subMonths(now, 1)); const e = endOfMonth(subMonths(now, 1));
+    r = r.filter(a => { const d = new Date(a.date); return d >= s && d <= e; });
+  } else if (filters.period === 'this_term') {
+    r = r.filter(a => { const d = new Date(a.date); return d >= subMonths(now, 3) && d <= now; });
+  } else if (filters.period === 'this_session') {
+    r = r.filter(a => { const d = new Date(a.date); return d >= startOfYear(now) && d <= now; });
+  } else if (filters.period === 'custom' && filters.from && filters.to) {
+    const s = new Date(filters.from); const e = new Date(filters.to);
+    r = r.filter(a => { const d = new Date(a.date); return d >= s && d <= e; });
+  }
+  // Subject
+  if (filters.subjectId && filters.subjectId !== 'all') {
+    r = r.filter(a => a.subjectId === filters.subjectId || a.subjectName === filters.subjectId);
+  }
+  // Status
+  if (filters.status && filters.status !== 'all') {
+    r = r.filter(a => a.status === filters.status);
+  }
+  return r;
 }
 
-function SubjectAttendanceSummary({ subjectName, records }) {
-  const total = records.length;
-  const presentCount = records.filter(a => a.status === 'present' || a.status === 'late').length;
-  const absentCount = records.filter(a => a.status === 'absent').length;
-  const lateCount = records.filter(a => a.status === 'late').length;
-  const pct = total > 0 ? Math.round((presentCount / total) * 100) : null;
+function ChildAttendance({ child, records, subjects }) {
+  const [filters, setFilters] = useState({ period: 'all', subjectId: 'all', status: 'all', from: '', to: '' });
 
-  const pctColor = pct === null ? 'text-muted-foreground' : pct >= 80 ? 'text-emerald-700' : pct >= 60 ? 'text-amber-700' : 'text-red-700';
-  const pctBg = pct === null ? '' : pct >= 80 ? 'bg-emerald-50' : pct >= 60 ? 'bg-amber-50' : 'bg-red-50';
+  const filteredRecords = useMemo(() => applyFilters(records, filters), [records, filters]);
 
-  // Group by week for history
-  const byWeek = {};
-  records.forEach(record => {
-    if (!record.date) return;
-    const date = parseISO(record.date);
-    const ws = startOfWeek(date, { weekStartsOn: 1 });
-    const key = ws.toISOString();
-    if (!byWeek[key]) byWeek[key] = { weekStart: ws, records: [] };
-    byWeek[key].records.push(record);
-  });
-  const weeks = Object.values(byWeek).sort((a, b) => b.weekStart - a.weekStart);
+  // Group by subject for breakdown
+  const bySubject = useMemo(() => {
+    const map = {};
+    records.forEach(r => {
+      const key = r.subjectName || r.subjectId || 'General';
+      if (!map[key]) map[key] = { records: [], teacherName: r.teacherName };
+      map[key].records.push(r);
+    });
+    return map;
+  }, [records]);
 
-  return (
-    <div className="space-y-3">
-      {/* Stats row */}
-      {pct !== null && (
-        <div className={`rounded-xl p-3 flex items-center justify-between ${pctBg}`}>
-          <div className="flex gap-4 text-sm">
-            <div><span className="font-bold text-emerald-700">{presentCount}</span> <span className="text-muted-foreground">Present</span></div>
-            <div><span className="font-bold text-red-700">{absentCount}</span> <span className="text-muted-foreground">Absent</span></div>
-            {lateCount > 0 && <div><span className="font-bold text-amber-700">{lateCount}</span> <span className="text-muted-foreground">Late</span></div>}
-          </div>
-          <span className={`text-xl font-bold ${pctColor}`}>{pct}%</span>
-        </div>
-      )}
+  const subjectKeys = Object.keys(bySubject).sort();
 
-      {/* Records history */}
-      {weeks.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-3">No attendance records for this subject.</p>
-      )}
-      {weeks.map(({ weekStart, records: wRecs }) => (
-        <div key={weekStart.toISOString()} className="rounded-lg border bg-card p-3 space-y-1.5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold">{getWeekLabel(weekStart)}</p>
-            <span className="text-xs text-muted-foreground">
-              {wRecs.filter(r => r.status === 'present' || r.status === 'late').length}/{wRecs.length} attended
-            </span>
-          </div>
-          {wRecs.sort((a, b) => new Date(b.date) - new Date(a.date)).map(record => {
-            const cfg = STATUS_CONFIG[record.status] || STATUS_CONFIG.absent;
-            const Icon = cfg.icon;
-            return (
-              <div key={record.id} className="flex items-center justify-between rounded-md px-3 py-2 bg-secondary/40">
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-3.5 h-3.5 ${cfg.iconColor}`} />
-                  <p className="text-sm">{record.date ? format(parseISO(record.date), 'EEEE, MMM d') : '—'}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {record.note && <span className="text-xs text-muted-foreground truncate max-w-[120px]">{record.note}</span>}
-                  <Badge className={`text-xs ${cfg.color}`}>{cfg.label}</Badge>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ChildAttendance({ child, records }) {
-  const total = records.length;
-  const presentCount = records.filter(a => a.status === 'present' || a.status === 'late').length;
-  const attendancePct = total > 0 ? Math.round((presentCount / total) * 100) : null;
-
-  // Group by subject
-  const bySubject = {};
-  records.forEach(r => {
-    const key = r.subjectName || r.subjectId || 'General';
-    if (!bySubject[key]) bySubject[key] = [];
-    bySubject[key].push(r);
-  });
-  const subjects = Object.keys(bySubject).sort();
-  const hasSubjects = subjects.length > 0 && subjects.some(s => s !== 'General' && s !== 'undefined');
-
-  // This week (overall)
-  const thisWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const thisWeekDays = eachDayOfInterval({ start: thisWeekStart, end: endOfWeek(thisWeekStart, { weekStartsOn: 1 }) })
-    .filter(d => d.getDay() !== 0 && d.getDay() !== 6);
-  const thisWeekRecords = records.filter(a => {
-    if (!a.date) return false;
-    const d = parseISO(a.date);
-    return d >= thisWeekStart && d <= endOfWeek(thisWeekStart, { weekStartsOn: 1 });
-  });
+  // Build subject options from this child's records
+  const subjectOptions = useMemo(() => {
+    const seen = new Set();
+    const opts = [];
+    records.forEach(r => {
+      const key = r.subjectName || r.subjectId || 'General';
+      if (!seen.has(key)) { seen.add(key); opts.push({ value: r.subjectId || key, label: key }); }
+    });
+    return opts;
+  }, [records]);
 
   return (
-    <div className="space-y-4">
-      {/* Overall banner */}
-      {attendancePct !== null && (
-        <div className={`rounded-xl p-4 flex items-center justify-between ${attendancePct >= 80 ? 'bg-emerald-50' : attendancePct >= 60 ? 'bg-amber-50' : 'bg-red-50'}`}>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Overall Attendance Rate</p>
-            <p className={`text-3xl font-bold mt-0.5 ${attendancePct >= 80 ? 'text-emerald-700' : attendancePct >= 60 ? 'text-amber-700' : 'text-red-700'}`}>
-              {attendancePct}%
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{presentCount} of {total} records attended</p>
-          </div>
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold border-4 ${
-            attendancePct >= 80 ? 'border-emerald-400 text-emerald-700' : attendancePct >= 60 ? 'border-amber-400 text-amber-700' : 'border-red-400 text-red-700'
-          }`}>
-            {attendancePct}%
-          </div>
-        </div>
-      )}
+    <div className="space-y-5">
+      {/* KPI Cards */}
+      <AttendanceKPICards records={records} />
 
-      {hasSubjects ? (
-        <Tabs defaultValue={subjects[0]}>
-          <TabsList className="flex flex-wrap h-auto gap-1 mb-2 bg-secondary/50 p-1">
-            {subjects.map(s => {
-              const sRecs = bySubject[s];
-              const sPct = sRecs.length > 0 ? Math.round((sRecs.filter(r => r.status === 'present' || r.status === 'late').length / sRecs.length) * 100) : null;
-              const dotColor = sPct === null ? 'bg-muted-foreground' : sPct >= 80 ? 'bg-emerald-500' : sPct >= 60 ? 'bg-amber-500' : 'bg-red-500';
-              return (
-                <TabsTrigger key={s} value={s} className="text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
-                  {s}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-          {subjects.map(s => (
-            <TabsContent key={s} value={s}>
-              <SubjectAttendanceSummary subjectName={s} records={bySubject[s]} />
-            </TabsContent>
-          ))}
-        </Tabs>
-      ) : (
-        // Fallback: no subject info, show general this-week + history
-        <>
-          <div>
-            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">This Week</p>
-            <div className="space-y-2">
-              {thisWeekDays.map(day => {
-                const dateStr = format(day, 'yyyy-MM-dd');
-                const record = thisWeekRecords.find(r => r.date === dateStr);
-                const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr;
-                const isFuture = day > new Date();
-                const cfg = record ? STATUS_CONFIG[record.status] : null;
-                const Icon = cfg?.icon;
-                return (
-                  <div key={dateStr} className={`flex items-center justify-between rounded-lg px-4 py-3 ${isToday ? 'bg-primary/5 border border-primary/20' : 'bg-secondary/40'}`}>
-                    <div className="flex items-center gap-3">
-                      {Icon ? <Icon className={`w-4 h-4 ${cfg.iconColor}`} /> : <MinusCircle className="w-4 h-4 text-muted-foreground/40" />}
-                      <div>
-                        <p className="font-medium text-sm">{format(day, 'EEEE')}</p>
-                        <p className="text-xs text-muted-foreground">{format(day, 'MMM d')}</p>
-                      </div>
-                    </div>
-                    {record ? <Badge className={`text-xs ${cfg.color}`}>{cfg.label}</Badge>
-                      : <span className="text-xs text-muted-foreground">{isFuture ? '—' : 'Not recorded'}</span>}
-                  </div>
-                );
-              })}
+      {/* Filters bar */}
+      <div className="bg-muted/40 rounded-xl p-3 flex flex-wrap items-center gap-3">
+        <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+        <Select value={filters.period} onValueChange={v => setFilters(f => ({ ...f, period: v }))}>
+          <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Time Period" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="this_week">This Week</SelectItem>
+            <SelectItem value="this_month">This Month</SelectItem>
+            <SelectItem value="last_month">Last Month</SelectItem>
+            <SelectItem value="this_term">This Term</SelectItem>
+            <SelectItem value="this_session">This Session</SelectItem>
+            <SelectItem value="custom">Custom Range</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {subjectOptions.length > 0 && (
+          <Select value={filters.subjectId} onValueChange={v => setFilters(f => ({ ...f, subjectId: v }))}>
+            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="All Subjects" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjectOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select value={filters.status} onValueChange={v => setFilters(f => ({ ...f, status: v }))}>
+          <SelectTrigger className="h-8 w-32 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="present">Present</SelectItem>
+            <SelectItem value="absent">Absent</SelectItem>
+            <SelectItem value="late">Late</SelectItem>
+            <SelectItem value="excused">Excused</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {filters.period === 'custom' && (
+          <div className="flex items-center gap-2">
+            <input type="date" value={filters.from} onChange={e => setFilters(f => ({ ...f, from: e.target.value }))}
+              className="h-8 rounded-md border border-input bg-transparent px-2 py-1 text-xs" />
+            <span className="text-xs text-muted-foreground">to</span>
+            <input type="date" value={filters.to} onChange={e => setFilters(f => ({ ...f, to: e.target.value }))}
+              className="h-8 rounded-md border border-input bg-transparent px-2 py-1 text-xs" />
+          </div>
+        )}
+
+        {(filters.period !== 'all' || filters.subjectId !== 'all' || filters.status !== 'all') && (
+          <button
+            className="text-xs text-muted-foreground hover:text-foreground ml-auto"
+            onClick={() => setFilters({ period: 'all', subjectId: 'all', status: 'all', from: '', to: '' })}
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="subjects">
+        <TabsList className="h-9 flex-wrap">
+          <TabsTrigger value="subjects" className="text-xs gap-1.5"><LayoutGrid className="w-3.5 h-3.5" />By Subject</TabsTrigger>
+          <TabsTrigger value="calendar" className="text-xs gap-1.5"><Calendar className="w-3.5 h-3.5" />Calendar</TabsTrigger>
+          <TabsTrigger value="weekly" className="text-xs gap-1.5"><Grid3X3 className="w-3.5 h-3.5" />Weekly Grid</TabsTrigger>
+          <TabsTrigger value="charts" className="text-xs gap-1.5"><BarChart3 className="w-3.5 h-3.5" />Analytics</TabsTrigger>
+        </TabsList>
+
+        {/* By Subject */}
+        <TabsContent value="subjects" className="mt-4">
+          {subjectKeys.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12 text-sm">No per-subject attendance records yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subjectKeys.map(subj => (
+                <SubjectBreakdownCard
+                  key={subj}
+                  subjectName={subj}
+                  teacherName={bySubject[subj].teacherName}
+                  records={filters.subjectId === 'all' || filters.subjectId === subj || bySubject[subj].records[0]?.subjectId === filters.subjectId
+                    ? bySubject[subj].records
+                    : []}
+                />
+              ))}
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </TabsContent>
 
-      {total === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">No attendance records yet.</p>
-      )}
+        {/* Calendar */}
+        <TabsContent value="calendar" className="mt-4">
+          <AttendanceCalendarView records={filteredRecords} />
+        </TabsContent>
+
+        {/* Weekly Grid */}
+        <TabsContent value="weekly" className="mt-4">
+          <WeeklyAttendanceGrid records={records} />
+        </TabsContent>
+
+        {/* Charts */}
+        <TabsContent value="charts" className="mt-4">
+          <AttendanceCharts records={filteredRecords} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -201,7 +190,9 @@ export default function ParentAttendance() {
   const { schoolUser: user } = useSchoolAuth();
   const [children, setChildren] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeChild, setActiveChild] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -214,43 +205,79 @@ export default function ParentAttendance() {
   }, [user?.id]);
 
   async function load() {
-    try {
-      const linkedIds = user?.linkedStudentIds || [];
-      if (linkedIds.length === 0) { setLoading(false); return; }
-      const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' });
-      const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
-      setChildren(linked);
-      const records = await Promise.all(
-        linkedIds.map(id => base44.entities.Attendance.filter({ schoolId: user.schoolId, studentId: id }).catch(() => []))
-      );
-      setAttendance(records.flat().filter(Boolean));
-    } catch { /* ignore */ }
+    const linkedIds = user?.linkedStudentIds || [];
+    if (linkedIds.length === 0) { setLoading(false); return; }
+    const [allStudents, subjectList, ...recordArrays] = await Promise.all([
+      base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' }),
+      base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }).catch(() => []),
+      ...linkedIds.map(id => base44.entities.Attendance.filter({ schoolId: user.schoolId, studentId: id }).catch(() => [])),
+    ]);
+    const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
+    setChildren(linked);
+    if (linked.length > 0) setActiveChild(linked[0].id);
+    setSubjects(subjectList || []);
+    setAttendance(recordArrays.flat().filter(Boolean));
     setLoading(false);
   }
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  if (children.length === 0) return <div className="text-center text-muted-foreground py-12">No linked children found.</div>;
+  if (children.length === 0) return <div className="text-center text-muted-foreground py-12">No linked children found. Please contact the school to link your child's account.</div>;
+
+  const currentChild = children.find(c => c.id === activeChild) || children[0];
+  const childRecords = attendance.filter(a => a.studentId === currentChild?.id);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Attendance</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Per-subject attendance breakdown</p>
+    <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Attendance</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Detailed per-subject attendance tracking</p>
+        </div>
+
+        {children.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {children.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setActiveChild(c.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${activeChild === c.id ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card border-border text-muted-foreground hover:text-foreground hover:border-primary/40'}`}
+              >
+                {c.fullName}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {children.map(child => (
-        <Card key={child.id} className="border-0 shadow-sm">
-          {children.length > 1 && (
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{child.fullName}</CardTitle>
-              <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>
-            </CardHeader>
-          )}
-          <CardContent className={children.length > 1 ? 'pt-0' : 'pt-4'}>
-            <ChildAttendance child={child} records={attendance.filter(a => a.studentId === child.id)} />
-          </CardContent>
-        </Card>
-      ))}
+      {children.length === 1 && (
+        <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+            {currentChild.fullName?.charAt(0)}
+          </div>
+          <div>
+            <p className="font-semibold">{currentChild.fullName}</p>
+            <p className="text-xs text-muted-foreground">{currentChild.className || 'No class assigned'} · {childRecords.length} records</p>
+          </div>
+          {childRecords.length > 0 && (() => {
+            const attended = childRecords.filter(r => r.status !== 'absent').length;
+            const pct = Math.round((attended / childRecords.length) * 100);
+            return (
+              <Badge className={`ml-auto ${pct >= 75 ? 'bg-emerald-100 text-emerald-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                {pct}% overall
+              </Badge>
+            );
+          })()}
+        </div>
+      )}
+
+      {currentChild && (
+        <ChildAttendance
+          key={currentChild.id}
+          child={currentChild}
+          records={childRecords}
+          subjects={subjects}
+        />
+      )}
     </div>
   );
 }

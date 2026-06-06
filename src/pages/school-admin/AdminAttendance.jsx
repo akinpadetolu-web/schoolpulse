@@ -17,9 +17,11 @@ export default function AdminAttendance() {
   const { schoolUser: user } = useSchoolAuth();
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClassId, setSelectedClassId] = useState('all');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [threshold, setThreshold] = useState(75);
   const [notifying, setNotifying] = useState(null);
@@ -28,14 +30,16 @@ export default function AdminAttendance() {
   useEffect(() => { if (!loading) loadAttendance(); }, [selectedClassId, selectedMonth]);
 
   async function loadData() {
-    const [cls, stu, att] = await Promise.all([
+    const [cls, stu, att, subs] = await Promise.all([
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student', isArchived: false }),
       base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
+      base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }).catch(() => []),
     ]);
     setClasses(cls || []);
     setStudents(stu || []);
     setAttendance(att || []);
+    setSubjects(subs || []);
     setLoading(false);
   }
 
@@ -44,11 +48,12 @@ export default function AdminAttendance() {
     setAttendance(att || []);
   }
 
-  // Filter attendance by month and class
+  // Filter attendance by month, class, and subject
   const filteredAttendance = attendance.filter(a => {
     const inMonth = a.date?.startsWith(selectedMonth);
     const inClass = selectedClassId === 'all' || a.classId === selectedClassId;
-    return inMonth && inClass;
+    const inSubject = selectedSubjectId === 'all' || a.subjectId === selectedSubjectId;
+    return inMonth && inClass && inSubject;
   });
 
   // Calculate school days in selected month
@@ -134,6 +139,18 @@ export default function AdminAttendance() {
               <SelectContent>
                 <SelectItem value="all">All Classes</SelectItem>
                 {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Subject</Label>
+            <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Subjects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subjects</SelectItem>
+                {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -224,6 +241,7 @@ export default function AdminAttendance() {
                       <tr>
                         <th className="text-left px-4 py-3 font-semibold">Student</th>
                         <th className="text-left px-4 py-3 font-semibold">Class</th>
+                        <th className="text-left px-3 py-3 font-semibold hidden sm:table-cell">Subject</th>
                         <th className="text-center px-3 py-3 font-semibold">Present</th>
                         <th className="text-center px-3 py-3 font-semibold">Absent</th>
                         <th className="text-center px-3 py-3 font-semibold">Excused</th>
@@ -235,6 +253,9 @@ export default function AdminAttendance() {
                         <tr key={s.id} className={s.pct !== null && s.pct < threshold ? 'bg-red-50' : ''}>
                           <td className="px-4 py-3 font-medium">{s.fullName}</td>
                           <td className="px-4 py-3 text-muted-foreground">{s.className}</td>
+                          <td className="px-3 py-3 text-muted-foreground hidden sm:table-cell text-xs">
+                            {selectedSubjectId !== 'all' ? (subjects.find(sub => sub.id === selectedSubjectId)?.name || '—') : 'All'}
+                          </td>
                           <td className="px-3 py-3 text-center text-emerald-700">{s.present}</td>
                           <td className="px-3 py-3 text-center text-red-700">{s.absent}</td>
                           <td className="px-3 py-3 text-center text-blue-700">{s.excused}</td>

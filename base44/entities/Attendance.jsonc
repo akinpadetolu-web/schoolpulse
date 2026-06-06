@@ -23,10 +23,26 @@
     "teacherName": {
       "type": "string"
     },
+    "subjectId": {
+      "type": "string",
+      "description": "Subject/lesson this attendance record is for"
+    },
+    "subjectName": {
+      "type": "string",
+      "description": "Name of the subject/lesson"
+    },
     "date": {
       "type": "string",
       "format": "date",
       "description": "YYYY-MM-DD"
+    },
+    "startTime": {
+      "type": "string",
+      "description": "Lesson start time HH:MM"
+    },
+    "endTime": {
+      "type": "string",
+      "description": "Lesson end time HH:MM"
     },
     "status": {
       "type": "string",
@@ -38,13 +54,18 @@
       ],
       "default": "present"
     },
+    "minutesLate": {
+      "type": "number",
+      "description": "How many minutes late (if status=late)"
+    },
     "note": {
-      "type": "string"
+      "type": "string",
+      "description": "Teacher remarks or notes about this attendance record"
     },
     "description": {
       "type": "string",
       "maxLength": 1000,
-      "description": "Additional details or justification for this attendance record"
+      "description": "Additional details or justification"
     }
   },
   "required": [
