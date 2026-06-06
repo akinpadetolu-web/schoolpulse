@@ -11,18 +11,21 @@ export default function StudentTimetable() {
   const { schoolUser: user } = useSchoolAuth();
   const [entries, setEntries] = useState([]);
   const [grades, setGrades] = useState([]);
+  const [lessonPlans, setLessonPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [data, gradeData] = await Promise.all([
+        const [data, gradeData, planData] = await Promise.all([
           base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId: user?.classId }),
           base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: user?.id }).catch(() => []),
+          base44.entities.LessonPlan.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }).catch(() => []),
         ]);
         setEntries(data || []);
         setGrades(gradeData || []);
-      } catch { setEntries([]); setGrades([]); }
+        setLessonPlans(planData || []);
+      } catch { setEntries([]); setGrades([]); setLessonPlans([]); }
       setLoading(false);
     }
     load();
@@ -48,6 +51,7 @@ export default function StudentTimetable() {
           <AIStudyPlanGenerator
             entries={entries}
             grades={grades}
+            lessonPlans={lessonPlans}
             studentName={user?.fullName}
             studentId={user?.id}
             schoolId={user?.schoolId}
@@ -57,6 +61,8 @@ export default function StudentTimetable() {
         <TabsContent value="tips">
           <AIExamPreparationTips
             entries={entries}
+            grades={grades}
+            lessonPlans={lessonPlans}
             studentId={user?.id}
             schoolId={user?.schoolId}
             studentName={user?.fullName}
