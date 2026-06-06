@@ -45,11 +45,95 @@
     },
     "primaryColor": {
       "type": "string",
-      "description": "Primary brand color (hex code)"
+      "description": "Primary brand color (hex)"
     },
     "secondaryColor": {
       "type": "string",
-      "description": "Secondary brand color (hex code)"
+      "description": "Secondary brand color (hex)"
+    },
+    "sidebarBgColor": {
+      "type": "string",
+      "description": "Sidebar background color (hex)"
+    },
+    "sidebarTextColor": {
+      "type": "string",
+      "description": "Sidebar text/icon color (hex)"
+    },
+    "sidebarActiveColor": {
+      "type": "string",
+      "description": "Sidebar active item background color (hex)"
+    },
+    "topbarBgColor": {
+      "type": "string",
+      "description": "Top navigation bar background color (hex)"
+    },
+    "topbarTextColor": {
+      "type": "string",
+      "description": "Top navigation bar text/icon color (hex)"
+    },
+    "bodyBgColor": {
+      "type": "string",
+      "description": "Page/body background color (hex)"
+    },
+    "cardBgColor": {
+      "type": "string",
+      "description": "Card/panel background color (hex)"
+    },
+    "primaryBtnColor": {
+      "type": "string",
+      "description": "Primary button background color (hex)"
+    },
+    "primaryBtnTextColor": {
+      "type": "string",
+      "description": "Primary button text color (hex)"
+    },
+    "secondaryBtnColor": {
+      "type": "string",
+      "description": "Secondary button background color (hex)"
+    },
+    "secondaryBtnTextColor": {
+      "type": "string",
+      "description": "Secondary button text color (hex)"
+    },
+    "headingTextColor": {
+      "type": "string",
+      "description": "Heading text color (hex)"
+    },
+    "bodyTextColor": {
+      "type": "string",
+      "description": "Body/paragraph text color (hex)"
+    },
+    "linkColor": {
+      "type": "string",
+      "description": "Link color (hex)"
+    },
+    "borderColor": {
+      "type": "string",
+      "description": "Border/divider color (hex)"
+    },
+    "tableHeaderBgColor": {
+      "type": "string",
+      "description": "Table header background color (hex)"
+    },
+    "tableHeaderTextColor": {
+      "type": "string",
+      "description": "Table header text color (hex)"
+    },
+    "badgeColor": {
+      "type": "string",
+      "description": "Default badge/tag color (hex)"
+    },
+    "successColor": {
+      "type": "string",
+      "description": "Success/pass color (hex)"
+    },
+    "warningColor": {
+      "type": "string",
+      "description": "Warning color (hex)"
+    },
+    "dangerColor": {
+      "type": "string",
+      "description": "Danger/error/fail color (hex)"
     },
     "defaultSenderEmail": {
       "type": "string",

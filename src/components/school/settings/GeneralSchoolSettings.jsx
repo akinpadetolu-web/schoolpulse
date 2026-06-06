@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Upload, Building2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { applyBrandColors } from '@/lib/brandColors';
+
 
 const TIMEZONES = [
   'Africa/Lagos', 'Africa/Nairobi', 'Africa/Johannesburg', 'Africa/Accra', 'Africa/Cairo',
@@ -27,8 +27,6 @@ export default function GeneralSchoolSettings({ school, onSaved }) {
     description: school?.description || '',
     timezone: school?.timezone || '',
     schoolLogoUrl: school?.schoolLogoUrl || '',
-    primaryColor: school?.primaryColor || '#1e3a5f',
-    secondaryColor: school?.secondaryColor || '#f0f4ff',
   });
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -47,7 +45,6 @@ export default function GeneralSchoolSettings({ school, onSaved }) {
     e.preventDefault();
     setSaving(true);
     await base44.entities.School.update(school.id, form);
-    applyBrandColors(form.primaryColor, form.secondaryColor);
     toast.success('General settings saved');
     setSaving(false);
     onSaved?.();
@@ -117,21 +114,6 @@ export default function GeneralSchoolSettings({ school, onSaved }) {
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder="Brief description of the school..."
             />
-          </div>
-
-          {/* Branding */}
-          <div>
-            <Label className="text-sm font-semibold">Brand Colors</Label>
-            <div className="flex gap-4 mt-2">
-              <div className="flex items-center gap-2">
-                <input type="color" value={form.primaryColor} onChange={e => setForm(f => ({ ...f, primaryColor: e.target.value }))} className="w-10 h-10 rounded border cursor-pointer" />
-                <span className="text-sm text-muted-foreground">Primary</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="color" value={form.secondaryColor} onChange={e => setForm(f => ({ ...f, secondaryColor: e.target.value }))} className="w-10 h-10 rounded border cursor-pointer" />
-                <span className="text-sm text-muted-foreground">Secondary</span>
-              </div>
-            </div>
           </div>
 
           <Button type="submit" disabled={saving}>

@@ -7,6 +7,7 @@ import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import GeneralSchoolSettings from '@/components/school/settings/GeneralSchoolSettings';
 import CommunicationSettings from '@/components/school/settings/CommunicationSettings';
 import AcademicQuickLinks from '@/components/school/settings/AcademicQuickLinks';
+import BrandColorsSettings from '@/components/school/settings/BrandColorsSettings';
 
 export default function AdminSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -50,6 +51,9 @@ export default function AdminSettings() {
 
       {/* General Information */}
       <GeneralSchoolSettings school={school} onSaved={loadSchool} />
+
+      {/* Brand Colors */}
+      <BrandColorsSettings school={school} onSaved={loadSchool} />
 
       {/* Academic Settings Quick Links */}
       <AcademicQuickLinks />
