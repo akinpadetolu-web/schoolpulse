@@ -33,6 +33,7 @@ export default function AdminExamTimetable() {
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('schedule');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEntryDialog, setShowEntryDialog] = useState(false);
   const [savingInv, setSavingInv] = useState(false);
@@ -259,7 +260,7 @@ export default function AdminExamTimetable() {
   }
 
   // Handle AI Planner apply
-  async function handlePlannerApply(aiRows, manualAssignments) {
+  async function handlePlannerApply(aiRows, manualAssignments, onApplyComplete) {
     if (!examTimetable || !aiRows?.length) return;
     const newEntries = aiRows.map((row, i) => {
       const subj = subjects.find(s => s.name?.toLowerCase() === row.subject?.toLowerCase());
@@ -288,6 +289,7 @@ export default function AdminExamTimetable() {
     await base44.entities.ExamTimetable.update(examTimetable.id, { entries: combined });
     setExamTimetable(prev => ({ ...prev, entries: combined }));
     toast.success(`${newEntries.length} exam entries added from AI Planner`);
+    setActiveTab('schedule');
   }
 
   // Lesson plan coverage
@@ -421,7 +423,7 @@ export default function AdminExamTimetable() {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="schedule">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="schedule"><Calendar className="w-3.5 h-3.5 mr-1" />Exam Schedule</TabsTrigger>
               <TabsTrigger value="ai-planner"><Wand2 className="w-3.5 h-3.5 mr-1" />AI Exam Planner</TabsTrigger>
