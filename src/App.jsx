@@ -69,6 +69,7 @@ const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
 const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
 const AdminPromotion = lazy(() => import('./pages/school-admin/AdminPromotion'));
 const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
+const AdminSessions = lazy(() => import('./pages/school-admin/AdminSessions'));
 const AdminFeeManagement = lazy(() => import('./pages/school-admin/AdminFeeManagement'));
 const AdminInvoices = lazy(() => import('./pages/school-admin/AdminInvoices'));
 const AdminPayments = lazy(() => import('./pages/school-admin/AdminPayments'));
@@ -204,6 +205,7 @@ const AuthenticatedApp = () => {
           <Route path="grading-system" element={<AdminGradingSystem />} />
           <Route path="promotion" element={<AdminPromotion />} />
           <Route path="hr" element={<AdminHR />} />
+          <Route path="sessions" element={<AdminSessions />} />
           <Route path="fee-management" element={<AdminFeeManagement />} />
           <Route path="invoices" element={<AdminInvoices />} />
           <Route path="payments" element={<AdminPayments />} />

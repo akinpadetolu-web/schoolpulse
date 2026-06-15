@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ const baseAdminNavGroups = [
   {
     label: 'ACADEMIC',
     items: [
+      { label: "Sessions", path: "/school-admin/sessions", icon: CalendarRange },
       { label: "Timetable", path: "/school-admin/timetable", icon: Calendar },
       { label: "Exam Timetable", path: "/school-admin/exam-timetable", icon: BookOpenCheck },
       { label: "Calendar & Events", path: "/school-admin/events", icon: CalendarDays },
@@ -116,6 +117,7 @@ const featureMap = {
   "/school-admin/grading-system": "gradingSystem",
   "/school-admin/promotion": "promotion",
   "/school-admin/academic-terms": "academicTerms",
+  "/school-admin/sessions": "adminSessions",
   "/school-admin/calendar": "adminEvents",
 };
 

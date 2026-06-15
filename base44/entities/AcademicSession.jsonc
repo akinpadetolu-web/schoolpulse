@@ -1,22 +1,16 @@
 {
-  "name": "AcademicTerm",
+  "name": "AcademicSession",
   "type": "object",
   "properties": {
     "schoolId": {
-      "type": "string",
-      "description": "ID of the school this term belongs to"
+      "type": "string"
     },
     "schoolName": {
-      "type": "string",
-      "description": "Name of the school"
-    },
-    "sessionId": {
-      "type": "string",
-      "description": "ID of the parent AcademicSession"
+      "type": "string"
     },
     "name": {
       "type": "string",
-      "description": "e.g., 1st Term, 2nd Term, 3rd Term"
+      "description": "e.g., 2025/2026 Academic Session"
     },
     "academicYear": {
       "type": "string",
@@ -30,19 +24,22 @@
       "type": "string",
       "format": "date"
     },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "active",
+        "completed"
+      ],
+      "default": "upcoming"
+    },
     "isCurrent": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether this is the current active term"
-    },
-    "midtermDate": {
-      "type": "string",
-      "format": "date",
-      "description": "Midterm breakpoint date"
+      "default": false
     },
     "description": {
       "type": "string",
-      "maxLength": 1000
+      "maxLength": 500
     }
   },
   "required": [
