@@ -1,37 +1,27 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
-export default function SpecialNeedsPanel({ specialNeeds, medicalRecords, search, onRefresh }) {
-  const filtered = specialNeeds.filter(s =>
-    s.studentName?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (filtered.length === 0) {
-    return <div className="text-center py-12 text-muted-foreground">No special needs records</div>;
-  }
-
+export default function SpecialNeedsPanel({ specialNeeds, onRefresh }) {
   return (
-    <div className="grid gap-4">
-      {filtered.map(need => (
-        <Card key={need.id} className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <div>
-                <h3 className="font-semibold">{need.studentName}</h3>
-                <p className="text-sm text-muted-foreground">{need.className}</p>
-              </div>
-              <Badge variant="outline">{need.needType.replace(/_/g, ' ')}</Badge>
-            </div>
-            {need.description && <p className="text-sm mb-2">{need.description}</p>}
-            {need.accommodations?.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Accommodations:</span> {need.accommodations.join(', ')}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <div className="flex justify-end mb-4">
+        <Button><Plus className="w-4 h-4 mr-2" /> Add Special Needs Record</Button>
+      </div>
+      {specialNeeds.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No special needs records</div>
+      ) : (
+        specialNeeds.map(record => (
+          <Card key={record.id} className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <p className="font-semibold">{record.studentName}</p>
+              <p className="text-sm text-muted-foreground capitalize">{record.needType.replace(/_/g, ' ')}</p>
+              {record.description && <p className="text-xs mt-2">{record.description}</p>}
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   );
 }
