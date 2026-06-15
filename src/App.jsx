@@ -84,6 +84,8 @@ const AdminExamTimetable = lazy(() => import('./pages/school-admin/AdminExamTime
 const AdminReportCardTemplates = lazy(() => import('./pages/school-admin/AdminReportCardTemplates'));
 const AdminInventory = lazy(() => import('./pages/school-admin/AdminInventory'));
 const AdminLibrary = lazy(() => import('./pages/school-admin/AdminLibrary'));
+const AdminHealth = lazy(() => import('./pages/school-admin/AdminHealth'));
+const AdminHostel = lazy(() => import('./pages/school-admin/AdminHostel'));
 const StudentReportCards = lazy(() => import('./pages/student/StudentReportCards'));
 const StudentExamTimetable = lazy(() => import('./pages/student/StudentExamTimetable'));
 
@@ -223,6 +225,8 @@ const AuthenticatedApp = () => {
           <Route path="messages" element={<FeatureGuard path="/school-admin/messages"><AdminMessaging /></FeatureGuard>} />
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="library" element={<AdminLibrary />} />
+          <Route path="health" element={<AdminHealth />} />
+          <Route path="hostel" element={<AdminHostel />} />
           <Route path="events" element={<AdminCalendar />} />
         </Route>
 

@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -81,6 +81,8 @@ const baseAdminNavGroups = [
     items: [
       { label: "Inventory", path: "/school-admin/inventory", icon: Package },
       { label: "Library", path: "/school-admin/library", icon: BookOpen },
+      { label: "Health & Medical", path: "/school-admin/health", icon: Heart },
+      { label: "Hostel Management", path: "/school-admin/hostel", icon: Home },
     ]
   },
   {
@@ -129,7 +131,9 @@ const featureMap = {
   "/school-admin/calendar": "adminEvents",
   "/school-admin/inventory": "adminInventory",
   "/school-admin/library": "adminLibrary",
-};
+  "/school-admin/health": "adminHealth",
+  "/school-admin/hostel": "adminHostel",
+  };
 
 export default function SchoolSidebar({ isOpen, onClose }) {
   const location = useLocation();

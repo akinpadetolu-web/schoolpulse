@@ -1,0 +1,123 @@
+{
+  "name": "SpecialNeeds",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "needType": {
+      "type": "string",
+      "enum": [
+        "physical_disability",
+        "visual_impairment",
+        "hearing_impairment",
+        "learning_disability",
+        "autism",
+        "intellectual_disability",
+        "speech_impairment",
+        "emotional_behavioral",
+        "chronic_illness",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of special needs"
+    },
+    "accommodations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required accommodations/modifications"
+    },
+    "accessibility": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "e.g. wheelchair ramp, accessible toilet, elevator"
+    },
+    "therapies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "assistiveDevices": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Hearing aids, wheelchairs, etc"
+    },
+    "behavioralStrategies": {
+      "type": "string",
+      "description": "Strategies for managing behavior"
+    },
+    "communicationNeeds": {
+      "type": "string",
+      "description": "Alternative communication methods"
+    },
+    "supportStaff": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "iepdocumentUrl": {
+      "type": "string",
+      "description": "URL to IEP (Individualized Education Plan)"
+    },
+    "reviewDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "nextReviewDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "needType"
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "name": "Hostel",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "e.g. Boys Hostel A, Girls Hostel B"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "mixed"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "boarding",
+        "day_scholar",
+        "mixed"
+      ],
+      "default": "boarding"
+    },
+    "capacity": {
+      "type": "number",
+      "description": "Total bed capacity"
+    },
+    "currentOccupancy": {
+      "type": "number",
+      "default": 0
+    },
+    "location": {
+      "type": "string",
+      "description": "Hostel location/building"
+    },
+    "housemaster": {
+      "type": "string",
+      "description": "Staff member managing hostel"
+    },
+    "housemasterName": {
+      "type": "string"
+    },
+    "housemasterPhone": {
+      "type": "string"
+    },
+    "assistantHousemaster": {
+      "type": "string"
+    },
+    "assistantHousemasterName": {
+      "type": "string"
+    },
+    "facilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "e.g. Wifi, Hot water, Laundry service"
+    },
+    "monthlyFee": {
+      "type": "number",
+      "description": "Monthly hostel fee"
+    },
+    "rulesAndRegulations": {
+      "type": "string",
+      "description": "Hostel rules and discipline policy"
+    },
+    "checkInTime": {
+      "type": "string",
+      "description": "Check-in time HH:MM"
+    },
+    "checkOutTime": {
+      "type": "string",
+      "description": "Check-out time HH:MM"
+    },
+    "visitingHours": {
+      "type": "string",
+      "description": "Parent visiting hours"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "schoolId",
+    "name",
+    "gender",
+    "capacity"
+  ]
+}

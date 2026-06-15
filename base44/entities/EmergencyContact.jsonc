@@ -1,0 +1,50 @@
+{
+  "name": "EmergencyContact",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "contactName": {
+      "type": "string"
+    },
+    "relationship": {
+      "type": "string",
+      "description": "e.g. Parent, Guardian, Sibling"
+    },
+    "phoneNumber": {
+      "type": "string"
+    },
+    "alternatePhone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "isPrimary": {
+      "type": "boolean",
+      "default": true,
+      "description": "First emergency contact to call"
+    },
+    "priority": {
+      "type": "number",
+      "default": 1,
+      "description": "Priority order for calling"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "contactName",
+    "phoneNumber"
+  ]
+}

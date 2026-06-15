@@ -1,0 +1,121 @@
+{
+  "name": "NurseVisitLog",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "visitDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "visitTime": {
+      "type": "string",
+      "description": "Time of visit HH:MM"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "illness",
+        "injury",
+        "routine_checkup",
+        "medication_administration",
+        "allergy_reaction",
+        "mental_health",
+        "dental",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of visit"
+    },
+    "symptoms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "temperature": {
+      "type": "number",
+      "description": "Body temperature in Celsius"
+    },
+    "bloodPressure": {
+      "type": "string",
+      "description": "e.g. 120/80"
+    },
+    "diagnosis": {
+      "type": "string"
+    },
+    "treatment": {
+      "type": "string",
+      "description": "Treatment provided"
+    },
+    "medicationGiven": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dosage": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "referralRequired": {
+      "type": "boolean",
+      "default": false
+    },
+    "referralTo": {
+      "type": "string",
+      "description": "Doctor/Hospital referral"
+    },
+    "parentNotified": {
+      "type": "boolean",
+      "default": false
+    },
+    "notificationMethod": {
+      "type": "string",
+      "enum": [
+        "call",
+        "sms",
+        "email",
+        "in_person"
+      ]
+    },
+    "nurseId": {
+      "type": "string"
+    },
+    "nurseName": {
+      "type": "string"
+    },
+    "visitedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "visitDate",
+    "reason"
+  ]
+}

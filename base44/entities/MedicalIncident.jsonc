@@ -1,0 +1,124 @@
+{
+  "name": "MedicalIncident",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "incidentNumber": {
+      "type": "string",
+      "description": "Auto-generated incident ID"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "incidentDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "incidentTime": {
+      "type": "string",
+      "description": "Time incident occurred HH:MM"
+    },
+    "location": {
+      "type": "string",
+      "description": "Where incident occurred (classroom, playground, etc)"
+    },
+    "incidentType": {
+      "type": "string",
+      "enum": [
+        "injury",
+        "poisoning",
+        "allergic_reaction",
+        "collapse",
+        "assault",
+        "accident",
+        "other"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "severe",
+        "critical"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "injuries": {
+      "type": "string"
+    },
+    "firstAidProvided": {
+      "type": "string"
+    },
+    "ambulanceRequired": {
+      "type": "boolean",
+      "default": false
+    },
+    "hospitalAdmitted": {
+      "type": "boolean",
+      "default": false
+    },
+    "hospitalName": {
+      "type": "string"
+    },
+    "witnessNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reportedBy": {
+      "type": "string"
+    },
+    "reportedByName": {
+      "type": "string"
+    },
+    "parentNotificationTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "followUpRequired": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "under_review",
+        "resolved",
+        "closed"
+      ],
+      "default": "reported"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "incidentDate",
+    "incidentType"
+  ]
+}

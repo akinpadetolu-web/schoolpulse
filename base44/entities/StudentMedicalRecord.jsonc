@@ -1,0 +1,138 @@
+{
+  "name": "StudentMedicalRecord",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "bloodGroup": {
+      "type": "string",
+      "enum": [
+        "O+",
+        "O-",
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "genotype": {
+      "type": "string",
+      "enum": [
+        "AA",
+        "AS",
+        "SS",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "allergies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of known allergies"
+    },
+    "medicalConditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "mild",
+              "moderate",
+              "severe"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "currentMedications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dosage": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "prescribedDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "dietaryRestrictions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lastMedicalCheckup": {
+      "type": "string",
+      "format": "date"
+    },
+    "nextMedicalCheckup": {
+      "type": "string",
+      "format": "date"
+    },
+    "medicalClearanceStatus": {
+      "type": "string",
+      "enum": [
+        "cleared",
+        "cleared_with_restrictions",
+        "pending",
+        "restricted"
+      ],
+      "default": "pending"
+    },
+    "medicalClearanceExpiry": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId"
+  ]
+}

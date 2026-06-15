@@ -1,0 +1,75 @@
+{
+  "name": "HostelAttendance",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "hostelId": {
+      "type": "string"
+    },
+    "hostelName": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "attendanceDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "checkInTime": {
+      "type": "string",
+      "description": "Time student checked in HH:MM"
+    },
+    "checkOutTime": {
+      "type": "string",
+      "description": "Time student checked out HH:MM"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "on_leave",
+        "late_arrival",
+        "early_departure"
+      ],
+      "default": "present"
+    },
+    "leaveReason": {
+      "type": "string",
+      "description": "Reason for leave if on_leave"
+    },
+    "leaveDates": {
+      "type": "string",
+      "description": "Leave period dates"
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "recordedBy": {
+      "type": "string"
+    },
+    "recordedByName": {
+      "type": "string"
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "hostelId",
+    "studentId",
+    "attendanceDate",
+    "status"
+  ]
+}

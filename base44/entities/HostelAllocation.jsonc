@@ -1,0 +1,84 @@
+{
+  "name": "HostelAllocation",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female"
+      ]
+    },
+    "hostelId": {
+      "type": "string"
+    },
+    "hostelName": {
+      "type": "string"
+    },
+    "bedNumber": {
+      "type": "string",
+      "description": "Assigned bed number"
+    },
+    "roomNumber": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "allocationDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "transferred",
+        "graduated"
+      ],
+      "default": "active"
+    },
+    "deallocationDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "deallocationReason": {
+      "type": "string"
+    },
+    "allocatedBy": {
+      "type": "string",
+      "description": "Staff ID who allocated"
+    },
+    "allocatedByName": {
+      "type": "string"
+    },
+    "parentNotified": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "hostelId"
+  ]
+}

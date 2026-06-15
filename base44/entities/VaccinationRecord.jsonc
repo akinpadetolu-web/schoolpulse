@@ -1,0 +1,92 @@
+{
+  "name": "VaccinationRecord",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "vaccineName": {
+      "type": "string"
+    },
+    "vaccinationType": {
+      "type": "string",
+      "enum": [
+        "polio",
+        "measles",
+        "yellow_fever",
+        "covid19",
+        "hepatitis_b",
+        "diphtheria",
+        "tetanus",
+        "tuberculosis",
+        "other"
+      ]
+    },
+    "doseNumber": {
+      "type": "number",
+      "description": "1st, 2nd, 3rd dose, etc"
+    },
+    "administrationDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "nextDueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "batchNumber": {
+      "type": "string"
+    },
+    "administeredBy": {
+      "type": "string"
+    },
+    "administeredByName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "description": "Where vaccine was administered"
+    },
+    "sideEffects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "pending",
+        "overdue",
+        "exempted"
+      ],
+      "default": "completed"
+    },
+    "certificateUrl": {
+      "type": "string",
+      "description": "URL to vaccination certificate"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "vaccineName",
+    "administrationDate"
+  ]
+}
