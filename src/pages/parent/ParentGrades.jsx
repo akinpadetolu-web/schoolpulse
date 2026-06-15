@@ -36,7 +36,7 @@ export default function ParentGrades() {
           const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
           setChildren(linked);
           if (linked.length > 0) {
-            setSelectedChildId('');
+            setSelectedChildId(linked[0].id);
           }
 
           const [allGrades, allExams] = await Promise.all([
