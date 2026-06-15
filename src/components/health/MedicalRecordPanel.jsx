@@ -47,8 +47,8 @@ export default function MedicalRecordPanel({ records, onRefresh }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.studentId || !form.studentName) {
-      toast.error('Student is required');
+    if (!form.studentName) {
+      toast.error('Student name is required');
       return;
     }
 
@@ -123,8 +123,8 @@ export default function MedicalRecordPanel({ records, onRefresh }) {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Student ID *</Label>
-                <Input value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })} placeholder="Student ID" disabled={saving} />
+                <Label>Student ID</Label>
+                <Input value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })} placeholder="Student ID (optional)" disabled={saving} />
               </div>
               <div>
                 <Label>Student Name *</Label>
