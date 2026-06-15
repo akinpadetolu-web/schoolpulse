@@ -69,6 +69,12 @@ const AdminSettings = lazy(() => import('./pages/school-admin/AdminSettings'));
 const AdminGradingSystem = lazy(() => import('./pages/school-admin/AdminGradingSystem'));
 const AdminPromotion = lazy(() => import('./pages/school-admin/AdminPromotion'));
 const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
+const AdminFeeManagement = lazy(() => import('./pages/school-admin/AdminFeeManagement'));
+const AdminInvoices = lazy(() => import('./pages/school-admin/AdminInvoices'));
+const AdminPayments = lazy(() => import('./pages/school-admin/AdminPayments'));
+const AdminFinancialReports = lazy(() => import('./pages/school-admin/AdminFinancialReports'));
+const AdminPaymentSettings = lazy(() => import('./pages/school-admin/AdminPaymentSettings'));
+const ParentFeesPayments = lazy(() => import('./pages/parent/ParentFeesPayments'));
 const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
 const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
@@ -198,6 +204,11 @@ const AuthenticatedApp = () => {
           <Route path="grading-system" element={<AdminGradingSystem />} />
           <Route path="promotion" element={<AdminPromotion />} />
           <Route path="hr" element={<AdminHR />} />
+          <Route path="fee-management" element={<AdminFeeManagement />} />
+          <Route path="invoices" element={<AdminInvoices />} />
+          <Route path="payments" element={<AdminPayments />} />
+          <Route path="financial-reports" element={<AdminFinancialReports />} />
+          <Route path="payment-settings" element={<AdminPaymentSettings />} />
           <Route path="staff-attendance" element={<AdminStaffAttendance />} />
           <Route path="leave-requests" element={<AdminLeaveRequests />} />
           <Route path="email-campaign" element={<FeatureGuard path="/school-admin/email-campaign"><AdminEmailCampaign /></FeatureGuard>} />
@@ -267,6 +278,7 @@ const AuthenticatedApp = () => {
           <Route path="attendance" element={<ParentAttendance />} />
           <Route path="lesson-plans" element={<ParentLessonPlans />} />
           <Route path="e-class" element={<ParentEClass />} />
+          <Route path="fees-payments" element={<ParentFeesPayments />} />
           <Route path="calendar" element={<ParentCalendar />} />
           <Route path="profile" element={<ParentProfile />} />
           <Route path="settings" element={<ParentSettings />} />
