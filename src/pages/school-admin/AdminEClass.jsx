@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Loader2, Clock, User, AlertTriangle, Trash2 } from 'lucide-react';
+import { Loader2, Clock, User, AlertTriangle, Trash2, Plus, Edit } from 'lucide-react';
 import { format, isFuture } from 'date-fns';
+import EClassDetailsDialog from '@/components/eclass/EClassDetailsDialog';
 
 export default function AdminEClass() {
   const { schoolUser: user } = useSchoolAuth();
@@ -15,6 +16,8 @@ export default function AdminEClass() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [flagged, setFlagged] = useState({});
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedEClass, setSelectedEClass] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -51,11 +54,32 @@ export default function AdminEClass() {
   const past = classes.filter(c => !isFuture(new Date(c.startDateTime)));
   const flaggedCount = Object.values(flagged).filter(Boolean).length;
 
+  const handleEditEClass = (eclass) => {
+    setSelectedEClass(eclass);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      const data = await base44.entities.VirtualClass.filter({ schoolId: user?.schoolId });
+      setClasses((data || []).sort((a, b) => new Date(b.startDateTime) - new Date(a.startDateTime)));
+    } catch {
+      setClasses([]);
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">E-Class Monitoring</h1>
-        <p className="text-muted-foreground">Overview of all virtual class sessions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">E-Class Monitoring</h1>
+          <p className="text-muted-foreground">Overview of all virtual class sessions</p>
+        </div>
+        <Button onClick={() => { setSelectedEClass(null); setDetailsDialogOpen(true); }}>
+          <Plus className="w-4 h-4 mr-2" /> New E-Class
+        </Button>
       </div>
 
       {flaggedCount > 0 && (
@@ -95,21 +119,28 @@ export default function AdminEClass() {
                         </a>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant={flagged[cls.id] ? 'default' : 'outline'}
-                          onClick={() => toggleFlag(cls.id)}
-                        >
-                          <AlertTriangle className="w-4 h-4 mr-1" /> {flagged[cls.id] ? 'Unflag' : 'Flag for Review'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setDeleteConfirm(cls)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
-                      </div>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleEditEClass(cls)}
+                         >
+                           <Edit className="w-4 h-4 mr-1" /> Edit
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant={flagged[cls.id] ? 'default' : 'outline'}
+                           onClick={() => toggleFlag(cls.id)}
+                         >
+                           <AlertTriangle className="w-4 h-4 mr-1" /> {flagged[cls.id] ? 'Unflag' : 'Flag for Review'}
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="destructive"
+                           onClick={() => setDeleteConfirm(cls)}
+                         >
+                           <Trash2 className="w-4 h-4 mr-1" /> Delete
+                         </Button>
+                       </div>
                     </div>
                   </div>
                 </CardContent>
@@ -158,6 +189,14 @@ export default function AdminEClass() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* E-Class Details Dialog */}
+      <EClassDetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        eclass={selectedEClass}
+        onSave={handleRefresh}
+      />
     </div>
   );
 }

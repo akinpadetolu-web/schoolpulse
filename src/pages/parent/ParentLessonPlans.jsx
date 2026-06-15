@@ -4,15 +4,19 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, BookOpen, Download } from 'lucide-react';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ParentLessonPlans() {
   const { schoolUser: user } = useSchoolAuth();
+  const { toast } = useToast();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [filter, setFilter] = useState("upcoming");
+  const [downloading, setDownloading] = useState({});
 
   useEffect(() => {
     async function load() {
@@ -70,6 +74,30 @@ export default function ParentLessonPlans() {
     return format(d, 'EEE, MMM d yyyy');
   }
 
+  const handleDownloadPDF = async (planId, planTitle) => {
+    setDownloading(prev => ({ ...prev, [planId]: true }));
+    try {
+      const response = await base44.functions.invoke('downloadLessonPlan', { planId });
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${planTitle || 'lesson-plan'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast({ title: 'Success', description: 'Lesson plan downloaded' });
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({ title: 'Error', description: 'Failed to download lesson plan', variant: 'destructive' });
+    } finally {
+      setDownloading(prev => ({ ...prev, [planId]: false }));
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
@@ -119,23 +147,34 @@ export default function ParentLessonPlans() {
                       <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">📅 Today's Lesson</span>
                     </div>
                   )}
-                  <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold">{plan.title}</p>
-                        {plan.date && (
-                          <Badge variant={isToday(parseISO(plan.date)) ? "default" : isFuture(parseISO(plan.date)) ? "outline" : "secondary"} className="text-xs">
-                            {dateLabel(plan.date)}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {plan.subjectName} · {plan.className} · by {plan.teacherName}
-                        {totalMins > 0 && <span className="ml-2">· {totalMins} min</span>}
-                      </p>
-                    </div>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />}
-                  </div>
+                  <div className="flex items-start justify-between gap-3 p-4">
+                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : plan.id)}>
+                       <div className="flex items-center gap-2 flex-wrap">
+                         <p className="font-semibold">{plan.title}</p>
+                         {plan.date && (
+                           <Badge variant={isToday(parseISO(plan.date)) ? "default" : isFuture(parseISO(plan.date)) ? "outline" : "secondary"} className="text-xs">
+                             {dateLabel(plan.date)}
+                           </Badge>
+                         )}
+                       </div>
+                       <p className="text-sm text-muted-foreground mt-0.5">
+                         {plan.subjectName} · {plan.className} · by {plan.teacherName}
+                         {totalMins > 0 && <span className="ml-2">· {totalMins} min</span>}
+                       </p>
+                     </div>
+                     <div className="flex items-center gap-2 flex-shrink-0">
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={(e) => { e.stopPropagation(); handleDownloadPDF(plan.id, plan.title); }}
+                         disabled={downloading[plan.id]}
+                         title="Download as PDF"
+                       >
+                         {downloading[plan.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                       </Button>
+                       {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                     </div>
+                   </div>
 
                   {isExpanded && (
                     <div className="border-t px-4 pb-4 pt-4 space-y-4">
