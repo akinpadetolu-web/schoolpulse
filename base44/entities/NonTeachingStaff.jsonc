@@ -1,0 +1,104 @@
+{
+  "name": "NonTeachingStaff",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "fullName": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "HR",
+        "Accounts",
+        "Security",
+        "Maintenance",
+        "IT",
+        "Administration",
+        "Transport",
+        "Catering",
+        "Library",
+        "Other"
+      ],
+      "default": "HR"
+    },
+    "jobTitle": {
+      "type": "string"
+    },
+    "employeeId": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female",
+        "Other"
+      ]
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "format": "date"
+    },
+    "address": {
+      "type": "string"
+    },
+    "emergencyContactName": {
+      "type": "string"
+    },
+    "emergencyContactPhone": {
+      "type": "string"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "employmentType": {
+      "type": "string",
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract",
+        "casual"
+      ],
+      "default": "full_time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "on_leave",
+        "terminated"
+      ],
+      "default": "active"
+    },
+    "profilePictureUrl": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "fullName",
+    "department"
+  ]
+}

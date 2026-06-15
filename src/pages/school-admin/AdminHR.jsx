@@ -13,6 +13,8 @@ import { Users, UserCheck, Calendar, Loader2, Check, X, Clock, Search, Plus, Shi
 import { toast } from 'sonner';
 import CreateHRStaffDialog from '@/components/hr/CreateHRStaffDialog';
 import HRStaffPermissionsDialog from '@/components/hr/HRStaffPermissionsDialog';
+import StaffProfileDialog from '@/components/hr/StaffProfileDialog';
+import { Building2, Phone, Mail, Edit, Trash2 } from 'lucide-react';
 
 const LEAVE_TYPES = ['annual', 'sick', 'maternity', 'paternity', 'compassionate', 'unpaid', 'other'];
 const STATUS_COLORS = {
@@ -39,6 +41,12 @@ export default function AdminHR() {
   const [showCreateHR, setShowCreateHR] = useState(false);
   const [selectedHRMember, setSelectedHRMember] = useState(null);
   const [showPermissions, setShowPermissions] = useState(false);
+  // Non-teaching staff
+  const [nonTeachingStaff, setNonTeachingStaff] = useState([]);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [staffSearch, setStaffSearch] = useState('');
 
   const [leaveForm, setLeaveForm] = useState({
     staffId: '', leaveType: 'annual', startDate: '', endDate: '', reason: '',
@@ -54,18 +62,20 @@ export default function AdminHR() {
   }, [staffAttendance, attendanceDate]);
 
   async function loadData() {
-    const [teachers, admins, hrStaffList, lv, att] = await Promise.all([
+    const [teachers, admins, hrStaffList, lv, att, nonTeaching] = await Promise.all([
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'teacher', isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'admin', isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'hr_staff', isArchived: false }),
       base44.entities.StaffLeave.filter({ schoolId: user?.schoolId }),
       base44.entities.StaffAttendance.filter({ schoolId: user?.schoolId }),
+      base44.entities.NonTeachingStaff.filter({ schoolId: user?.schoolId, isArchived: false }),
     ]);
     const allStaff = [...(teachers || []), ...(admins || [])];
     setStaff(allStaff);
     setHrStaff(hrStaffList || []);
     setLeaves(lv || []);
     setStaffAttendance(att || []);
+    setNonTeachingStaff(nonTeaching || []);
     setLoading(false);
   }
 
@@ -190,6 +200,7 @@ export default function AdminHR() {
             Leave Requests
             {pendingLeaves > 0 && <span className="ml-1.5 bg-amber-500 text-white text-xs rounded-full px-1.5">{pendingLeaves}</span>}
           </TabsTrigger>
+          <TabsTrigger value="non_teaching">Staff <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">{nonTeachingStaff.length}</span></TabsTrigger>
           <TabsTrigger value="hr_staff">HR Staff <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">{hrStaff.length}</span></TabsTrigger>
         </TabsList>
 
@@ -346,6 +357,128 @@ export default function AdminHR() {
           )}
         </TabsContent>
 
+        {/* NON-TEACHING STAFF TAB */}
+        <TabsContent value="non_teaching">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search staff..." value={staffSearch} onChange={e => setStaffSearch(e.target.value)} className="pl-9" />
+            </div>
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="All Departments" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {['HR', 'Accounts', 'Security', 'Maintenance', 'IT', 'Administration', 'Transport', 'Catering', 'Library', 'Other'].map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => { setEditingStaff(null); setShowStaffDialog(true); }}>
+              <Plus className="w-4 h-4 mr-2" /> Add Staff
+            </Button>
+          </div>
+
+          {(() => {
+            const filtered = nonTeachingStaff.filter(s => {
+              const matchSearch = s.fullName?.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                s.email?.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                s.jobTitle?.toLowerCase().includes(staffSearch.toLowerCase());
+              const matchDept = deptFilter === 'all' || s.department === deptFilter;
+              return matchSearch && matchDept;
+            });
+
+            if (filtered.length === 0) return (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No staff found</p>
+                  <p className="text-sm mt-1">Add non-teaching staff and assign them to departments.</p>
+                </CardContent>
+              </Card>
+            );
+
+            // Group by department
+            const grouped = filtered.reduce((acc, s) => {
+              const dept = s.department || 'Other';
+              if (!acc[dept]) acc[dept] = [];
+              acc[dept].push(s);
+              return acc;
+            }, {});
+
+            const STATUS_BADGE = {
+              active: 'bg-emerald-100 text-emerald-700',
+              inactive: 'bg-slate-100 text-slate-700',
+              on_leave: 'bg-blue-100 text-blue-700',
+              terminated: 'bg-red-100 text-red-700',
+            };
+
+            return (
+              <div className="space-y-6">
+                {Object.entries(grouped).map(([dept, members]) => (
+                  <div key={dept}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 className="w-4 h-4 text-primary" />
+                      <h3 className="font-semibold text-sm">{dept}</h3>
+                      <span className="text-xs text-muted-foreground">({members.length})</span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {members.map(member => (
+                        <Card key={member.id} className="border-0 shadow-sm">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
+                                  {member.fullName?.charAt(0) || '?'}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">{member.fullName}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{member.jobTitle || member.department}</p>
+                                  {member.email && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <Mail className="w-3 h-3 text-muted-foreground" />
+                                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                                    </div>
+                                  )}
+                                  {member.phone && (
+                                    <div className="flex items-center gap-1">
+                                      <Phone className="w-3 h-3 text-muted-foreground" />
+                                      <p className="text-xs text-muted-foreground">{member.phone}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                <Badge className={`text-xs capitalize ${STATUS_BADGE[member.status] || 'bg-slate-100 text-slate-700'}`}>
+                                  {member.status?.replace('_', ' ') || 'active'}
+                                </Badge>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditingStaff(member); setShowStaffDialog(true); }}>
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={async () => {
+                                    await base44.entities.NonTeachingStaff.update(member.id, { isArchived: true });
+                                    toast.success('Staff member removed');
+                                    loadData();
+                                  }}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                            {member.employeeId && (
+                              <p className="text-xs text-muted-foreground mt-2 border-t pt-2">ID: {member.employeeId} {member.employmentType && `• ${member.employmentType.replace('_', ' ')}`}</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </TabsContent>
+
         {/* HR STAFF TAB */}
         <TabsContent value="hr_staff">
           <div className="flex items-center justify-between mb-4">
@@ -394,6 +527,7 @@ export default function AdminHR() {
         </TabsContent>
       </Tabs>
 
+      <StaffProfileDialog open={showStaffDialog} onOpenChange={setShowStaffDialog} member={editingStaff} schoolUser={user} onSaved={loadData} />
       <CreateHRStaffDialog open={showCreateHR} onOpenChange={setShowCreateHR} schoolUser={user} onCreated={loadData} />
       {selectedHRMember && (
         <HRStaffPermissionsDialog
