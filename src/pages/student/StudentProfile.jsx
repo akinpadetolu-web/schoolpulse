@@ -3,6 +3,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
+import StudentFeesTab from '@/components/student/StudentFeesTab';
 
 export default function StudentProfile() {
   const { schoolUser: user } = useSchoolAuth();
@@ -23,6 +24,7 @@ export default function StudentProfile() {
       <Tabs defaultValue="general">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="fees">My Fees</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
@@ -65,6 +67,10 @@ export default function StudentProfile() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="fees">
+          <StudentFeesTab />
         </TabsContent>
 
       </Tabs>

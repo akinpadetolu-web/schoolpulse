@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, ClipboardList, Megaphone, LogOut, X, Users, CalendarDays, Video, Bell, Settings, UserCheck, MessageSquare, BookOpen, CreditCard } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,12 @@ const baseParentNavGroups = [
       { label: "Grades", path: "/parent/grades", icon: ClipboardList },
       { label: "Attendance", path: "/parent/attendance", icon: UserCheck },
       { label: "E-Class Schedule", path: "/parent/e-class", icon: Video },
+    ]
+  },
+  {
+    label: 'FINANCE',
+    items: [
+      { label: "Fees & Payments", path: "/parent/fees-payments", icon: CreditCard },
     ]
   },
   {
