@@ -7,11 +7,19 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { fileUrl, fileType = 'text', topic = '', subjectName = '' } = body;
+    const { fileUrl, fileType = 'text', topic = '', subjectName = '', questionCounts = {} } = body;
 
     if (!fileUrl) {
       return Response.json({ error: 'fileUrl is required' }, { status: 400 });
     }
+
+    // Default question distribution if not provided
+    const counts = {
+      multiple_choice: questionCounts.multiple_choice || 2,
+      true_false: questionCounts.true_false || 1,
+      short_answer: questionCounts.short_answer || 1,
+      long_answer: questionCounts.long_answer || 1
+    };
 
     // Fetch file content
     let fileContent = '';
@@ -35,7 +43,7 @@ Deno.serve(async (req) => {
     }
 
     // Use Gemini Pro to intelligently generate questions
-    const prompt = `You are an expert teacher and quiz creator. Analyze the following content and create a diverse set of quiz questions.
+    const prompt = `You are an expert teacher and quiz creator. Analyze the following content and create a precise set of quiz questions.
 
 Content/Topic: ${topic || 'General Knowledge'}
 Subject: ${subjectName || 'General'}
@@ -43,18 +51,17 @@ Subject: ${subjectName || 'General'}
 Content to analyze:
 ${fileContent.substring(0, 3000)}
 
-Generate a well-balanced quiz with:
-1. 2-3 multiple choice questions (with 4 options each)
-2. 1-2 true/false questions
-3. 1 short answer question
-4. 1 passage-based reading question (if applicable)
-5. 1 long essay question
+Generate exactly:
+- ${counts.multiple_choice} multiple choice questions (with 4 options each)
+- ${counts.true_false} true/false questions
+- ${counts.short_answer} short answer questions
+- ${counts.long_answer} long essay questions
 
 Return ONLY valid JSON array in this format (no markdown, no code blocks):
 [
   {
     "question": "question text",
-    "type": "multiple_choice|true_false|short_answer|passage_based|long_answer",
+    "type": "multiple_choice|true_false|short_answer|long_answer",
     "options": ["option1", "option2", "option3", "option4"],
     "correctAnswer": "correct option text or answer",
     "points": 1
@@ -65,10 +72,10 @@ Rules:
 - For multiple_choice: include exactly 4 options
 - For true_false: options should be ["True", "False"]
 - For short_answer: keep correctAnswer concise
-- For passage_based: reference the provided content
 - For long_answer: correctAnswer should be a rubric/key points
 - All questions must be clear and well-formatted
-- Points can be 1-5 based on difficulty
+- Points: 1 for multiple_choice/true_false, 2 for short_answer, 3-5 for long_answer
+- Questions must align with the provided content
 `;
 
     const response = await base44.integrations.Core.InvokeLLM({

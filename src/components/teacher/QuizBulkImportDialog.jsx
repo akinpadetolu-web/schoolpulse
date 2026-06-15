@@ -16,6 +16,12 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
   const [error, setError] = useState('');
   const [topic, setTopic] = useState('');
   const [fileUrl, setFileUrl] = useState('');
+  const [questionCounts, setQuestionCounts] = useState({
+    multiple_choice: 2,
+    true_false: 1,
+    short_answer: 1,
+    long_answer: 1
+  });
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -140,13 +146,20 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
       return;
     }
 
+    const totalQuestions = Object.values(questionCounts).reduce((a, b) => a + b, 0);
+    if (totalQuestions === 0) {
+      setError('Specify at least one question');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await base44.functions.invoke('smartQuizImport', {
         fileUrl,
         fileType: format,
         topic,
-        subjectName: ''
+        subjectName: '',
+        questionCounts
       });
 
       if (response.data?.questions) {
@@ -249,6 +262,60 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
                   onChange={e => setTopic(e.target.value)}
                   disabled={loading}
                 />
+              </div>
+
+              {/* Question Type Counts */}
+              <div>
+                <Label className="text-sm font-semibold">Question Distribution</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Multiple Choice</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={questionCounts.multiple_choice}
+                      onChange={e => setQuestionCounts({ ...questionCounts, multiple_choice: Math.max(0, parseInt(e.target.value) || 0) })}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">True/False</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={questionCounts.true_false}
+                      onChange={e => setQuestionCounts({ ...questionCounts, true_false: Math.max(0, parseInt(e.target.value) || 0) })}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Short Answer</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={questionCounts.short_answer}
+                      onChange={e => setQuestionCounts({ ...questionCounts, short_answer: Math.max(0, parseInt(e.target.value) || 0) })}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Long Essay</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={questionCounts.long_answer}
+                      onChange={e => setQuestionCounts({ ...questionCounts, long_answer: Math.max(0, parseInt(e.target.value) || 0) })}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Total: {Object.values(questionCounts).reduce((a, b) => a + b, 0)} questions
+                </p>
               </div>
             </>
           )}
