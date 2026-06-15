@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Loader2, Video, Plus, Trash2, Edit2, Play, Clock, Users } from 'lucide-react';
 import { format, isPast, isFuture } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function TeacherEClass() {
   const { schoolUser: user } = useSchoolAuth();
@@ -19,6 +20,8 @@ export default function TeacherEClass() {
   const [editingClass, setEditingClass] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     title: '',
     subjectId: '',
@@ -50,6 +53,7 @@ export default function TeacherEClass() {
   }, [user?.schoolId, user?.id]);
 
   const handleOpenDialog = (cls = null) => {
+    setErrors({});
     if (cls) {
       setEditingClass(cls);
       setForm({
@@ -74,38 +78,64 @@ export default function TeacherEClass() {
     setDialogOpen(true);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!form.title?.trim()) newErrors.title = 'Title is required';
+    if (!form.subjectId) newErrors.subjectId = 'Subject is required';
+    if (!form.meetLink?.trim()) newErrors.meetLink = 'Meet link is required';
+    if (!form.startDateTime) newErrors.startDateTime = 'Start date & time is required';
+    
+    if (form.meetLink && !form.meetLink.includes('meet.google.com') && !form.meetLink.includes('zoom.us')) {
+      newErrors.meetLink = 'Please use a valid Google Meet or Zoom link';
+    }
+    
+    if (form.endDateTime && form.startDateTime && new Date(form.endDateTime) <= new Date(form.startDateTime)) {
+      newErrors.endDateTime = 'End time must be after start time';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
-    if (!form.title || !form.subjectId || !form.meetLink || !form.startDateTime) {
-      alert('Please fill in all required fields');
+    if (!validateForm()) {
+      toast.error('Please fix the errors below');
       return;
     }
 
-    const subject = subjects.find(s => s.id === form.subjectId);
-    const data = {
-      schoolId: user?.schoolId,
-      schoolName: user?.schoolName,
-      classId: user?.classId,
-      className: user?.className,
-      subjectId: form.subjectId,
-      subjectName: subject?.name,
-      teacherId: user?.id,
-      teacherName: user?.fullName,
-      title: form.title,
-      meetLink: form.meetLink,
-      startDateTime: new Date(form.startDateTime).toISOString(),
-      endDateTime: form.endDateTime ? new Date(form.endDateTime).toISOString() : null,
-      description: form.description,
-    };
-
+    setSaving(true);
     try {
+      const subject = subjects.find(s => s.id === form.subjectId);
+      const data = {
+        schoolId: user?.schoolId,
+        schoolName: user?.schoolName,
+        classId: user?.classId,
+        className: user?.className,
+        subjectId: form.subjectId,
+        subjectName: subject?.name,
+        teacherId: user?.id,
+        teacherName: user?.fullName,
+        title: form.title.trim(),
+        meetLink: form.meetLink.trim(),
+        startDateTime: new Date(form.startDateTime).toISOString(),
+        endDateTime: form.endDateTime ? new Date(form.endDateTime).toISOString() : null,
+        description: form.description.trim(),
+      };
+
       if (editingClass) {
         await base44.entities.VirtualClass.update(editingClass.id, data);
+        toast.success('E-Class updated successfully');
       } else {
         await base44.entities.VirtualClass.create(data);
+        toast.success('E-Class created successfully');
       }
       setDialogOpen(false);
+      setErrors({});
     } catch (error) {
       console.error('Save failed:', error);
+      toast.error(error.message || 'Failed to save E-Class. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -206,7 +236,7 @@ export default function TeacherEClass() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingClass ? 'Edit E-Class' : 'Create E-Class'}</DialogTitle>
           </DialogHeader>
@@ -217,18 +247,21 @@ export default function TeacherEClass() {
                 placeholder="e.g., Mathematics - Algebra Introduction"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className={errors.title ? 'border-destructive' : ''}
               />
+              {errors.title && <p className="text-xs text-destructive mt-1">{errors.title}</p>}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Subject *</label>
               <select
-                className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                className={`w-full px-3 py-2 border border-input rounded-md text-sm ${errors.subjectId ? 'border-destructive' : ''}`}
                 value={form.subjectId}
                 onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
               >
                 <option value="">Select subject</option>
                 {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
+              {errors.subjectId && <p className="text-xs text-destructive mt-1">{errors.subjectId}</p>}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Google Meet Link *</label>
@@ -236,7 +269,9 @@ export default function TeacherEClass() {
                 placeholder="https://meet.google.com/..."
                 value={form.meetLink}
                 onChange={(e) => setForm({ ...form, meetLink: e.target.value })}
+                className={errors.meetLink ? 'border-destructive' : ''}
               />
+              {errors.meetLink && <p className="text-xs text-destructive mt-1">{errors.meetLink}</p>}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Start Date & Time *</label>
@@ -244,7 +279,9 @@ export default function TeacherEClass() {
                 type="datetime-local"
                 value={form.startDateTime}
                 onChange={(e) => setForm({ ...form, startDateTime: e.target.value })}
+                className={errors.startDateTime ? 'border-destructive' : ''}
               />
+              {errors.startDateTime && <p className="text-xs text-destructive mt-1">{errors.startDateTime}</p>}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">End Date & Time</label>
@@ -252,7 +289,9 @@ export default function TeacherEClass() {
                 type="datetime-local"
                 value={form.endDateTime}
                 onChange={(e) => setForm({ ...form, endDateTime: e.target.value })}
+                className={errors.endDateTime ? 'border-destructive' : ''}
               />
+              {errors.endDateTime && <p className="text-xs text-destructive mt-1">{errors.endDateTime}</p>}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Description (optional)</label>
@@ -264,9 +303,18 @@ export default function TeacherEClass() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>Save E-Class</Button>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save E-Class'
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>

@@ -97,7 +97,12 @@ export default function NoteCard({ note, onEdit, onDelete, onShare }) {
                 />
               )}
               {isDrawing && note.drawingUrl && (
-                <img src={note.drawingUrl} alt="drawing preview" className="mt-2 h-16 rounded border object-contain bg-white" />
+                <>
+                  <img src={note.drawingUrl} alt="drawing preview" className="mt-2 h-16 rounded border object-contain bg-white" />
+                  {note.description && (
+                    <p className="text-xs text-muted-foreground mt-1">{note.description}</p>
+                  )}
+                </>
               )}
               {note.teacherFeedback && (
                 <div className="mt-2 bg-green-50 border border-green-200 rounded-lg px-2.5 py-2">

@@ -6,7 +6,7 @@ import SubjectTagPicker from '@/components/notes/SubjectTagPicker';
 
 const COLORS = ['#000000', '#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#f59e0b', '#ec4899', '#14b8a6', '#64748b', '#ffffff'];
 
-export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved, initialSubject, onSubjectChange }) {
+export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, onShare, isSaved, initialSubject, onSubjectChange, initialDescription, onDescriptionChange }) {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPos = useRef(null);
@@ -21,6 +21,7 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
   const [saveStatus, setSaveStatus] = useState('idle');
   const [downloading, setDownloading] = useState(false);
   const [subject, setSubject] = useState(initialSubject || '');
+  const [description, setDescription] = useState(initialDescription || '');
 
   // Initialize canvas and load existing image
   useEffect(() => {
@@ -255,8 +256,18 @@ export default function NoteDrawingCanvas({ onSave, onCancel, existingImageUrl, 
         </div>
       </div>
 
-      {/* Subject tag */}
-      <SubjectTagPicker value={subject} onChange={(val) => { setSubject(val); onSubjectChange?.(val); }} />
+      {/* Subject tag and Description */}
+      <div className="space-y-2">
+        <SubjectTagPicker value={subject} onChange={(val) => { setSubject(val); onSubjectChange?.(val); }} />
+        <textarea
+          placeholder="Add a description for this drawing..."
+          value={description}
+          onChange={(e) => { setDescription(e.target.value); onDescriptionChange?.(e.target.value); }}
+          maxLength={1000}
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+          rows={2}
+        />
+      </div>
 
       {/* Canvas */}
       <div className="flex-1 border rounded-lg overflow-hidden bg-white" style={{ minHeight: 0 }}>

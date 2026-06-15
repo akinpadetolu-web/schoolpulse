@@ -44,13 +44,14 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [subject, setSubject] = useState(note?.subject || '');
+  const [description, setDescription] = useState(note?.description || '');
   const [saveStatus, setSaveStatus] = useState('idle');
   const autoSaveTimer = useRef(null);
   // Track the created note id for new notes after first save
   const noteIdRef = useRef(note?.id || null);
   const [downloading, setDownloading] = useState(false);
 
-  const triggerAutoSave = useCallback((newTitle, newContent, newSubject) => {
+  const triggerAutoSave = useCallback((newTitle, newContent, newSubject, newDescription) => {
     const trimmedTitle = newTitle.trim() || 'Untitled Note';
     clearTimeout(autoSaveTimer.current);
     setSaveStatus('idle');
@@ -58,9 +59,9 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
       setSaveStatus('saving');
       try {
         if (noteIdRef.current) {
-          await onAutoSave({ id: noteIdRef.current, title: trimmedTitle, content: newContent, subject: newSubject });
+          await onAutoSave({ id: noteIdRef.current, title: trimmedTitle, content: newContent, subject: newSubject, description: newDescription });
         } else {
-          const created = await onSave({ title: trimmedTitle, content: newContent, subject: newSubject, mode: 'text' });
+          const created = await onSave({ title: trimmedTitle, content: newContent, subject: newSubject, description: newDescription, mode: 'text' });
           if (created?.id) noteIdRef.current = created.id;
         }
         setSaveStatus('saved');
@@ -73,17 +74,22 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
-    triggerAutoSave(e.target.value, content, subject);
+    triggerAutoSave(e.target.value, content, subject, description);
   };
 
   const handleContentChange = (val) => {
     setContent(val);
-    triggerAutoSave(title, val, subject);
+    triggerAutoSave(title, val, subject, description);
   };
 
   const handleSubjectChange = (val) => {
     setSubject(val);
-    triggerAutoSave(title, content, val);
+    triggerAutoSave(title, content, val, description);
+  };
+
+  const handleDescriptionChange = (e) => {
+    setDescription(e.target.value);
+    triggerAutoSave(title, content, subject, e.target.value);
   };
 
   useEffect(() => () => clearTimeout(autoSaveTimer.current), []);
@@ -107,6 +113,16 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
         <StatusIcon />
       </div>
       <SubjectTagPicker value={subject} onChange={handleSubjectChange} />
+      {note?.mode === 'drawing' && (
+        <textarea
+          placeholder="Add a description for this drawing..."
+          value={description}
+          onChange={handleDescriptionChange}
+          maxLength={1000}
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+          rows={3}
+        />
+      )}
       <div className="flex-1 min-h-[300px]">
         <ReactQuill
           theme="snow"

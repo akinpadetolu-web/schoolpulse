@@ -34,6 +34,24 @@
       "type": "string",
       "description": "Topics or description"
     },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Teaching materials and attachments"
+    },
     "meetLink": {
       "type": "string",
       "description": "Google Meet link"

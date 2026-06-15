@@ -19,6 +19,10 @@
       "type": "string",
       "description": "Rich text HTML content"
     },
+    "description": {
+      "type": "string",
+      "description": "Text description for drawings"
+    },
     "drawingUrl": {
       "type": "string",
       "description": "URL of saved drawing PNG"

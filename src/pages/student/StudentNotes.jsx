@@ -87,8 +87,9 @@ export default function StudentNotes() {
 
       const current = editingNoteRef.current;
       const title = current?.title || `Drawing ${new Date().toLocaleDateString()}`;
+      const description = current?.description || '';
       if (current?.id) {
-        await base44.entities.Note.update(current.id, { drawingUrl: file_url, mode: 'drawing' });
+        await base44.entities.Note.update(current.id, { drawingUrl: file_url, mode: 'drawing', description });
       } else {
         const created = await base44.entities.Note.create({
           schoolId: user.schoolId,
@@ -97,6 +98,7 @@ export default function StudentNotes() {
           title,
           drawingUrl: file_url,
           mode: 'drawing',
+          description,
         });
         // Update ref so subsequent auto-saves update the same record
         editingNoteRef.current = created;
@@ -242,9 +244,15 @@ export default function StudentNotes() {
               onShare={handleShareFromEditor}
               isSaved={!!editingNoteRef.current?.id}
               initialSubject={editingNote?.subject || ''}
+              initialDescription={editingNote?.description || ''}
               onSubjectChange={async (val) => {
                 if (editingNoteRef.current?.id) {
                   await base44.entities.Note.update(editingNoteRef.current.id, { subject: val });
+                }
+              }}
+              onDescriptionChange={async (val) => {
+                if (editingNoteRef.current?.id) {
+                  await base44.entities.Note.update(editingNoteRef.current.id, { description: val });
                 }
               }}
             />
