@@ -1,0 +1,117 @@
+{
+  "name": "PurchaseRequest",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "requestNumber": {
+      "type": "string",
+      "description": "Auto-generated PR number"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "classroom_equipment",
+        "laboratory_equipment",
+        "sports_equipment",
+        "office_equipment",
+        "furniture",
+        "ict_equipment",
+        "cleaning_supplies",
+        "other"
+      ]
+    },
+    "itemName": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "estimatedUnitPrice": {
+      "type": "number"
+    },
+    "estimatedTotalPrice": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "justification": {
+      "type": "string",
+      "description": "Why this item is needed"
+    },
+    "requestedBy": {
+      "type": "string"
+    },
+    "requestedByName": {
+      "type": "string"
+    },
+    "requestedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "ordered",
+        "received"
+      ],
+      "default": "draft"
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "approvedByName": {
+      "type": "string"
+    },
+    "approvalDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejectionReason": {
+      "type": "string"
+    },
+    "supplierName": {
+      "type": "string"
+    },
+    "purchaseOrderNumber": {
+      "type": "string"
+    },
+    "orderedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expectedDeliveryDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "itemName",
+    "category",
+    "quantity"
+  ]
+}

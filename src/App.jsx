@@ -82,6 +82,7 @@ const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveReq
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
 const AdminExamTimetable = lazy(() => import('./pages/school-admin/AdminExamTimetable'));
 const AdminReportCardTemplates = lazy(() => import('./pages/school-admin/AdminReportCardTemplates'));
+const AdminInventory = lazy(() => import('./pages/school-admin/AdminInventory'));
 const StudentReportCards = lazy(() => import('./pages/student/StudentReportCards'));
 const StudentExamTimetable = lazy(() => import('./pages/student/StudentExamTimetable'));
 
@@ -219,6 +220,7 @@ const AuthenticatedApp = () => {
           <Route path="exam-timetable" element={<AdminExamTimetable />} />
           <Route path="e-class" element={<FeatureGuard path="/school-admin/e-class"><AdminEClass /></FeatureGuard>} />
           <Route path="messages" element={<FeatureGuard path="/school-admin/messages"><AdminMessaging /></FeatureGuard>} />
+          <Route path="inventory" element={<AdminInventory />} />
           <Route path="events" element={<AdminCalendar />} />
         </Route>
 

@@ -1,0 +1,88 @@
+{
+  "name": "MaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "inventoryId": {
+      "type": "string",
+      "description": "ID of the asset needing maintenance"
+    },
+    "assetName": {
+      "type": "string"
+    },
+    "assetId": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "requestedBy": {
+      "type": "string"
+    },
+    "requestedByName": {
+      "type": "string"
+    },
+    "issue": {
+      "type": "string",
+      "description": "Description of the problem"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "assignedTo": {
+      "type": "string",
+      "description": "Staff member assigned to fix"
+    },
+    "assignedToName": {
+      "type": "string"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "completionDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "estimatedCost": {
+      "type": "number"
+    },
+    "actualCost": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "requestedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "inventoryId",
+    "issue"
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "name": "Inventory",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "assetId": {
+      "type": "string",
+      "description": "Unique asset identifier/barcode"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "classroom_equipment",
+        "laboratory_equipment",
+        "sports_equipment",
+        "office_equipment",
+        "furniture",
+        "ict_equipment",
+        "cleaning_supplies",
+        "other"
+      ]
+    },
+    "location": {
+      "type": "string",
+      "description": "e.g. Classroom A1, Lab 2, Sports Hall"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "unit": {
+      "type": "string",
+      "description": "e.g. units, sets, pieces"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "damaged",
+        "maintenance",
+        "retired",
+        "lost"
+      ],
+      "default": "active"
+    },
+    "purchaseDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "purchasePrice": {
+      "type": "number"
+    },
+    "purchaseCurrency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "supplier": {
+      "type": "string"
+    },
+    "warranty": {
+      "type": "string",
+      "description": "e.g. 12 months, 2 years"
+    },
+    "warrantyExpiryDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "usefulLifeYears": {
+      "type": "number",
+      "description": "Expected lifespan in years for depreciation"
+    },
+    "depreciationMethod": {
+      "type": "string",
+      "enum": [
+        "straight_line",
+        "none"
+      ],
+      "default": "straight_line"
+    },
+    "currentValue": {
+      "type": "number",
+      "description": "Current asset value after depreciation"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "imageUrl": {
+      "type": "string"
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "schoolId",
+    "name",
+    "category",
+    "location"
+  ]
+}

@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -77,6 +77,12 @@ const baseAdminNavGroups = [
     ]
   },
   {
+    label: 'OPERATIONS',
+    items: [
+      { label: "Inventory", path: "/school-admin/inventory", icon: Package },
+    ]
+  },
+  {
     label: 'SETTINGS',
     items: [
       { label: "School Settings", path: "/school-admin/settings", icon: Settings },
@@ -120,6 +126,7 @@ const featureMap = {
   "/school-admin/academic-terms": "academicTerms",
   "/school-admin/sessions": "adminSessions",
   "/school-admin/calendar": "adminEvents",
+  "/school-admin/inventory": "adminInventory",
 };
 
 export default function SchoolSidebar({ isOpen, onClose }) {
