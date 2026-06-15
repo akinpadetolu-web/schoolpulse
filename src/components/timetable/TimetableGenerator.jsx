@@ -27,11 +27,15 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
         toast.error(res.data?.error || 'No entries were generated');
       }
     } catch (err) {
-      toast.error(err?.message || 'Generation failed');
-      setResult({ error: err?.message || 'Generation failed' });
-    } finally {
-      setGenerating(false);
-    }
+       const errorMsg = err?.message || 'Generation failed';
+       const displayMsg = errorMsg.includes('504') 
+         ? 'Request timeout (504): AI generation took too long'
+         : errorMsg;
+       toast.error(displayMsg);
+       setResult({ error: displayMsg });
+     } finally {
+       setGenerating(false);
+     }
   }
 
   return (
@@ -56,11 +60,14 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
       </div>
 
       {result?.error && (
-        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          {result.error}
-        </div>
-      )}
+         <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+           <div>
+             {result.error}
+             {result.error?.includes('504') && <p className="text-xs mt-1 text-red-600">The AI generation took too long. Try with a shorter or clearer prompt, and ensure all classes, subjects, and teachers are configured.</p>}
+           </div>
+         </div>
+       )}
 
       <Button className="w-full h-11" onClick={handleGenerate} disabled={generating}>
         {generating
