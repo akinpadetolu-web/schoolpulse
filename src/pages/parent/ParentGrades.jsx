@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 function getColor(pct) {
   if (pct >= 70) return 'text-emerald-600';
@@ -20,6 +21,7 @@ export default function ParentGrades() {
   const [children, setChildren] = useState([]);
   const [grades, setGrades] = useState([]);
   const [examResults, setExamResults] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
@@ -43,6 +45,8 @@ export default function ParentGrades() {
           ]);
           setGrades(allGrades.flat().filter(Boolean));
           setExamResults(allExams.flat().filter(Boolean));
+          const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []);
+          setCategories(cats || []);
         }
       } catch { /* ignore */ }
       setLoading(false);
@@ -115,12 +119,26 @@ export default function ParentGrades() {
         const childGrades = grades.filter(g => g.studentId === child.id);
         const childExams = examResults.filter(e => e.studentId === child.id);
 
-        // Group grades by subject
+        // Group grades by subjectId
         const bySubject = {};
         childGrades.forEach(g => {
-          if (!bySubject[g.subjectName]) bySubject[g.subjectName] = [];
-          bySubject[g.subjectName].push(g);
+          const key = g.subjectId || g.subjectName;
+          if (!bySubject[key]) bySubject[key] = { name: g.subjectName, subjectId: g.subjectId, grades: [] };
+          bySubject[key].grades.push(g);
         });
+
+        // Weighted subject results
+        const subjectResults = Object.values(bySubject).map(({ name, subjectId, grades: sg }) => {
+          const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === child.classId);
+          const result = calculateWeightedScore(childGrades, classCats, child.id, subjectId);
+          return { name, subjectId, grades: sg, ...result };
+        });
+
+        const overallAvg = subjectResults.length > 0
+          ? Math.round(subjectResults.reduce((sum, s) => sum + s.overall, 0) / subjectResults.length)
+          : null;
+
+        const anyWeighted = subjectResults.some(s => s.hasWeights);
 
         // Group exams by subject
         const examsBySubject = {};
@@ -128,10 +146,6 @@ export default function ParentGrades() {
           if (!examsBySubject[e.subjectName]) examsBySubject[e.subjectName] = [];
           examsBySubject[e.subjectName].push(e);
         });
-
-        const overallAvg = childGrades.length > 0
-          ? Math.round(childGrades.reduce((sum, g) => sum + ((g.score / (g.maxScore || 100)) * 100), 0) / childGrades.length)
-          : null;
 
         return (
           <Card key={child.id} className="border-0 shadow-sm">
@@ -141,7 +155,7 @@ export default function ParentGrades() {
                 <div className="flex items-center gap-2">
                   {overallAvg !== null && (
                     <Badge className={`text-sm px-3 py-1 ${overallAvg >= 70 ? 'bg-emerald-100 text-emerald-700' : overallAvg >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                      Overall: {overallAvg}%
+                      Overall: {overallAvg}% {anyWeighted && '(weighted)'}
                     </Badge>
                   )}
                   {child.subjectAverages && child.subjectAverages.length > 0 && (
@@ -168,29 +182,35 @@ export default function ParentGrades() {
                 </TabsList>
 
                 <TabsContent value="classwork">
-                  {Object.keys(bySubject).length === 0 ? (
+                  {subjectResults.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No grade records yet.</p>
                   ) : (
                     <div className="space-y-4">
-                      {Object.entries(bySubject).map(([subject, gs]) => {
-                        const avg = Math.round(gs.reduce((s, g) => s + ((g.score / (g.maxScore || 100)) * 100), 0) / gs.length);
-                        return (
-                          <div key={subject}>
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="font-medium text-sm">{subject}</p>
-                              <span className={`text-sm font-semibold ${getColor(avg)}`}>{avg}% avg</span>
-                            </div>
-                            <div className="space-y-1">
-                              {gs.map(g => (
-                                <div key={g.id} className="flex items-center justify-between text-xs text-muted-foreground bg-secondary/50 rounded px-3 py-1.5">
-                                  <span className="capitalize">{g.assessmentType} {g.term ? `• ${g.term}` : ''}</span>
-                                  <span className={`font-medium ${getColor((g.score / (g.maxScore || 100)) * 100)}`}>{g.score}/{g.maxScore}</span>
-                                </div>
+                      {subjectResults.map(({ name, subjectId, grades: sg, overall, breakdown, hasWeights }) => (
+                        <div key={subjectId}>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-medium text-sm">{name}</p>
+                            <span className={`text-sm font-semibold ${getColor(overall)}`}>{overall}% {hasWeights && <span className="text-xs font-normal text-muted-foreground">(weighted)</span>}</span>
+                          </div>
+                          {hasWeights && breakdown.length > 0 && (
+                            <div className="mb-2 text-xs text-muted-foreground bg-muted/40 rounded px-2.5 py-1.5 flex flex-wrap gap-x-2">
+                              {breakdown.map(b => (
+                                <span key={b.assessmentType}>
+                                  {b.categoryName} {b.weight}% ({b.categoryAvg.toFixed(0)}) → <strong>{b.contribution.toFixed(1)}</strong>
+                                </span>
                               ))}
                             </div>
+                          )}
+                          <div className="space-y-1">
+                            {sg.map(g => (
+                              <div key={g.id} className="flex items-center justify-between text-xs text-muted-foreground bg-secondary/50 rounded px-3 py-1.5">
+                                <span className="capitalize">{g.assessmentType} {g.term ? `• ${g.term}` : ''}</span>
+                                <span className={`font-medium ${getColor((g.score / (g.maxScore || 100)) * 100)}`}>{g.score}/{g.maxScore}</span>
+                              </div>
+                            ))}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </TabsContent>

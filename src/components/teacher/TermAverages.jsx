@@ -1,14 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, Award } from 'lucide-react';
-
-function pct(score, max) {
-  if (!max) return 0;
-  return Math.round((score / max) * 100);
-}
+import { TrendingUp, Award, Info } from 'lucide-react';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 function gradeLabel(p) {
   if (p >= 70) return { label: "A", color: "text-emerald-600", bg: "bg-emerald-50" };
@@ -19,9 +17,10 @@ function gradeLabel(p) {
 }
 
 export default function TermAverages({ grades, classes, subjects }) {
+  const { schoolUser: user } = useSchoolAuth();
   const [filterClass, setFilterClass] = useState("all");
+  const [categories, setCategories] = useState([]);
 
-  // Derive available terms from actual grade data — never rely on hardcoded list
   const availableTerms = useMemo(() => {
     const seen = new Set();
     grades.forEach(g => { if (g.term) seen.add(g.term); });
@@ -29,11 +28,14 @@ export default function TermAverages({ grades, classes, subjects }) {
   }, [grades]);
 
   const [filterTerm, setFilterTerm] = useState("");
-
-  // Auto-select first term when available terms load
   const effectiveTerm = filterTerm || availableTerms[0] || "";
 
-  // Build per-student per-subject averages for selected term & class
+  useEffect(() => {
+    if (user?.schoolId) {
+      base44.entities.GradeCategory.filter({ schoolId: user.schoolId }).then(c => setCategories(c || []));
+    }
+  }, [user?.schoolId]);
+
   const averages = useMemo(() => {
     if (!effectiveTerm) return [];
     const termGrades = grades.filter(g => {
@@ -42,33 +44,35 @@ export default function TermAverages({ grades, classes, subjects }) {
       return true;
     });
 
-    // Group by studentId -> subjectId -> [grades]
-    const map = {};
-    for (const g of termGrades) {
-      if (!map[g.studentId]) map[g.studentId] = { studentName: g.studentName, classId: g.classId, subjects: {} };
-      if (!map[g.studentId].subjects[g.subjectId]) {
-        map[g.studentId].subjects[g.subjectId] = { subjectName: g.subjectName, records: [] };
-      }
-      map[g.studentId].subjects[g.subjectId].records.push(g);
-    }
+    // Unique students in this term/class
+    const studentMap = {};
+    termGrades.forEach(g => {
+      if (!studentMap[g.studentId]) studentMap[g.studentId] = { studentName: g.studentName, classId: g.classId };
+    });
 
-    // Compute averages
-    return Object.entries(map).map(([studentId, data]) => {
-      const subjectAverages = Object.entries(data.subjects).map(([subjectId, sData]) => {
-        const totalPct = sData.records.reduce((sum, r) => sum + pct(r.score, r.maxScore), 0);
-        const avg = Math.round(totalPct / sData.records.length);
-        return { subjectId, subjectName: sData.subjectName, avg, count: sData.records.length };
+    // Unique subjects in this term/class
+    const subjectIds = [...new Set(termGrades.map(g => g.subjectId))];
+
+    return Object.entries(studentMap).map(([studentId, sData]) => {
+      const subjectAverages = subjectIds.map(subjectId => {
+        const subjectName = termGrades.find(g => g.subjectId === subjectId)?.subjectName || subjectId;
+        // Try to find class-specific categories
+        const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === sData.classId);
+        const result = calculateWeightedScore(termGrades, classCats, studentId, subjectId, effectiveTerm);
+        return { subjectId, subjectName, avg: result.overall, hasWeights: result.hasWeights, breakdown: result.breakdown };
+      }).filter(s => {
+        // Only include subjects where this student has at least one grade
+        return termGrades.some(g => g.studentId === studentId && g.subjectId === s.subjectId);
       });
-      // Overall = average of all individual grade percentages (not average-of-averages)
-      const allRecords = Object.values(data.subjects).flatMap(s => s.records);
-      const overallAvg = allRecords.length
-        ? Math.round(allRecords.reduce((sum, r) => sum + pct(r.score, r.maxScore), 0) / allRecords.length)
-        : 0;
-      return { studentId, studentName: data.studentName, classId: data.classId, subjectAverages, overallAvg };
-    }).sort((a, b) => b.overallAvg - a.overallAvg);
-  }, [grades, filterClass, effectiveTerm]);
 
-  // All unique subjects in filtered results — stable memo
+      const overallAvg = subjectAverages.length
+        ? Math.round(subjectAverages.reduce((sum, s) => sum + s.avg, 0) / subjectAverages.length * 100) / 100
+        : 0;
+
+      return { studentId, studentName: sData.studentName, classId: sData.classId, subjectAverages, overallAvg };
+    }).sort((a, b) => b.overallAvg - a.overallAvg);
+  }, [grades, filterClass, effectiveTerm, categories]);
+
   const activeSubjects = useMemo(() => {
     const ids = new Set();
     averages.forEach(r => r.subjectAverages.forEach(s => ids.add(s.subjectId)));
@@ -78,22 +82,20 @@ export default function TermAverages({ grades, classes, subjects }) {
     });
   }, [averages]);
 
-  // Class average per subject — only students who have a score for that subject
   const classSubjectAverages = useMemo(() => {
     const result = {};
     for (const subj of activeSubjects) {
-      const vals = averages
-        .map(a => a.subjectAverages.find(s => s.subjectId === subj.id)?.avg)
-        .filter(v => v !== undefined && v !== null);
-      result[subj.id] = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+      const vals = averages.map(a => a.subjectAverages.find(s => s.subjectId === subj.id)?.avg).filter(v => v !== undefined);
+      result[subj.id] = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 100) / 100 : null;
     }
     return result;
   }, [averages, activeSubjects]);
 
+  const isWeighted = averages.some(a => a.subjectAverages.some(s => s.hasWeights));
+
   return (
     <div>
-      {/* Filters */}
-      <div className="flex gap-3 mb-5 flex-wrap">
+      <div className="flex gap-3 mb-5 flex-wrap items-center">
         <Select value={effectiveTerm} onValueChange={setFilterTerm}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Select term" /></SelectTrigger>
           <SelectContent>
@@ -107,6 +109,11 @@ export default function TermAverages({ grades, classes, subjects }) {
             {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
           </SelectContent>
         </Select>
+        {isWeighted && (
+          <span className="flex items-center gap-1 text-xs text-primary font-medium">
+            <Info className="w-3.5 h-3.5" /> Weighted grades active
+          </span>
+        )}
       </div>
 
       {averages.length === 0 ? (
@@ -116,42 +123,13 @@ export default function TermAverages({ grades, classes, subjects }) {
         </div>
       ) : (
         <>
-          {/* Summary stat cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Students</p>
-                <p className="text-2xl font-bold mt-1">{averages.length}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Subjects</p>
-                <p className="text-2xl font-bold mt-1">{activeSubjects.length}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Class Average</p>
-                <p className="text-2xl font-bold mt-1">
-                  {averages.length
-                    ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%`
-                    : "—"}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4 flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-500" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Top Student</p>
-                  <p className="text-sm font-bold mt-0.5 truncate">{averages[0]?.studentName || "—"}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Card className="border-0 shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Students</p><p className="text-2xl font-bold mt-1">{averages.length}</p></CardContent></Card>
+            <Card className="border-0 shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Subjects</p><p className="text-2xl font-bold mt-1">{activeSubjects.length}</p></CardContent></Card>
+            <Card className="border-0 shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Class Average</p><p className="text-2xl font-bold mt-1">{averages.length ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%` : "—"}</p></CardContent></Card>
+            <Card className="border-0 shadow-sm"><CardContent className="p-4 flex items-center gap-2"><Award className="w-5 h-5 text-amber-500" /><div><p className="text-xs text-muted-foreground">Top Student</p><p className="text-sm font-bold mt-0.5 truncate">{averages[0]?.studentName || "—"}</p></div></CardContent></Card>
           </div>
 
-          {/* Average table */}
           <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
@@ -178,8 +156,8 @@ export default function TermAverages({ grades, classes, subjects }) {
                         const { label: sl, color: sc } = gradeLabel(sub.avg);
                         return (
                           <TableCell key={s.id} className="text-center">
-                            <span className={`font-semibold text-sm ${sc}`}>{sub.avg}%</span>
-                            <span className="text-xs text-muted-foreground ml-1">({sub.count})</span>
+                            <div className={`font-semibold text-sm ${sc}`}>{sub.avg}%</div>
+                            {sub.hasWeights && <div className="text-xs text-muted-foreground">weighted</div>}
                           </TableCell>
                         );
                       })}
@@ -190,7 +168,6 @@ export default function TermAverages({ grades, classes, subjects }) {
                     </TableRow>
                   );
                 })}
-                {/* Class average footer row */}
                 <TableRow className="bg-muted/40 font-semibold">
                   <TableCell className="sticky left-0 bg-muted/40"></TableCell>
                   <TableCell className="sticky left-8 bg-muted/40 text-xs text-muted-foreground">Class Avg</TableCell>
@@ -200,14 +177,16 @@ export default function TermAverages({ grades, classes, subjects }) {
                     </TableCell>
                   ))}
                   <TableCell className="text-center text-sm font-bold">
-                   {averages.length ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%` : "—"}
+                    {averages.length ? `${Math.round(averages.reduce((s, a) => s + a.overallAvg, 0) / averages.length)}%` : "—"}
                   </TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Numbers in parentheses indicate how many assessments were recorded per subject.</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {isWeighted ? 'Scores use configured assessment weights (e.g. Exam 60%, Quiz 20%, Assignment 20%).' : 'Scores are simple averages. Configure Grade Weighting to enable weighted calculation.'}
+          </p>
         </>
       )}
     </div>

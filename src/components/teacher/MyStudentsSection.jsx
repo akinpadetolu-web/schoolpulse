@@ -1,11 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, TrendingUp } from 'lucide-react';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 export default function MyStudentsSection({ teachingAssignments, students, grades, subjects, classes }) {
+  const { schoolUser: user } = useSchoolAuth();
   const [filterSubject, setFilterSubject] = useState("all");
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      base44.entities.GradeCategory.filter({ schoolId: user.schoolId }).then(c => setCategories(c || []));
+    }
+  }, [user?.schoolId]);
 
   // Get teacher's subjects and classes
   const assignedSubjectIds = [...new Set(teachingAssignments.map(a => a.subjectId))];
@@ -40,13 +51,12 @@ export default function MyStudentsSection({ teachingAssignments, students, grade
     ? groupedBySubject
     : { [filterSubject]: groupedBySubject[filterSubject] };
 
-  const calculateAverage = (studentId, subjectId) => {
+  const calculateAverage = (studentId, subjectId, classId) => {
     const studentGrades = grades.filter(g => g.studentId === studentId && g.subjectId === subjectId);
     if (studentGrades.length === 0) return null;
-    const avg = Math.round(
-      studentGrades.reduce((sum, g) => sum + ((g.score / (g.maxScore || 100)) * 100), 0) / studentGrades.length
-    );
-    return avg;
+    const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+    const result = calculateWeightedScore(grades, classCats, studentId, subjectId);
+    return Math.round(result.overall);
   };
 
   const getGradeColor = (avg) => {
@@ -94,7 +104,7 @@ export default function MyStudentsSection({ teachingAssignments, students, grade
             <CardContent>
               <div className="space-y-2">
                 {subjectStudents.map(student => {
-                  const avg = calculateAverage(student.id, subjectId);
+                  const avg = calculateAverage(student.id, subjectId, student.classId);
                   const lastGrades = grades
                     .filter(g => g.studentId === student.id && g.subjectId === subjectId)
                     .sort((a, b) => new Date(b.updated_date || 0) - new Date(a.updated_date || 0))

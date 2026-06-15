@@ -24,6 +24,17 @@
       "type": "string",
       "description": "e.g. Assignments, Tests, Exams, Classwork, Participation"
     },
+    "assessmentType": {
+      "type": "string",
+      "enum": [
+        "exam",
+        "test",
+        "quiz",
+        "assignment",
+        "classwork"
+      ],
+      "description": "Maps to Grade.assessmentType for automatic calculation"
+    },
     "weight": {
       "type": "number",
       "description": "Percentage weight in final grade (0-100)"
@@ -37,6 +48,7 @@
     "classId",
     "subjectId",
     "categoryName",
+    "assessmentType",
     "weight"
   ]
 }
