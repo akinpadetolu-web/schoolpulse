@@ -3,13 +3,14 @@ import { base44 } from '@/api/base44Client';
 /**
  * Grade Weight Calculation Engine
  *
- * Formula:
+ * Formula (missing assessments = 0, no weight rescaling):
  *   For each category (e.g. Exam 60%, Quiz 20%, Assignment 20%):
  *     1. Collect all Grade records for this student/subject/term matching that assessmentType
  *     2. Compute the average percentage for that category: avg(score/maxScore * 100)
- *        (If no records: category score = 0)
+ *        (If no records: category score = 0, contribution = 0)
  *     3. Contribution = categoryAvg * (weight / 100)
  *   Overall = sum of all category contributions
+ *   Example: Quiz 100% (20% weight) + Assignment 0% (20% weight) + Exam 0% (60% weight) = 20%
  *   Rounds to 2 decimal places.
  */
 
@@ -75,14 +76,9 @@ export function calculateWeightedScore(grades, categories, studentId, subjectId,
     };
   });
 
-  // Only score using categories that have data; rescale weights proportionally
-  const scoredCats = breakdown.filter(b => b.categoryAvg !== null);
-  const totalWeight = scoredCats.reduce((sum, b) => sum + b.weight, 0);
-
+  // Missing categories count as 0 — no weight rescaling
   const finalBreakdown = breakdown.map(b => {
-    if (b.categoryAvg === null) return { ...b, contribution: 0 };
-    const effectiveWeight = totalWeight > 0 ? (b.weight / totalWeight) * 100 : b.weight;
-    const contribution = b.categoryAvg * (effectiveWeight / 100);
+    const contribution = b.categoryAvg !== null ? b.categoryAvg * (b.weight / 100) : 0;
     return { ...b, contribution: Math.round(contribution * 100) / 100 };
   });
 
