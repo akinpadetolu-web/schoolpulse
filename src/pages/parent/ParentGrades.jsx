@@ -47,6 +47,10 @@ export default function ParentGrades() {
           setExamResults(allExams.flat().filter(Boolean));
           const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []);
           setCategories(cats || []);
+          // Subscribe to category updates for real-time weight changes
+          base44.entities.GradeCategory.subscribe(() => {
+            base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).then(c => setCategories(c || [])).catch(() => {});
+          });
         }
       } catch { /* ignore */ }
       setLoading(false);

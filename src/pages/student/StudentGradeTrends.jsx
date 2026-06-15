@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 function gradeLabel(p) {
   if (p >= 70) return { label: "A", color: "#10b981" };
@@ -21,18 +22,27 @@ function pct(score, max) {
 export default function StudentGradeTrends() {
   const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState([]);
+  const [gradeCategories, setGradeCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const g = await base44.entities.Grade.filter({
-          schoolId: user?.schoolId,
-          studentId: user?.id,
-        });
+        const [g, cats] = await Promise.all([
+          base44.entities.Grade.filter({
+            schoolId: user?.schoolId,
+            studentId: user?.id,
+          }),
+          base44.entities.GradeCategory.filter({
+            schoolId: user?.schoolId,
+            classId: user?.classId,
+          }),
+        ]);
         setGrades(g || []);
+        setGradeCategories(cats || []);
       } catch {
         setGrades([]);
+        setGradeCategories([]);
       }
       setLoading(false);
     }
@@ -45,9 +55,9 @@ export default function StudentGradeTrends() {
     });
 
     return () => unsubscribe();
-  }, [user?.id, user?.schoolId]);
+  }, [user?.id, user?.schoolId, user?.classId]);
 
-  // Group by subject and calculate trend data
+  // Group by subject and calculate trend data — remember raw percentages for trend lines
   const groupedBySubject = {};
   grades.forEach(g => {
     if (!groupedBySubject[g.subjectName]) {
@@ -73,9 +83,11 @@ export default function StudentGradeTrends() {
     }));
   });
 
-  // Calculate subject performance summary
+  // Calculate subject performance summary using weighted scores
   const subjectSummary = Object.entries(groupedBySubject).map(([name, subjectGrades]) => {
-    const avg = Math.round(subjectGrades.reduce((sum, g) => sum + g.percentage, 0) / subjectGrades.length);
+    const subjectId = subjectGrades[0]?.subjectId;
+    const { overall: weightedAvg } = calculateWeightedScore(grades, gradeCategories, user?.id, subjectId);
+    const avg = weightedAvg || Math.round(subjectGrades.reduce((sum, g) => sum + g.percentage, 0) / subjectGrades.length);
     const latest = subjectGrades[subjectGrades.length - 1];
     const previous = subjectGrades[Math.max(0, subjectGrades.length - 2)];
     const trend = latest.percentage - (previous?.percentage || latest.percentage);

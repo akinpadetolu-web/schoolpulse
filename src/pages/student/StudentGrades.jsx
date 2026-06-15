@@ -27,7 +27,7 @@ export default function StudentGrades() {
         const [g, s, cats] = await Promise.all([
           base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: user?.id }),
           base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
-          base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }),
+          base44.entities.GradeCategory.filter({ schoolId: user?.schoolId, classId: user?.classId }),
         ]);
         setGrades(g || []);
         setSubjects(s || []);
