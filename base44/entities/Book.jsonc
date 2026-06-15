@@ -1,0 +1,128 @@
+{
+  "name": "Book",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "isbn": {
+      "type": "string",
+      "description": "International Standard Book Number"
+    },
+    "title": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "publicationYear": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fiction",
+        "non_fiction",
+        "reference",
+        "textbook",
+        "biography",
+        "history",
+        "science",
+        "mathematics",
+        "languages",
+        "arts",
+        "technology",
+        "other"
+      ]
+    },
+    "resourceType": {
+      "type": "string",
+      "enum": [
+        "physical_book",
+        "digital_ebook",
+        "audiobook",
+        "journal",
+        "magazine",
+        "dvd"
+      ],
+      "default": "physical_book"
+    },
+    "description": {
+      "type": "string"
+    },
+    "totalCopies": {
+      "type": "number",
+      "default": 1
+    },
+    "availableCopies": {
+      "type": "number",
+      "default": 1
+    },
+    "borrowedCopies": {
+      "type": "number",
+      "default": 0
+    },
+    "location": {
+      "type": "string",
+      "description": "Shelf location in library"
+    },
+    "callNumber": {
+      "type": "string",
+      "description": "Library classification number"
+    },
+    "purchaseDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "purchasePrice": {
+      "type": "number"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "default": "good"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "digitalUrl": {
+      "type": "string",
+      "description": "URL for digital resources"
+    },
+    "borrowingPeriodDays": {
+      "type": "number",
+      "default": 14,
+      "description": "Days allowed for borrowing"
+    },
+    "maxRenewals": {
+      "type": "number",
+      "default": 2
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    },
+    "coverImageUrl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "title",
+    "author"
+  ]
+}

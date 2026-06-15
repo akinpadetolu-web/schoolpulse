@@ -80,6 +80,7 @@ const baseAdminNavGroups = [
     label: 'OPERATIONS',
     items: [
       { label: "Inventory", path: "/school-admin/inventory", icon: Package },
+      { label: "Library", path: "/school-admin/library", icon: BookOpen },
     ]
   },
   {
@@ -127,6 +128,7 @@ const featureMap = {
   "/school-admin/sessions": "adminSessions",
   "/school-admin/calendar": "adminEvents",
   "/school-admin/inventory": "adminInventory",
+  "/school-admin/library": "adminLibrary",
 };
 
 export default function SchoolSidebar({ isOpen, onClose }) {

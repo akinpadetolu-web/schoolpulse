@@ -1,0 +1,65 @@
+{
+  "name": "BookReturn",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "bookBorrowId": {
+      "type": "string"
+    },
+    "bookId": {
+      "type": "string"
+    },
+    "bookTitle": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "borrowDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "returnDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "daysLate": {
+      "type": "number",
+      "default": 0
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor",
+        "damaged",
+        "lost"
+      ],
+      "default": "good"
+    },
+    "damageNotes": {
+      "type": "string"
+    },
+    "returnedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "bookBorrowId",
+    "bookId",
+    "studentId"
+  ]
+}

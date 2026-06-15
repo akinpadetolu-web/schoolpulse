@@ -1,0 +1,83 @@
+{
+  "name": "BookFine",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "bookId": {
+      "type": "string"
+    },
+    "bookTitle": {
+      "type": "string"
+    },
+    "bookReturnId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "fineType": {
+      "type": "string",
+      "enum": [
+        "overdue",
+        "damage",
+        "loss"
+      ],
+      "default": "overdue"
+    },
+    "daysLate": {
+      "type": "number",
+      "default": 0
+    },
+    "finePerDay": {
+      "type": "number",
+      "description": "Fine amount per day (for overdue)"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "waived",
+        "paid"
+      ],
+      "default": "pending"
+    },
+    "paidDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "waivedReason": {
+      "type": "string"
+    },
+    "waivedBy": {
+      "type": "string"
+    },
+    "waivedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "amount"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "name": "BookBorrow",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "bookId": {
+      "type": "string"
+    },
+    "bookTitle": {
+      "type": "string"
+    },
+    "bookAuthor": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "borrowDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "borrowingPeriodDays": {
+      "type": "number",
+      "default": 14
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "overdue",
+        "returned"
+      ],
+      "default": "active"
+    },
+    "renewalCount": {
+      "type": "number",
+      "default": 0
+    },
+    "lastRenewedDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "borrowedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "bookId",
+    "studentId"
+  ]
+}

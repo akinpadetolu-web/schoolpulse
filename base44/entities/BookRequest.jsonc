@@ -1,0 +1,83 @@
+{
+  "name": "BookRequest",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "bookId": {
+      "type": "string",
+      "description": "ID of book being requested (if already in system)"
+    },
+    "requestedTitle": {
+      "type": "string",
+      "description": "Title of book being requested"
+    },
+    "requestedAuthor": {
+      "type": "string"
+    },
+    "requestedBy": {
+      "type": "string",
+      "description": "Student or staff ID"
+    },
+    "requestedByName": {
+      "type": "string"
+    },
+    "requestType": {
+      "type": "string",
+      "enum": [
+        "new_acquisition",
+        "book_availability",
+        "digital_resource"
+      ],
+      "default": "new_acquisition"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "fulfilled"
+      ],
+      "default": "pending"
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "approvedByName": {
+      "type": "string"
+    },
+    "approvalDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejectionReason": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "requestedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schoolId",
+    "requestedTitle",
+    "requestedBy"
+  ]
+}
