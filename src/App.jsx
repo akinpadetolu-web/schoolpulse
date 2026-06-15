@@ -109,6 +109,7 @@ const TeacherExamResults = lazy(() => import('./pages/teacher/TeacherExamResults
 const TeacherExamTimetable = lazy(() => import('./pages/teacher/TeacherExamTimetable'));
 const TeacherProfile = lazy(() => import('./pages/teacher/TeacherProfile'));
 const TeacherSharedNotes = lazy(() => import('./pages/teacher/TeacherSharedNotes'));
+const TeacherSettings = lazy(() => import('./pages/teacher/TeacherSettings'));
 const SchoolCalendar = lazy(() => import('./pages/shared/SchoolCalendar'));
 const PerformanceDashboard = lazy(() => import('./pages/shared/PerformanceDashboard'));
 
@@ -255,6 +256,7 @@ const AuthenticatedApp = () => {
           <Route path="calendar" element={<TeacherCalendar />} />
           <Route path="performance" element={<PerformanceDashboard />} />
           <Route path="profile" element={<TeacherProfile />} />
+          <Route path="settings" element={<TeacherSettings />} />
           <Route path="shared-notes" element={<TeacherSharedNotes />} />
         </Route>
 

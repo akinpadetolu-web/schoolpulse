@@ -44,7 +44,7 @@ const baseTeacherNavGroups = [
     label: 'ACCOUNT',
     items: [
       { label: "Profile", path: "/teacher/profile", icon: GraduationCap },
-      { label: "Settings", path: "/teacher", icon: Settings },
+      { label: "Settings", path: "/teacher/settings", icon: Settings },
     ]
   },
 ];
