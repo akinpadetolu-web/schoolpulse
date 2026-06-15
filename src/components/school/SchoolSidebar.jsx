@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck, BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,16 @@ const baseAdminNavGroups = [
       { label: "Messages", path: "/school-admin/messages", icon: MessageSquare },
       { label: "Email Campaign", path: "/school-admin/email-campaign", icon: Mail },
       { label: "Notifications", path: "/school-admin/approvals", icon: CheckSquare },
+    ]
+  },
+  {
+    label: 'FINANCE',
+    items: [
+      { label: "Fee Management", path: "/school-admin/fee-management", icon: DollarSign },
+      { label: "Invoices", path: "/school-admin/invoices", icon: Receipt },
+      { label: "Payments", path: "/school-admin/payments", icon: CreditCard },
+      { label: "Financial Reports", path: "/school-admin/financial-reports", icon: BarChart2 },
+      { label: "Payment Settings", path: "/school-admin/payment-settings", icon: Settings },
     ]
   },
   {
