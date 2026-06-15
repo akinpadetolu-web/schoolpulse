@@ -62,21 +62,27 @@ export default function AdminHR() {
   }, [staffAttendance, attendanceDate]);
 
   async function loadData() {
-    const [teachers, admins, hrStaffList, lv, att, nonTeaching] = await Promise.all([
-      base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'teacher', isArchived: false }),
-      base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'admin', isArchived: false }),
-      base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'hr_staff', isArchived: false }),
-      base44.entities.StaffLeave.filter({ schoolId: user?.schoolId }),
-      base44.entities.StaffAttendance.filter({ schoolId: user?.schoolId }),
-      base44.entities.NonTeachingStaff.filter({ schoolId: user?.schoolId, isArchived: false }),
-    ]);
-    const allStaff = [...(teachers || []), ...(admins || [])];
-    setStaff(allStaff);
-    setHrStaff(hrStaffList || []);
-    setLeaves(lv || []);
-    setStaffAttendance(att || []);
-    setNonTeachingStaff(nonTeaching || []);
-    setLoading(false);
+    try {
+      const [teachers, admins, hrStaffList, lv, att, nonTeaching] = await Promise.all([
+        base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'teacher', isArchived: false }),
+        base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'admin', isArchived: false }),
+        base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'hr_staff', isArchived: false }),
+        base44.entities.StaffLeave.filter({ schoolId: user?.schoolId }),
+        base44.entities.StaffAttendance.filter({ schoolId: user?.schoolId }),
+        base44.entities.NonTeachingStaff.filter({ schoolId: user?.schoolId, isArchived: false }),
+      ]);
+      const allStaff = [...(teachers || []), ...(admins || [])];
+      setStaff(allStaff);
+      setHrStaff(hrStaffList || []);
+      setLeaves(lv || []);
+      setStaffAttendance(att || []);
+      setNonTeachingStaff(nonTeaching || []);
+    } catch (err) {
+      console.error('HR loadData error:', err);
+      toast.error('Failed to load some HR data. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleLeaveSubmit(e) {
