@@ -1,0 +1,115 @@
+{
+  "name": "FeeStructure",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "applicableClasses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicableClassNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applyToAllClasses": {
+      "type": "boolean",
+      "default": false
+    },
+    "feeItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "feeTypeId": {
+            "type": "string"
+          },
+          "feeTypeName": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isMandatory": {
+            "type": "boolean",
+            "default": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "paymentType": {
+            "type": "string",
+            "enum": [
+              "full",
+              "installment"
+            ],
+            "default": "full"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "dueDate": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "autoAssignOnEnroll": {
+      "type": "boolean",
+      "default": false
+    },
+    "totalAmount": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "schoolId",
+    "name"
+  ]
+}

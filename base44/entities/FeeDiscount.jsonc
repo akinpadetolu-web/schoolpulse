@@ -1,0 +1,73 @@
+{
+  "name": "FeeDiscount",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed"
+      ],
+      "default": "percentage"
+    },
+    "value": {
+      "type": "number"
+    },
+    "applicableFeeTypes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applyToAllFees": {
+      "type": "boolean",
+      "default": true
+    },
+    "validityType": {
+      "type": "string",
+      "enum": [
+        "term",
+        "year",
+        "custom"
+      ],
+      "default": "term"
+    },
+    "validFrom": {
+      "type": "string",
+      "format": "date"
+    },
+    "validTo": {
+      "type": "string",
+      "format": "date"
+    },
+    "maxBeneficiaries": {
+      "type": "number"
+    },
+    "currentBeneficiaries": {
+      "type": "number",
+      "default": 0
+    },
+    "requirements": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "schoolId",
+    "name",
+    "type",
+    "value"
+  ]
+}

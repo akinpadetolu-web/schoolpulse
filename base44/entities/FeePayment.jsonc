@@ -1,0 +1,104 @@
+{
+  "name": "FeePayment",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "invoiceId": {
+      "type": "string"
+    },
+    "invoiceNumber": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "paymentDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "paymentMethod": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "bank_transfer",
+        "cheque",
+        "paystack",
+        "interswitch",
+        "stripe",
+        "other"
+      ],
+      "default": "cash"
+    },
+    "referenceNumber": {
+      "type": "string"
+    },
+    "proofUrl": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "confirmedBy": {
+      "type": "string"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejectedBy": {
+      "type": "string"
+    },
+    "rejectedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejectionReason": {
+      "type": "string"
+    },
+    "receiptNumber": {
+      "type": "string"
+    },
+    "submittedByParent": {
+      "type": "boolean",
+      "default": false
+    },
+    "parentId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "invoiceId",
+    "studentId",
+    "amount"
+  ]
+}

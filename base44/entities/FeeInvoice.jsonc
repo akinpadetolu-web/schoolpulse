@@ -1,0 +1,176 @@
+{
+  "name": "FeeInvoice",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "invoiceNumber": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "admissionNumber": {
+      "type": "string"
+    },
+    "feeStructureId": {
+      "type": "string"
+    },
+    "feeStructureName": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "invoiceDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "feeItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "feeTypeId": {
+            "type": "string"
+          },
+          "feeTypeName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "paymentType": {
+            "type": "string",
+            "enum": [
+              "full",
+              "installment"
+            ],
+            "default": "full"
+          },
+          "installments": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "discounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "discountId": {
+            "type": "string"
+          },
+          "discountName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "fixed"
+            ]
+          },
+          "value": {
+            "type": "number"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "default": 0
+    },
+    "totalDiscount": {
+      "type": "number",
+      "default": 0
+    },
+    "totalAmount": {
+      "type": "number",
+      "default": 0
+    },
+    "amountPaid": {
+      "type": "number",
+      "default": 0
+    },
+    "outstandingBalance": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "unpaid",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "pending_confirmation"
+      ],
+      "default": "unpaid"
+    },
+    "isOverdue": {
+      "type": "boolean",
+      "default": false
+    },
+    "sentToParent": {
+      "type": "boolean",
+      "default": false
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "createdByName": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "totalAmount"
+  ]
+}

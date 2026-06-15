@@ -1,0 +1,230 @@
+{
+  "name": "PaymentSettings",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "paystackPublicKey": {
+      "type": "string"
+    },
+    "paystackSecretKey": {
+      "type": "string"
+    },
+    "paystackEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "interswitchMerchantCode": {
+      "type": "string"
+    },
+    "interswitchPayItemId": {
+      "type": "string"
+    },
+    "interswitchSecretKey": {
+      "type": "string"
+    },
+    "interswitchEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "stripePublishableKey": {
+      "type": "string"
+    },
+    "stripeSecretKey": {
+      "type": "string"
+    },
+    "stripeEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "primaryGateway": {
+      "type": "string",
+      "enum": [
+        "paystack",
+        "interswitch",
+        "stripe",
+        "both",
+        "none"
+      ],
+      "default": "none"
+    },
+    "acceptBankTransfer": {
+      "type": "boolean",
+      "default": true
+    },
+    "bankAccounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "acceptCash": {
+      "type": "boolean",
+      "default": true
+    },
+    "acceptCheque": {
+      "type": "boolean",
+      "default": false
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "currencySymbol": {
+      "type": "string",
+      "default": "\u20a6"
+    },
+    "currencySymbolPosition": {
+      "type": "string",
+      "enum": [
+        "before",
+        "after"
+      ],
+      "default": "before"
+    },
+    "numberFormat": {
+      "type": "string",
+      "enum": [
+        "10,000.00",
+        "10.000,00",
+        "10 000.00"
+      ],
+      "default": "10,000.00"
+    },
+    "multiCurrencyEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "confirmationMode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto_online",
+        "auto_all"
+      ],
+      "default": "auto_online"
+    },
+    "confirmationDeadlineDays": {
+      "type": "number",
+      "default": 3
+    },
+    "notifyAdminOnPayment": {
+      "type": "boolean",
+      "default": true
+    },
+    "notifyAdminEmail": {
+      "type": "boolean",
+      "default": true
+    },
+    "invoicePrefix": {
+      "type": "string",
+      "default": "INV"
+    },
+    "invoiceNumberFormat": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "year",
+        "term"
+      ],
+      "default": "year"
+    },
+    "invoiceGenerationMode": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "manual",
+        "both"
+      ],
+      "default": "auto"
+    },
+    "invoiceDueDays": {
+      "type": "number",
+      "default": 30
+    },
+    "invoiceFooterText": {
+      "type": "string"
+    },
+    "showBankDetailsOnInvoice": {
+      "type": "boolean",
+      "default": true
+    },
+    "latePaymentEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "latePenaltyType": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "percentage"
+      ],
+      "default": "percentage"
+    },
+    "latePenaltyAmount": {
+      "type": "number",
+      "default": 5
+    },
+    "latePenaltyGraceDays": {
+      "type": "number",
+      "default": 7
+    },
+    "latePenaltyMaxCap": {
+      "type": "number"
+    },
+    "overdueAlertsEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "overdueAlert1Days": {
+      "type": "number",
+      "default": 1
+    },
+    "overdueAlert2Days": {
+      "type": "number",
+      "default": 7
+    },
+    "overdueAlert3Days": {
+      "type": "number",
+      "default": 14
+    },
+    "overdueAlert4Days": {
+      "type": "number",
+      "default": 30
+    },
+    "overdueAlertMethods": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "inapp",
+        "email"
+      ]
+    }
+  },
+  "required": [
+    "schoolId"
+  ]
+}
