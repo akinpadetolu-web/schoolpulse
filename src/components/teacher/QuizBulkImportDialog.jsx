@@ -34,8 +34,24 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
       } finally {
         setLoading(false);
       }
+    } else if (mode === 'manual' && (format === 'pdf' || format === 'docx')) {
+      // Extract text from PDF/DOCX for manual processing
+      try {
+        setLoading(true);
+        const res = await base44.integrations.Core.UploadFile({ file });
+        // Fetch and display the file content
+        const fileRes = await fetch(res.file_url);
+        const text = await fileRes.text();
+        setContent(text.substring(0, 4000)); // Limit to 4000 chars
+        setError('');
+        toast.success('File extracted. Format the text as CSV or JSON below.');
+      } catch (err) {
+        setError('Failed to extract file content');
+      } finally {
+        setLoading(false);
+      }
     } else {
-      // Manual parsing
+      // CSV/JSON manual parsing
       const reader = new FileReader();
       reader.onload = (event) => {
         setContent(event.target?.result || '');
@@ -187,13 +203,14 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               {/* Format Selector */}
               <div>
                 <Label>Format</Label>
-                <div className="flex gap-2 mt-2">
-                  {['csv', 'json'].map(f => (
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {['csv', 'json', 'pdf', 'docx'].map(f => (
                     <Button
                       key={f}
                       variant={format === f ? 'default' : 'outline'}
                       onClick={() => { setFormat(f); setContent(''); setError(''); }}
                       disabled={loading}
+                      size="sm"
                     >
                       {f.toUpperCase()}
                     </Button>
@@ -244,7 +261,7 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
                 <div className="mt-2 space-y-2">
                   <Input
                     type="file"
-                    accept={format === 'csv' ? '.csv' : '.json'}
+                    accept={format === 'csv' ? '.csv' : format === 'json' ? '.json' : format === 'pdf' ? '.pdf' : '.docx'}
                     onChange={handleFileUpload}
                     disabled={loading}
                   />
@@ -254,7 +271,9 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
                       onChange={(e) => { setContent(e.target.value); setError(''); }}
                       placeholder={format === 'csv' 
                         ? `question,type,answer,options,points\nWhat is 2+2?,multiple_choice,4,2|3|4|5,1\nIs the sky blue?,true_false,true,,1`
-                        : `[{"question": "What is 2+2?", "type": "multiple_choice", "correctAnswer": "4", "options": ["2", "3", "4", "5"], "points": 1}]`
+                        : format === 'json'
+                        ? `[{"question": "What is 2+2?", "type": "multiple_choice", "correctAnswer": "4", "options": ["2", "3", "4", "5"], "points": 1}]`
+                        : `Paste extracted text from PDF/Word document here. You can manually format it as CSV or JSON.`
                       }
                       className="font-mono text-sm h-40 resize-none"
                       disabled={loading}
@@ -265,14 +284,23 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
 
               {/* Help Text */}
               <div className="bg-muted p-3 rounded text-sm text-muted-foreground">
-                <p className="font-semibold mb-1">Supported Question Types:</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li><code>multiple_choice</code> - options separated by |</li>
-                  <li><code>true_false</code> - answer is "true" or "false"</li>
-                  <li><code>short_answer</code> - free text answer</li>
-                  <li><code>long_answer</code> - essay questions</li>
-                  <li><code>passage_based</code> - reading comprehension</li>
-                </ul>
+                <p className="font-semibold mb-1">Supported Formats & Types:</p>
+                {(format === 'pdf' || format === 'docx') ? (
+                  <ul className="list-disc list-inside space-y-0.5 text-xs">
+                    <li>Upload PDF or Word documents with questions</li>
+                    <li>Text will be extracted and displayed above</li>
+                    <li>Manually format as CSV or JSON before importing</li>
+                    <li>Or paste the content into a CSV/JSON formatted text</li>
+                  </ul>
+                ) : (
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li><code>multiple_choice</code> - options separated by |</li>
+                    <li><code>true_false</code> - answer is "true" or "false"</li>
+                    <li><code>short_answer</code> - free text answer</li>
+                    <li><code>long_answer</code> - essay questions</li>
+                    <li><code>passage_based</code> - reading comprehension</li>
+                  </ul>
+                )}
               </div>
             </>
           ) : (
