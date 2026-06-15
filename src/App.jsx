@@ -125,6 +125,7 @@ const StudentQuizzes = lazy(() => import('./pages/student/StudentQuizzes'));
 const StudentProfile = lazy(() => import('./pages/student/StudentProfile'));
 const StudentSettings = lazy(() => import('./pages/student/StudentSettings'));
 const StudentNotes = lazy(() => import('./pages/student/StudentNotes'));
+const StudentLibrary = lazy(() => import('./pages/student/StudentLibrary'));
 const StudentGames = lazy(() => import('./pages/student/StudentGames'));
 
 // Parent
@@ -272,6 +273,7 @@ const AuthenticatedApp = () => {
           <Route path="report-cards" element={<StudentReportCards />} />
           <Route path="exam-timetable" element={<StudentExamTimetable />} />
           <Route path="notes" element={<StudentNotes />} />
+          <Route path="library" element={<StudentLibrary />} />
           <Route path="games" element={<StudentGames />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="settings" element={<StudentSettings />} />
