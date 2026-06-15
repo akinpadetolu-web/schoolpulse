@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio, CalendarDays, Video, Bell, Settings, UserCheck, TrendingUp, HelpCircle, StickyNote } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, NotebookPen, Radio, CalendarDays, Video, Bell, Settings, UserCheck, TrendingUp, HelpCircle, StickyNote, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
@@ -30,6 +30,7 @@ const baseStudentNavGroups = [
       { label: "Notes", path: "/student/notes", icon: StickyNote },
       { label: "Quizzes", path: "/student/quizzes", icon: HelpCircle },
       { label: "E-Class", path: "/student/e-class", icon: Video },
+      { label: "Games", path: "/student/games", icon: Gamepad2 },
     ]
   },
   {
