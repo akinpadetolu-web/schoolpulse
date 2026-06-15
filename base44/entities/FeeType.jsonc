@@ -19,6 +19,22 @@
       "type": "boolean",
       "default": true
     },
+    "defaultAmount": {
+      "type": "number",
+      "default": 0
+    },
+    "applicableClassIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicableClassNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "isArchived": {
       "type": "boolean",
       "default": false
