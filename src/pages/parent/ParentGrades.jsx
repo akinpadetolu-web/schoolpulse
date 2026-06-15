@@ -200,7 +200,7 @@ export default function ParentGrades() {
                             <div className="mb-2 text-xs text-muted-foreground bg-muted/40 rounded px-2.5 py-1.5 flex flex-wrap gap-x-2">
                               {breakdown.map(b => (
                                 <span key={b.assessmentType}>
-                                  {b.categoryName} {b.weight}% ({b.categoryAvg.toFixed(0)}) → <strong>{b.contribution.toFixed(1)}</strong>
+                                  {b.categoryName} {b.weight}% ({b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}) → <strong>{b.contribution.toFixed(1)}</strong>
                                 </span>
                               ))}
                             </div>
