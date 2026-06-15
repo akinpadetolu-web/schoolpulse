@@ -206,8 +206,6 @@ export default function AdminHR() {
             Leave Requests
             {pendingLeaves > 0 && <span className="ml-1.5 bg-amber-500 text-white text-xs rounded-full px-1.5">{pendingLeaves}</span>}
           </TabsTrigger>
-          <TabsTrigger value="non_teaching">Staff <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">{nonTeachingStaff.length}</span></TabsTrigger>
-          <TabsTrigger value="hr_staff">HR Staff <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">{hrStaff.length}</span></TabsTrigger>
         </TabsList>
 
         {/* STAFF DIRECTORY */}
@@ -363,8 +361,8 @@ export default function AdminHR() {
           )}
         </TabsContent>
 
-        {/* NON-TEACHING STAFF TAB */}
-        <TabsContent value="non_teaching">
+        {/* HR STAFF TAB - hidden */}
+        <TabsContent value="non_teaching_hidden">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -485,8 +483,8 @@ export default function AdminHR() {
           })()}
         </TabsContent>
 
-        {/* HR STAFF TAB */}
-        <TabsContent value="hr_staff">
+        {/* HR STAFF TAB - hidden */}
+        <TabsContent value="hr_staff_hidden">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">Manage HR staff accounts and control which features they can access.</p>
             <Button onClick={() => setShowCreateHR(true)}>
