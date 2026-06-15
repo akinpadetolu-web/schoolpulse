@@ -43,6 +43,10 @@
     "description": {
       "type": "string"
     },
+    "passage": {
+      "type": "string",
+      "description": "Optional passage text for reading comprehension questions"
+    },
     "questions": {
       "type": "array",
       "items": {
@@ -56,7 +60,9 @@
             "enum": [
               "multiple_choice",
               "true_false",
-              "short_answer"
+              "short_answer",
+              "long_answer",
+              "passage_based"
             ]
           },
           "options": {
@@ -113,8 +119,6 @@
   },
   "required": [
     "schoolId",
-    "classId",
-    "subjectId",
     "title"
   ]
 }

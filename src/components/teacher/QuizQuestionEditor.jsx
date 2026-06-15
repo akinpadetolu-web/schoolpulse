@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
@@ -65,6 +66,8 @@ export default function QuizQuestionEditor({ questions, onChange }) {
                   <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                   <SelectItem value="true_false">True / False</SelectItem>
                   <SelectItem value="short_answer">Short Answer</SelectItem>
+                  <SelectItem value="long_answer">Long Answer / Essay</SelectItem>
+                  <SelectItem value="passage_based">Passage-Based</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -117,6 +120,20 @@ export default function QuizQuestionEditor({ questions, onChange }) {
             <div className="space-y-1.5">
               <Label className="text-xs">Model Answer (for reference)</Label>
               <Input placeholder="Expected answer..." value={q.correctAnswer} onChange={e => updateQuestion(idx, "correctAnswer", e.target.value)} />
+            </div>
+          )}
+
+          {q.type === "long_answer" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Marking Rubric / Key Points</Label>
+              <Textarea placeholder="Outline key points students should cover..." value={q.correctAnswer} onChange={e => updateQuestion(idx, "correctAnswer", e.target.value)} rows={3} />
+            </div>
+          )}
+
+          {q.type === "passage_based" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Expected Answer (for reference)</Label>
+              <Textarea placeholder="Reference answer for grading..." value={q.correctAnswer} onChange={e => updateQuestion(idx, "correctAnswer", e.target.value)} rows={3} />
             </div>
           )}
         </div>

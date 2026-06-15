@@ -37,10 +37,10 @@ export default function TeacherQuizzes() {
   const [showBulkImport, setShowBulkImport] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", description: "", classId: "", subjectId: "",
+    title: "", description: "", classId: "", classIds: [], subjectId: "",
     durationMinutes: 30, releaseMode: "manual",
     scheduledAt: "", timetableEntryId: "",
-    questions: []
+    passage: "", questions: []
   });
 
   useEffect(() => { loadData(); }, []);
@@ -61,7 +61,7 @@ export default function TeacherQuizzes() {
 
   function openCreate() {
     setEditingQuiz(null);
-    setForm({ title: "", description: "", classId: "", subjectId: "", durationMinutes: 30, releaseMode: "manual", scheduledAt: "", timetableEntryId: "", questions: [] });
+    setForm({ title: "", description: "", classId: "", classIds: [], subjectId: "", durationMinutes: 30, releaseMode: "manual", scheduledAt: "", timetableEntryId: "", passage: "", questions: [] });
     setShowDialog(true);
   }
 
@@ -74,22 +74,24 @@ export default function TeacherQuizzes() {
     setEditingQuiz(quiz);
     setForm({
       title: quiz.title, description: quiz.description || "",
-      classId: quiz.classId, subjectId: quiz.subjectId,
+      classId: quiz.classId, classIds: quiz.classIds || [], subjectId: quiz.subjectId,
       durationMinutes: quiz.durationMinutes || 30,
       releaseMode: quiz.releaseMode || "manual",
       scheduledAt: quiz.scheduledAt || "",
       timetableEntryId: quiz.timetableEntryId || "",
-      questions: quiz.questions || []
+      passage: quiz.passage || "", questions: quiz.questions || []
     });
     setShowDialog(true);
   }
 
   async function handleSave() {
-    if (!form.title || !form.classId || !form.subjectId) return toast.error("Title, class and subject are required");
+    if (!form.title || !form.subjectId) return toast.error("Title and subject are required");
+    const selectedIds = form.classIds.length > 0 ? form.classIds : (form.classId ? [form.classId] : []);
+    if (selectedIds.length === 0) return toast.error("Select at least one class");
     if (form.questions.length === 0) return toast.error("Add at least one question");
     setSaving(true);
 
-    const cls = classes.find(c => c.id === form.classId);
+    const selectedClasses = classes.filter(c => selectedIds.includes(c.id));
     const subj = subjects.find(s => s.id === form.subjectId);
     const ttEntry = timetable.find(t => t.id === form.timetableEntryId);
 
@@ -97,12 +99,15 @@ export default function TeacherQuizzes() {
       schoolId: user.schoolId,
       teacherId: user.id,
       teacherName: user.fullName,
-      classId: form.classId,
-      className: cls?.className || "",
+      classId: selectedIds[0],
+      className: selectedClasses[0]?.className || "",
+      classIds: selectedIds,
+      classNames: selectedClasses.map(c => c.className),
       subjectId: form.subjectId,
       subjectName: subj?.name || "",
       title: form.title,
       description: form.description,
+      passage: form.passage,
       durationMinutes: Number(form.durationMinutes),
       releaseMode: form.releaseMode,
       scheduledAt: form.releaseMode === "scheduled" ? form.scheduledAt : "",
@@ -238,25 +243,47 @@ export default function TeacherQuizzes() {
                 <Label>Description</Label>
                 <Textarea placeholder="Instructions for students..." rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Class *</Label>
-                  <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v, timetableEntryId: "" })}>
-                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                    <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}</SelectContent>
-                  </Select>
+              <div className="space-y-2">
+                <Label>Classes * (select one or more)</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                  {classes.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 p-2 rounded">
+                      <input 
+                        type="checkbox" 
+                        checked={form.classIds.includes(c.id)} 
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setForm({ ...form, classIds: [...form.classIds, c.id], classId: form.classIds[0] || c.id });
+                          } else {
+                            const newIds = form.classIds.filter(id => id !== c.id);
+                            setForm({ ...form, classIds: newIds, classId: newIds[0] || "" });
+                          }
+                        }} 
+                      />
+                      <span className="text-sm">{c.className}</span>
+                    </label>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label>Subject *</Label>
-                  <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                    <SelectContent>{subjects.filter(s => !form.classId || (s.applicableClasses || []).includes(form.classId)).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Subject *</Label>
+                <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                  <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Duration (minutes)</Label>
                 <Input type="number" min={5} max={180} value={form.durationMinutes} onChange={e => setForm({ ...form, durationMinutes: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Reading Passage (optional - for language subjects)</Label>
+                <textarea 
+                  className="w-full border rounded px-3 py-2 text-sm font-mono min-h-24"
+                  placeholder="Paste the reading passage here for comprehension questions..."
+                  value={form.passage}
+                  onChange={e => setForm({ ...form, passage: e.target.value })}
+                />
               </div>
             </TabsContent>
 
