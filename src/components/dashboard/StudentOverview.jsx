@@ -18,7 +18,11 @@ const GRADE_DIST = [
   { label: 'F', range: [0, 40], color: '#ef4444' },
 ];
 
-export default function StudentOverview({ students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets }) {
+export default function StudentOverview({ students, grades, allGrades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets }) {
+  // allGrades = unfiltered grades for accurate weighted score calculation
+  // grades = filtered grades for display/filtering context
+  const gradesForCalc = allGrades || grades;
+
   const data = useMemo(() => {
     // Build a weighted average per student by computing weighted score per subject then averaging
     const studentMap = {};
@@ -34,14 +38,14 @@ export default function StudentOverview({ students, grades, classes, subjects, a
       }
     });
 
-    // Compute weighted avg per student (across all their subjects)
+    // Compute weighted avg per student using ALL grades (not filtered) so missing categories don't zero out scores
     Object.values(studentMap).forEach(st => {
-      const studentGrades = grades.filter(g => g.studentId === st.id);
+      const studentGrades = gradesForCalc.filter(g => g.studentId === st.id);
       const subjectIds = [...new Set(studentGrades.map(g => g.subjectId).filter(Boolean))];
       if (subjectIds.length === 0) { st.avg = 0; st.pass = false; return; }
       const classCats = gradeCategories.filter(c => c.classId === st.classId);
       const subjectScores = subjectIds.map(subjectId => {
-        const result = calculateWeightedScore(grades, classCats, st.id, subjectId);
+        const result = calculateWeightedScore(gradesForCalc, classCats, st.id, subjectId);
         return result.overall;
       });
       st.avg = avg(subjectScores);
@@ -92,16 +96,16 @@ export default function StudentOverview({ students, grades, classes, subjects, a
     const overallPassRate = pct(studentList.filter(s => s.pass).length, studentList.length);
     const overallAvg = avg(scores);
 
-    // Subject avg (weighted per student per subject, then averaged)
-    const subjectIds = [...new Set(grades.map(g => g.subjectId).filter(Boolean))];
+    // Subject avg (weighted per student per subject, then averaged) — use all grades
+    const subjectIds = [...new Set(gradesForCalc.map(g => g.subjectId).filter(Boolean))];
     const subjectAvgs = subjectIds.map(subjectId => {
-      const name = grades.find(g => g.subjectId === subjectId)?.subjectName || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+      const name = gradesForCalc.find(g => g.subjectId === subjectId)?.subjectName || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
       const shortName = name.length > 10 ? name.slice(0, 10) : name;
-      const studentsWithSubject = [...new Set(grades.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
+      const studentsWithSubject = [...new Set(gradesForCalc.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
       const subjectScores = studentsWithSubject.map(studentId => {
         const st = studentMap[studentId];
         const classCats = gradeCategories.filter(c => c.classId === st?.classId);
-        return calculateWeightedScore(grades, classCats, studentId, subjectId).overall;
+        return calculateWeightedScore(gradesForCalc, classCats, studentId, subjectId).overall;
       }).filter(s => s > 0);
       return { name: shortName, score: avg(subjectScores), value: avg(subjectScores) };
     }).filter(s => s.value > 0);
@@ -164,7 +168,7 @@ export default function StudentOverview({ students, grades, classes, subjects, a
       subjectAvgs, gradeDist, trendData, classEnrollment, attTrend, genderData, assignmentByClass,
       attRate, assignCompletion: Math.min(assignCompletion, 100),
     };
-  }, [students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories]);
+  }, [students, grades, gradesForCalc, classes, subjects, attendance, assignments, submissions, gradeCategories]);
 
   const KPI_CARDS = [
     { label: 'Total Students', value: students.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },

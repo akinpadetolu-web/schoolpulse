@@ -220,6 +220,7 @@ export default function AdminDashboard() {
         <StudentOverview
           students={filtered.students}
           grades={filtered.grades}
+          allGrades={raw.grades}
           classes={filtered.classes}
           subjects={filtered.subjects}
           attendance={filtered.attendance}
