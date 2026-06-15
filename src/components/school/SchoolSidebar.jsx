@@ -32,7 +32,6 @@ const baseAdminNavGroups = [
       { label: "Calendar & Events", path: "/school-admin/events", icon: CalendarDays },
       { label: "Assignments", path: "/school-admin/assignments", icon: FileText },
       { label: "Grades", path: "/school-admin/grade-weighting", icon: Award },
-      { label: "Subject Weights", path: "/school-admin/subject-weights", icon: PieChart },
       { label: "Attendance", path: "/school-admin/attendance", icon: UserCheck },
       { label: "Examinations", path: "/school-admin/school-report", icon: PieChart },
       { label: "Report Cards", path: "/school-admin/report-cards", icon: FileText },
