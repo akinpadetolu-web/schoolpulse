@@ -10,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Trash2, Eye, EyeOff, ClipboardList, Clock, Calendar, Radio, Edit2 } from 'lucide-react';
+import { Plus, Loader2, Trash2, Eye, EyeOff, ClipboardList, Clock, Calendar, Radio, Edit2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizQuestionEditor from '@/components/teacher/QuizQuestionEditor';
+import QuizBulkImportDialog from '@/components/teacher/QuizBulkImportDialog';
 
 const RELEASE_MODES = [
   { value: "manual", label: "Manual — publish when ready" },
@@ -33,6 +34,7 @@ export default function TeacherQuizzes() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const [form, setForm] = useState({
     title: "", description: "", classId: "", subjectId: "",
@@ -60,6 +62,11 @@ export default function TeacherQuizzes() {
   function openCreate() {
     setEditingQuiz(null);
     setForm({ title: "", description: "", classId: "", subjectId: "", durationMinutes: 30, releaseMode: "manual", scheduledAt: "", timetableEntryId: "", questions: [] });
+    setShowDialog(true);
+  }
+
+  function handleBulkImportComplete(importedQuestions) {
+    setForm(prev => ({ ...prev, questions: importedQuestions }));
     setShowDialog(true);
   }
 
@@ -151,7 +158,10 @@ export default function TeacherQuizzes() {
           <h1 className="text-2xl font-bold">Quizzes</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Create and schedule quizzes for your classes</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create Quiz</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBulkImport(true)}><Upload className="w-4 h-4 mr-2" /> Bulk Import</Button>
+          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create Quiz</Button>
+        </div>
       </div>
 
       {quizzes.length === 0 ? (
@@ -201,6 +211,9 @@ export default function TeacherQuizzes() {
           ))}
         </div>
       )}
+
+      {/* Bulk Import Dialog */}
+      <QuizBulkImportDialog open={showBulkImport} onOpenChange={setShowBulkImport} onImport={handleBulkImportComplete} />
 
       {/* Create / Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
