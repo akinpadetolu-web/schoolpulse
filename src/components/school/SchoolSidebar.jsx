@@ -69,6 +69,7 @@ const baseAdminNavGroups = [
   {
     label: 'STAFF',
     items: [
+      { label: "Non-Teaching Staff", path: "/school-admin/staff", icon: Users },
       { label: "Teacher Workload", path: "/school-admin/teacher-workload", icon: TrendingUp },
       { label: "Clock In/Out", path: "/school-admin/staff-attendance", icon: Clock },
       { label: "Leave Requests", path: "/school-admin/leave-requests", icon: AlertCircle },
@@ -112,6 +113,7 @@ const featureMap = {
   "/school-admin/staff-attendance": "staffAttendance",
   "/school-admin/leave-requests": "leaveRequests",
   "/school-admin/hr": "adminHR",
+  "/school-admin/staff": "adminStaff",
   "/school-admin/settings": "adminSettings",
   "/school-admin/grading-system": "gradingSystem",
   "/school-admin/promotion": "promotion",
