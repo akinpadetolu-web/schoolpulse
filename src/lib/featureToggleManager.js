@@ -148,6 +148,12 @@ export function getDefaultFeatures(role) {
     defaults.studentReports = false;
   }
 
+  if (role === 'hr_staff') {
+    // HR staff get no features by default — only what admin explicitly grants via permittedFeatures
+    Object.keys(defaults).forEach(k => { defaults[k] = false; });
+    defaults.adminDashboard = true; // always show dashboard so they can navigate
+  }
+
   if (role === 'parent') {
     defaults.adminDashboard = false;
     defaults.adminStudents = false;

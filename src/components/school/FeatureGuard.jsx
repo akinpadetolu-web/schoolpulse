@@ -33,6 +33,17 @@ export default function FeatureGuard({ children, path }) {
         setAllowed(true);
         return;
       }
+      // HR staff: check their personal permittedFeatures first
+      if (user?.role === 'hr_staff') {
+        const permitted = user?.permittedFeatures || {};
+        if (permitted[requiredFeature] === true) {
+          setAllowed(true);
+        } else {
+          setAllowed(false);
+          setTimeout(() => navigate('/school-admin'), 2000);
+        }
+        return;
+      }
       const features = await getFeatures(user?.schoolId, user?.role, user?.id);
       if (features[requiredFeature] === false) {
         setAllowed(false);

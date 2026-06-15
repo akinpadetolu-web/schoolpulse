@@ -21,7 +21,8 @@
         "admin",
         "teacher",
         "student",
-        "parent"
+        "parent",
+        "hr_staff"
       ]
     },
     "gender": {
@@ -110,6 +111,44 @@
     "isArchived": {
       "type": "boolean",
       "default": false
+    },
+    "permittedFeatures": {
+      "type": "object",
+      "description": "Feature permissions granted to this HR staff member by the school admin. Key-value pairs where key is feature name and value is boolean.",
+      "properties": {
+        "adminHR": {
+          "type": "boolean",
+          "default": false
+        },
+        "staffAttendance": {
+          "type": "boolean",
+          "default": false
+        },
+        "leaveRequests": {
+          "type": "boolean",
+          "default": false
+        },
+        "teacherWorkload": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminStudents": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminTeachers": {
+          "type": "boolean",
+          "default": false
+        },
+        "attendance": {
+          "type": "boolean",
+          "default": false
+        },
+        "announcements": {
+          "type": "boolean",
+          "default": false
+        }
+      }
     },
     "subjectAverages": {
       "type": "array",

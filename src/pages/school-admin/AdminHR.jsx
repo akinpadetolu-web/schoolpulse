@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserCheck, Calendar, Loader2, Check, X, Clock, Search, Plus } from 'lucide-react';
+import { Users, UserCheck, Calendar, Loader2, Check, X, Clock, Search, Plus, Shield, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import CreateHRStaffDialog from '@/components/hr/CreateHRStaffDialog';
+import HRStaffPermissionsDialog from '@/components/hr/HRStaffPermissionsDialog';
 
 const LEAVE_TYPES = ['annual', 'sick', 'maternity', 'paternity', 'compassionate', 'unpaid', 'other'];
 const STATUS_COLORS = {
@@ -33,6 +35,10 @@ export default function AdminHR() {
   const [attendanceMap, setAttendanceMap] = useState({});
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
+  const [hrStaff, setHrStaff] = useState([]);
+  const [showCreateHR, setShowCreateHR] = useState(false);
+  const [selectedHRMember, setSelectedHRMember] = useState(null);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   const [leaveForm, setLeaveForm] = useState({
     staffId: '', leaveType: 'annual', startDate: '', endDate: '', reason: '',
@@ -48,14 +54,16 @@ export default function AdminHR() {
   }, [staffAttendance, attendanceDate]);
 
   async function loadData() {
-    const [teachers, admins, lv, att] = await Promise.all([
+    const [teachers, admins, hrStaffList, lv, att] = await Promise.all([
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'teacher', isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'admin', isArchived: false }),
+      base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'hr_staff', isArchived: false }),
       base44.entities.StaffLeave.filter({ schoolId: user?.schoolId }),
       base44.entities.StaffAttendance.filter({ schoolId: user?.schoolId }),
     ]);
     const allStaff = [...(teachers || []), ...(admins || [])];
     setStaff(allStaff);
+    setHrStaff(hrStaffList || []);
     setLeaves(lv || []);
     setStaffAttendance(att || []);
     setLoading(false);
@@ -175,13 +183,14 @@ export default function AdminHR() {
       </div>
 
       <Tabs defaultValue="directory">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="directory">Staff Directory</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="leaves">
             Leave Requests
             {pendingLeaves > 0 && <span className="ml-1.5 bg-amber-500 text-white text-xs rounded-full px-1.5">{pendingLeaves}</span>}
           </TabsTrigger>
+          <TabsTrigger value="hr_staff">HR Staff <span className="ml-1.5 bg-primary/20 text-primary text-xs rounded-full px-1.5">{hrStaff.length}</span></TabsTrigger>
         </TabsList>
 
         {/* STAFF DIRECTORY */}
@@ -336,7 +345,64 @@ export default function AdminHR() {
             </div>
           )}
         </TabsContent>
+
+        {/* HR STAFF TAB */}
+        <TabsContent value="hr_staff">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground">Manage HR staff accounts and control which features they can access.</p>
+            <Button onClick={() => setShowCreateHR(true)}>
+              <UserPlus className="w-4 h-4 mr-2" /> Add HR Staff
+            </Button>
+          </div>
+
+          {hrStaff.length === 0 ? (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No HR staff yet</p>
+                <p className="text-sm mt-1">Add an HR staff member to delegate HR tasks with controlled access.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {hrStaff.map(member => {
+                const enabledCount = Object.values(member.permittedFeatures || {}).filter(Boolean).length;
+                return (
+                  <Card key={member.id} className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
+                            {member.fullName?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{member.fullName}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{enabledCount} feature{enabledCount !== 1 ? 's' : ''} enabled</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => { setSelectedHRMember(member); setShowPermissions(true); }}>
+                          <Shield className="w-3.5 h-3.5 mr-1" /> Permissions
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
+
+      <CreateHRStaffDialog open={showCreateHR} onOpenChange={setShowCreateHR} schoolUser={user} onCreated={loadData} />
+      {selectedHRMember && (
+        <HRStaffPermissionsDialog
+          open={showPermissions}
+          onOpenChange={setShowPermissions}
+          member={selectedHRMember}
+          onSaved={loadData}
+        />
+      )}
 
       {/* Leave Request Dialog */}
       <Dialog open={showLeave} onOpenChange={setShowLeave}>

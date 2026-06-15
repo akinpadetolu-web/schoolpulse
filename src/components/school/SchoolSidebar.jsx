@@ -126,8 +126,17 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     if (user?.schoolId) loadFeatures();
   }, [user?.schoolId, user?.role, user?.id]);
 
-  // Admin always sees Exam Timetable (they manage it); build dynamic groups
-  const adminNavGroups = baseAdminNavGroups;
+  // For hr_staff: build nav from their permittedFeatures
+  const adminNavGroups = user?.role === 'hr_staff'
+    ? baseAdminNavGroups.map(group => ({
+        ...group,
+        items: group.items.filter(item => {
+          const requiredFeature = featureMap[item.path];
+          if (!requiredFeature) return item.path === '/school-admin'; // always show dashboard
+          return user?.permittedFeatures?.[requiredFeature] === true;
+        })
+      })).filter(g => g.items.length > 0)
+    : baseAdminNavGroups;
 
   useEffect(() => {
     if (isOpen) {
@@ -148,14 +157,16 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     return location.pathname.startsWith(path);
   };
 
-  const filteredNavGroups = adminNavGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      const requiredFeature = featureMap[item.path];
-      if (!requiredFeature) return true;
-      return features[requiredFeature] !== false;
-    })
-  })).filter(group => group.items.length > 0);
+  const filteredNavGroups = user?.role === 'hr_staff'
+    ? adminNavGroups // already filtered above for hr_staff
+    : adminNavGroups.map(group => ({
+        ...group,
+        items: group.items.filter(item => {
+          const requiredFeature = featureMap[item.path];
+          if (!requiredFeature) return true;
+          return features[requiredFeature] !== false;
+        })
+      })).filter(group => group.items.length > 0);
 
   return (
     <>
@@ -171,7 +182,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
             <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
             <div>
               <span className="font-bold text-sm">SchoolEduPulse</span>
-              <p className="text-xs text-sidebar-foreground/60">{user?.schoolName || "Admin Panel"}</p>
+              <p className="text-xs text-sidebar-foreground/60">{user?.role === 'hr_staff' ? 'HR Staff' : (user?.schoolName || "Admin Panel")}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>

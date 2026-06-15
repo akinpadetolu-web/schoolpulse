@@ -18,12 +18,14 @@ export default function SchoolLayout() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  const isAllowedRole = user?.role === 'admin' || user?.role === 'hr_staff';
+
   useEffect(() => {
-    if (!isLoadingSchoolAuth && (!user || user.role !== "admin")) navigate("/");
-  }, [user, isLoadingSchoolAuth, navigate]);
+    if (!isLoadingSchoolAuth && (!user || !isAllowedRole)) navigate("/");
+  }, [user, isLoadingSchoolAuth, navigate, isAllowedRole]);
 
   if (isLoadingSchoolAuth) return <div className="fixed inset-0 flex items-center justify-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
-  if (!user || user.role !== "admin") return null;
+  if (!user || !isAllowedRole) return null;
 
   return (
     <div className="flex flex-col md:flex-row bg-background" style={{ height: '100dvh', overflow: 'hidden' }}>

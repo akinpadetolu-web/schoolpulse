@@ -45,7 +45,7 @@ export function SchoolAuthProvider({ children }) {
           setIsLoadingSchoolAuth(false); 
           return; 
         }
-        const users = await base44.entities.SchoolUser.filter({ email: stored.email, schoolId: stored.schoolId, role: stored.role });
+        const users = await base44.entities.SchoolUser.filter({ email: stored.email, schoolId: stored.schoolId });
         const user = (users || [])[0];
         if (user && !user.isArchived) {
           const { passwordHash, ...safe } = user;
