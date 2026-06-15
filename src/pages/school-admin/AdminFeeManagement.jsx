@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
-const EMPTY_TYPE = { name: '', description: '', colorCode: '#6366f1', isMandatory: true };
+const EMPTY_TYPE = { name: '', description: '', colorCode: '#6366f1', isMandatory: true, defaultAmount: 0 };
 const EMPTY_STRUCTURE = { name: '', academicYear: '', term: '', applyToAllClasses: true, feeItems: [], status: 'draft', totalAmount: 0 };
 
 export default function AdminFeeManagement() {
@@ -43,7 +43,7 @@ export default function AdminFeeManagement() {
   }
 
   function openNewType() { setEditingType(null); setTypeForm(EMPTY_TYPE); setShowTypeDialog(true); }
-  function openEditType(t) { setEditingType(t); setTypeForm({ name: t.name, description: t.description || '', colorCode: t.colorCode || '#6366f1', isMandatory: t.isMandatory !== false }); setShowTypeDialog(true); }
+  function openEditType(t) { setEditingType(t); setTypeForm({ name: t.name, description: t.description || '', colorCode: t.colorCode || '#6366f1', isMandatory: t.isMandatory !== false, defaultAmount: t.defaultAmount || 0 }); setShowTypeDialog(true); }
 
   async function saveType() {
     if (!typeForm.name) { toast.error('Name is required'); return; }
@@ -101,7 +101,10 @@ export default function AdminFeeManagement() {
       items[idx] = { ...items[idx], [field]: value };
       if (field === 'feeTypeId') {
         const ft = feeTypes.find(t => t.id === value);
-        if (ft) items[idx].feeTypeName = ft.name;
+        if (ft) {
+          items[idx].feeTypeName = ft.name;
+          if (ft.defaultAmount > 0) items[idx].amount = ft.defaultAmount;
+        }
       }
       return { ...f, feeItems: items };
     });
@@ -144,8 +147,9 @@ export default function AdminFeeManagement() {
                     </div>
                   </div>
                   {ft.description && <p className="text-sm text-muted-foreground mt-2">{ft.description}</p>}
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center justify-between">
                     <Badge variant={ft.isMandatory ? 'default' : 'outline'}>{ft.isMandatory ? 'Mandatory' : 'Optional'}</Badge>
+                    {ft.defaultAmount > 0 && <span className="text-sm font-bold">₦{(ft.defaultAmount || 0).toLocaleString()}</span>}
                   </div>
                 </CardContent>
               </Card>
@@ -194,6 +198,7 @@ export default function AdminFeeManagement() {
           <div className="space-y-3">
             <div><Label className="text-sm mb-1 block">Name *</Label><Input value={typeForm.name} onChange={e => setTypeForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div><Label className="text-sm mb-1 block">Description</Label><Input value={typeForm.description} onChange={e => setTypeForm(f => ({ ...f, description: e.target.value }))} /></div>
+            <div><Label className="text-sm mb-1 block">Default Amount (₦)</Label><Input type="number" min="0" value={typeForm.defaultAmount} onChange={e => setTypeForm(f => ({ ...f, defaultAmount: +e.target.value }))} placeholder="0" /></div>
             <div><Label className="text-sm mb-1 block">Color</Label><Input type="color" value={typeForm.colorCode} onChange={e => setTypeForm(f => ({ ...f, colorCode: e.target.value }))} className="h-9 w-20 p-1" /></div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="mandatory" checked={typeForm.isMandatory} onChange={e => setTypeForm(f => ({ ...f, isMandatory: e.target.checked }))} />
