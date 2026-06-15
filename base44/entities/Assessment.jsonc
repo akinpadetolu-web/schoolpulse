@@ -1,0 +1,101 @@
+{
+  "name": "Assessment",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "classIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "For multi-class assessments"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "assessmentType": {
+      "type": "string",
+      "enum": [
+        "Assignment",
+        "Quiz",
+        "Test",
+        "Continuous Assessment",
+        "Exam"
+      ]
+    },
+    "weight": {
+      "type": "number",
+      "description": "Percentage weight (0-100)"
+    },
+    "maxScore": {
+      "type": "number",
+      "default": 100
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date",
+      "description": "When the assessment is due/conducted"
+    },
+    "durationMinutes": {
+      "type": "number",
+      "description": "For timed assessments like quizzes"
+    },
+    "isVisibleToStudent": {
+      "type": "boolean",
+      "default": true
+    },
+    "isVisibleToParent": {
+      "type": "boolean",
+      "default": true
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false
+    },
+    "legacyQuizId": {
+      "type": "string",
+      "description": "Reference to original Quiz record for migration tracking"
+    },
+    "legacyAssignmentId": {
+      "type": "string",
+      "description": "Reference to original Assignment record for migration tracking"
+    }
+  },
+  "required": [
+    "schoolId",
+    "title",
+    "assessmentType",
+    "weight",
+    "dueDate"
+  ]
+}
