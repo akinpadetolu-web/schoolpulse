@@ -58,28 +58,37 @@ export function calculateWeightedScore(grades, categories, studentId, subjectId,
     return { overall: Math.round(avg * 100) / 100, breakdown: [], hasWeights: false };
   }
 
-  // Weighted calculation
+  // Weighted calculation — only include categories that have actual grade records
   const breakdown = relevantCategories.map(cat => {
     const catGrades = relevant.filter(g => g.assessmentType === cat.assessmentType);
-    let categoryAvg = 0;
+    let categoryAvg = null; // null = no data yet
     if (catGrades.length > 0) {
       const totalPct = catGrades.reduce((sum, g) => sum + (g.maxScore > 0 ? (g.score / g.maxScore) * 100 : 0), 0);
       categoryAvg = totalPct / catGrades.length;
     }
-    const contribution = categoryAvg * (cat.weight / 100);
     return {
       categoryName: cat.categoryName,
       assessmentType: cat.assessmentType,
       weight: cat.weight,
-      categoryAvg: Math.round(categoryAvg * 100) / 100,
-      contribution: Math.round(contribution * 100) / 100,
+      categoryAvg: categoryAvg !== null ? Math.round(categoryAvg * 100) / 100 : null,
       count: catGrades.length,
     };
   });
 
-  const overall = Math.round(breakdown.reduce((sum, b) => sum + b.contribution, 0) * 100) / 100;
+  // Only score using categories that have data; rescale weights proportionally
+  const scoredCats = breakdown.filter(b => b.categoryAvg !== null);
+  const totalWeight = scoredCats.reduce((sum, b) => sum + b.weight, 0);
 
-  return { overall, breakdown, hasWeights: true };
+  const finalBreakdown = breakdown.map(b => {
+    if (b.categoryAvg === null) return { ...b, contribution: 0 };
+    const effectiveWeight = totalWeight > 0 ? (b.weight / totalWeight) * 100 : b.weight;
+    const contribution = b.categoryAvg * (effectiveWeight / 100);
+    return { ...b, contribution: Math.round(contribution * 100) / 100 };
+  });
+
+  const overall = Math.round(finalBreakdown.reduce((sum, b) => sum + b.contribution, 0) * 100) / 100;
+
+  return { overall, breakdown: finalBreakdown, hasWeights: true };
 }
 
 /**
