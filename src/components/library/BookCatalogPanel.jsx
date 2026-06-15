@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit2, Trash2, AlertTriangle, BookOpen } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertTriangle, BookOpen, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -49,7 +49,9 @@ export default function BookCatalogPanel({ books, search, onRefresh }) {
     purchaseDate: '',
     purchasePrice: '',
     borrowingPeriodDays: 14,
+    coverImageUrl: '',
   });
+  const [uploading, setUploading] = useState(false);
 
   const filteredBooks = books.filter(b =>
     b.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -75,9 +77,43 @@ export default function BookCatalogPanel({ books, search, onRefresh }) {
         purchaseDate: book.purchaseDate || '',
         purchasePrice: book.purchasePrice || '',
         borrowingPeriodDays: book.borrowingPeriodDays || 14,
+        coverImageUrl: book.coverImageUrl || '',
+      });
+    } else {
+      setForm({
+        isbn: '',
+        title: '',
+        author: '',
+        publisher: '',
+        publicationYear: new Date().getFullYear(),
+        category: 'fiction',
+        resourceType: 'physical_book',
+        description: '',
+        totalCopies: 1,
+        location: '',
+        callNumber: '',
+        purchaseDate: '',
+        purchasePrice: '',
+        borrowingPeriodDays: 14,
+        coverImageUrl: '',
       });
     }
     setShowDialog(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await base44.integrations.Core.UploadFile({ file });
+      setForm({ ...form, coverImageUrl: res.file_url });
+      toast.success('Cover image uploaded');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -92,11 +128,21 @@ export default function BookCatalogPanel({ books, search, onRefresh }) {
       const payload = {
         schoolId: user?.schoolId,
         schoolName: user?.schoolName,
-        ...form,
-        totalCopies: Number(form.totalCopies),
+        isbn: form.isbn,
+        title: form.title,
+        author: form.author,
+        publisher: form.publisher,
         publicationYear: Number(form.publicationYear),
+        category: form.category,
+        resourceType: form.resourceType,
+        description: form.description,
+        totalCopies: Number(form.totalCopies),
+        location: form.location,
+        callNumber: form.callNumber,
+        purchaseDate: form.purchaseDate,
         purchasePrice: form.purchasePrice ? Number(form.purchasePrice) : 0,
         borrowingPeriodDays: Number(form.borrowingPeriodDays),
+        coverImageUrl: form.coverImageUrl,
       };
 
       if (selectedBook?.id) {
@@ -282,6 +328,25 @@ export default function BookCatalogPanel({ books, search, onRefresh }) {
                 className="resize-none h-20"
                 disabled={saving}
               />
+            </div>
+
+            <div>
+              <Label>Book Cover Image</Label>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={saving || uploading}
+                  />
+                </div>
+              </div>
+              {form.coverImageUrl && (
+                <div className="mt-2 relative w-20 h-28 bg-slate-100 rounded border overflow-hidden">
+                  <img src={form.coverImageUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

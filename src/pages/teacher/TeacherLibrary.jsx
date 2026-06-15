@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Search, BookOpen, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function StudentLibrary() {
+export default function TeacherLibrary() {
   const { schoolUser: user } = useSchoolAuth();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
-  const [requestingBook, setRequestingBook] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadBooks();
@@ -40,7 +38,7 @@ export default function StudentLibrary() {
   }
 
   function filterBooks() {
-    let result = books.filter(b => b.availableCopies > 0 && !b.isArchived);
+    let result = books.filter(b => !b.isArchived);
 
     if (search) {
       result = result.filter(b =>
@@ -57,32 +55,6 @@ export default function StudentLibrary() {
     setFilteredBooks(result);
   }
 
-  const handleRequestBook = async (book) => {
-    setRequestingBook(book.id);
-    setSubmitting(true);
-    try {
-      await base44.entities.BookRequest.create({
-        schoolId: user?.schoolId,
-        bookId: book.id,
-        requestedTitle: book.title,
-        requestedAuthor: book.author,
-        requestedBy: user?.id,
-        requestedByName: user?.fullName,
-        requestType: 'book_availability',
-        reason: `Student requesting to borrow ${book.title}`,
-        status: 'pending',
-        requestedAt: new Date().toISOString(),
-      });
-      toast.success(`Request sent for "${book.title}"`);
-      setRequestingBook(null);
-    } catch (error) {
-      toast.error('Failed to request book');
-      setRequestingBook(null);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -93,22 +65,22 @@ export default function StudentLibrary() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Library</h1>
-        <p className="text-muted-foreground">Browse and request books from the school library</p>
+        <h1 className="text-2xl font-bold">School Library</h1>
+        <p className="text-muted-foreground">Browse and explore the school library collection</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total Available</p>
-            <p className="text-2xl font-bold">{books.filter(b => b.availableCopies > 0).length}</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Books</p>
+            <p className="text-2xl font-bold">{books.length}</p>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total Copies</p>
-            <p className="text-2xl font-bold">{books.reduce((sum, b) => sum + (b.totalCopies || 1), 0)}</p>
+            <p className="text-sm text-muted-foreground mb-1">Available Copies</p>
+            <p className="text-2xl font-bold text-green-600">{books.reduce((sum, b) => sum + (b.availableCopies || 0), 0)}</p>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm">
@@ -143,11 +115,11 @@ export default function StudentLibrary() {
         </Select>
       </div>
 
-      {/* Books */}
+      {/* Books Grid */}
       {filteredBooks.length === 0 ? (
         <div className="text-center py-12">
           <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-muted-foreground">{search || category !== 'all' ? 'No books match your search' : 'No available books'}</p>
+          <p className="text-muted-foreground">{search || category !== 'all' ? 'No books match your search' : 'No books available'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -184,18 +156,8 @@ export default function StudentLibrary() {
                   )}
                 </div>
 
-                <Button
-                  onClick={() => handleRequestBook(book)}
-                  disabled={submitting || requestingBook === book.id || book.availableCopies <= 0}
-                  className="w-full"
-                  size="sm"
-                >
-                  {submitting && requestingBook === book.id ? (
-                    <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                  ) : (
-                    <BookOpen className="w-3 h-3 mr-2" />
-                  )}
-                  Request Book
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  View Details
                 </Button>
               </CardContent>
             </Card>

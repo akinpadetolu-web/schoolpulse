@@ -100,6 +100,7 @@ const TeacherAttendance = lazy(() => import('./pages/teacher/TeacherAttendance')
 const TeacherLessonPlans = lazy(() => import('./pages/teacher/TeacherLessonPlans'));
 const TeacherAnnouncements = lazy(() => import('./pages/teacher/TeacherAnnouncements'));
 const TeacherQuizzes = lazy(() => import('./pages/teacher/TeacherQuizzes'));
+const TeacherLibrary = lazy(() => import('./pages/teacher/TeacherLibrary'));
 const TeacherQuizRemarks = lazy(() => import('./pages/teacher/TeacherQuizRemarks'));
 const TeacherSubmissions = lazy(() => import('./pages/teacher/TeacherSubmissions'));
 const TeacherNotifications = lazy(() => import('./pages/teacher/TeacherNotifications'));
@@ -246,6 +247,7 @@ const AuthenticatedApp = () => {
           <Route path="submissions" element={<TeacherSubmissions />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
           <Route path="e-class" element={<TeacherEClass />} />
+          <Route path="library" element={<TeacherLibrary />} />
           <Route path="notifications" element={<TeacherNotifications />} />
           <Route path="progress" element={<TeacherProgressDashboard />} />
           <Route path="exam-results" element={<TeacherExamResults />} />
