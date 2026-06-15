@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Users, TrendingUp, Activity, BookOpen, CheckSquare, AlertTriangle, Star } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import ChartWidget from './ChartWidget';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 const PASS_MARK = 40;
 
@@ -17,19 +18,38 @@ const GRADE_DIST = [
   { label: 'F', range: [0, 40], color: '#ef4444' },
 ];
 
-export default function StudentOverview({ students, grades, classes, subjects, attendance, assignments, submissions, visibleWidgets }) {
+export default function StudentOverview({ students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets }) {
   const data = useMemo(() => {
-    const scores = grades.map(score);
-
-    // Student avg map
+    // Build a weighted average per student by computing weighted score per subject then averaging
     const studentMap = {};
+    students.forEach(s => {
+      studentMap[s.id] = { id: s.id, name: s.fullName || 'Unknown', gender: s.gender || '', classId: s.classId, className: s.className, scores: [], attendancePct: 0 };
+    });
+    // Also add students seen in grades but not in students list
     grades.forEach(g => {
       if (!g.studentId) return;
-      const s = students.find(s => s.id === g.studentId);
-      if (!studentMap[g.studentId]) studentMap[g.studentId] = { id: g.studentId, name: g.studentName || s?.fullName || 'Unknown', gender: s?.gender || '', classId: g.classId, className: g.className, scores: [], attendancePct: 0 };
-      studentMap[g.studentId].scores.push(score(g));
+      if (!studentMap[g.studentId]) {
+        const st = students.find(s => s.id === g.studentId);
+        studentMap[g.studentId] = { id: g.studentId, name: g.studentName || st?.fullName || 'Unknown', gender: st?.gender || '', classId: g.classId, className: g.className, scores: [], attendancePct: 0 };
+      }
     });
-    const studentList = Object.values(studentMap).map(s => ({ ...s, avg: avg(s.scores), pass: avg(s.scores) >= PASS_MARK }));
+
+    // Compute weighted avg per student (across all their subjects)
+    Object.values(studentMap).forEach(st => {
+      const studentGrades = grades.filter(g => g.studentId === st.id);
+      const subjectIds = [...new Set(studentGrades.map(g => g.subjectId).filter(Boolean))];
+      if (subjectIds.length === 0) { st.avg = 0; st.pass = false; return; }
+      const classCats = gradeCategories.filter(c => c.classId === st.classId);
+      const subjectScores = subjectIds.map(subjectId => {
+        const result = calculateWeightedScore(grades, classCats, st.id, subjectId);
+        return result.overall;
+      });
+      st.avg = avg(subjectScores);
+      st.pass = st.avg >= PASS_MARK;
+    });
+
+    const studentList = Object.values(studentMap).filter(s => s.avg > 0 || grades.some(g => g.studentId === s.id));
+    const scores = studentList.map(s => s.avg);
 
     // Attendance per student
     const attMap = {};
@@ -68,32 +88,37 @@ export default function StudentOverview({ students, grades, classes, subjects, a
 
     const top10 = [...studentList].sort((a, b) => b.avg - a.avg).slice(0, 10);
     const bottom10 = [...studentList].sort((a, b) => a.avg - b.avg).slice(0, 10);
-    const atRisk = studentList.filter(s => s.avg < PASS_MARK);
+    const atRisk = studentList.filter(s => s.avg < PASS_MARK && s.avg > 0);
     const overallPassRate = pct(studentList.filter(s => s.pass).length, studentList.length);
     const overallAvg = avg(scores);
 
-    // Subject avg
-    const subjectMap = {};
-    grades.forEach(g => {
-      if (!g.subjectId) return;
-      const name = g.subjectName || subjects.find(s => s.id === g.subjectId)?.name || 'Unknown';
-      if (!subjectMap[g.subjectId]) subjectMap[g.subjectId] = { name: name.length > 10 ? name.slice(0, 10) : name, scores: [] };
-      subjectMap[g.subjectId].scores.push(score(g));
-    });
-    const subjectAvgs = Object.values(subjectMap).map(s => ({ name: s.name, score: avg(s.scores), value: avg(s.scores) }));
+    // Subject avg (weighted per student per subject, then averaged)
+    const subjectIds = [...new Set(grades.map(g => g.subjectId).filter(Boolean))];
+    const subjectAvgs = subjectIds.map(subjectId => {
+      const name = grades.find(g => g.subjectId === subjectId)?.subjectName || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+      const shortName = name.length > 10 ? name.slice(0, 10) : name;
+      const studentsWithSubject = [...new Set(grades.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
+      const subjectScores = studentsWithSubject.map(studentId => {
+        const st = studentMap[studentId];
+        const classCats = gradeCategories.filter(c => c.classId === st?.classId);
+        return calculateWeightedScore(grades, classCats, studentId, subjectId).overall;
+      }).filter(s => s > 0);
+      return { name: shortName, score: avg(subjectScores), value: avg(subjectScores) };
+    }).filter(s => s.value > 0);
 
-    // Grade distribution
+    // Grade distribution based on weighted student averages
     const gradeDist = GRADE_DIST.map(g => ({
       label: g.label, name: g.label, count: scores.filter(s => s >= g.range[0] && s < g.range[1]).length,
       value: scores.filter(s => s >= g.range[0] && s < g.range[1]).length, color: g.color,
     }));
 
-    // Pass rate trend (6 months)
+    // Pass rate trend (6 months) — use student weighted avgs
     const now = new Date();
     const trendData = Array.from({ length: 6 }, (_, i) => {
       const d = subMonths(now, 5 - i);
-      const monthGrades = grades.filter(g => { const at = g.lastUpdatedAt ? new Date(g.lastUpdatedAt) : null; return at && at >= startOfMonth(d) && at <= endOfMonth(d); });
-      const ms = monthGrades.map(score);
+      // students who had any grade updated this month
+      const activeStudentIds = [...new Set(grades.filter(g => { const at = g.lastUpdatedAt ? new Date(g.lastUpdatedAt) : null; return at && at >= startOfMonth(d) && at <= endOfMonth(d); }).map(g => g.studentId))];
+      const ms = activeStudentIds.map(sid => studentList.find(s => s.id === sid)?.avg ?? 0).filter(s => s > 0);
       return { month: format(d, 'MMM'), rate: ms.length > 0 ? pct(ms.filter(s => s >= PASS_MARK).length, ms.length) : null, value: ms.length > 0 ? pct(ms.filter(s => s >= PASS_MARK).length, ms.length) : 0 };
     });
 
@@ -111,12 +136,12 @@ export default function StudentOverview({ students, grades, classes, subjects, a
       return { month: format(d, 'MMM'), rate: monthAtt.length > 0 ? pct(monthAtt.filter(a => a.status === 'present').length, monthAtt.length) : 0, value: monthAtt.length > 0 ? pct(monthAtt.filter(a => a.status === 'present').length, monthAtt.length) : 0 };
     });
 
-    // Gender comparison
-    const maleScores = grades.filter(g => students.find(s => s.id === g.studentId && s.gender === 'Male')).map(score);
-    const femaleScores = grades.filter(g => students.find(s => s.id === g.studentId && s.gender === 'Female')).map(score);
+    // Gender comparison — use weighted student averages
+    const maleAvgs = studentList.filter(s => s.gender === 'Male').map(s => s.avg);
+    const femaleAvgs = studentList.filter(s => s.gender === 'Female').map(s => s.avg);
     const genderData = [
-      { name: 'Male', avgScore: avg(maleScores), passRate: pct(maleScores.filter(s => s >= PASS_MARK).length, maleScores.length) },
-      { name: 'Female', avgScore: avg(femaleScores), passRate: pct(femaleScores.filter(s => s >= PASS_MARK).length, femaleScores.length) },
+      { name: 'Male', avgScore: avg(maleAvgs), passRate: pct(maleAvgs.filter(s => s >= PASS_MARK).length, maleAvgs.length) },
+      { name: 'Female', avgScore: avg(femaleAvgs), passRate: pct(femaleAvgs.filter(s => s >= PASS_MARK).length, femaleAvgs.length) },
     ];
 
     // Assignment completion by class
@@ -139,7 +164,7 @@ export default function StudentOverview({ students, grades, classes, subjects, a
       subjectAvgs, gradeDist, trendData, classEnrollment, attTrend, genderData, assignmentByClass,
       attRate, assignCompletion: Math.min(assignCompletion, 100),
     };
-  }, [students, grades, classes, subjects, attendance, assignments, submissions]);
+  }, [students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories]);
 
   const KPI_CARDS = [
     { label: 'Total Students', value: students.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },

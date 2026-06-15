@@ -110,14 +110,14 @@ export default function AdminDashboard() {
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
 
   // Raw data
-  const [raw, setRaw] = useState({ students: [], grades: [], classes: [], subjects: [], teachers: [], attendance: [], assignments: [], submissions: [], staffAttendance: [], academicTerms: [] });
+  const [raw, setRaw] = useState({ students: [], grades: [], classes: [], subjects: [], teachers: [], attendance: [], assignments: [], submissions: [], staffAttendance: [], academicTerms: [], gradeCategories: [] });
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     if (!schoolId) { setLoading(false); return; }
     async function load() {
-      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms] = await Promise.all([
+      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms, gradeCategories] = await Promise.all([
         base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
         base44.entities.Grade.filter({ schoolId }),
         base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
@@ -128,8 +128,9 @@ export default function AdminDashboard() {
         base44.entities.Submission.filter({ schoolId }),
         base44.entities.StaffAttendance.filter({ schoolId }).catch(() => []),
         base44.entities.AcademicTerm.filter({ schoolId }).catch(() => []),
+        base44.entities.GradeCategory.filter({ schoolId }).catch(() => []),
       ]);
-      setRaw({ students: students || [], grades: grades || [], classes: classes || [], subjects: subjects || [], teachers: teachers || [], attendance: attendance || [], assignments: assignments || [], submissions: submissions || [], staffAttendance: staffAtt || [], academicTerms: terms || [] });
+      setRaw({ students: students || [], grades: grades || [], classes: classes || [], subjects: subjects || [], teachers: teachers || [], attendance: attendance || [], assignments: assignments || [], submissions: submissions || [], staffAttendance: staffAtt || [], academicTerms: terms || [], gradeCategories: gradeCategories || [] });
       setLastUpdated(new Date());
       setLoading(false);
     }
@@ -224,6 +225,7 @@ export default function AdminDashboard() {
           attendance={filtered.attendance}
           assignments={filtered.assignments}
           submissions={filtered.submissions}
+          gradeCategories={raw.gradeCategories}
           visibleWidgets={studentVisible}
         />
       ) : (
