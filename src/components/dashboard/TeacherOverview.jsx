@@ -36,7 +36,9 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
     });
     Object.entries(teacherSubjectGroups).forEach(([key, groupGrades]) => {
       const [teacherId, studentId, subjectId] = key.split('__');
-      const result = calculateWeightedScore(groupGrades, gradeCategories, studentId, subjectId);
+      const classId = groupGrades[0]?.classId;
+      const classCats = gradeCategories.filter(c => !c.classId || c.classId === classId);
+      const result = calculateWeightedScore(groupGrades, classCats, studentId, subjectId);
       teacherMap[teacherId].scores.push(result.overall);
     });
 

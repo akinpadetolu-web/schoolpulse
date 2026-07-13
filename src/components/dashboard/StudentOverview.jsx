@@ -43,9 +43,9 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       const studentGrades = gradesForCalc.filter(g => g.studentId === st.id);
       const subjectIds = [...new Set(studentGrades.map(g => g.subjectId).filter(Boolean))];
       if (subjectIds.length === 0) { st.avg = 0; st.pass = false; return; }
-      // Use ALL grade categories (don't filter by classId) — the calculateWeightedScore function filters by subject internally
+      const classCats = gradeCategories.filter(c => !c.classId || c.classId === st.classId);
       const subjectScores = subjectIds.map(subjectId => {
-        const result = calculateWeightedScore(gradesForCalc, gradeCategories, st.id, subjectId);
+        const result = calculateWeightedScore(studentGrades, classCats, st.id, subjectId);
         return result.overall;
       });
       st.avg = avg(subjectScores);
@@ -103,7 +103,9 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       const shortName = name.length > 10 ? name.slice(0, 10) : name;
       const studentsWithSubject = [...new Set(gradesForCalc.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
       const subjectScores = studentsWithSubject.map(studentId => {
-        return calculateWeightedScore(gradesForCalc, gradeCategories, studentId, subjectId).overall;
+        const st = studentMap[studentId];
+        const classCats = gradeCategories.filter(c => !c.classId || c.classId === st?.classId);
+        return calculateWeightedScore(gradesForCalc.filter(g => g.studentId === studentId), classCats, studentId, subjectId).overall;
       }).filter(s => s > 0);
       return { name: shortName, score: avg(subjectScores), value: avg(subjectScores) };
     }).filter(s => s.value > 0);

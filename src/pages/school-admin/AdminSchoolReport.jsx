@@ -80,7 +80,9 @@ export default function AdminSchoolReport() {
 
       const weightedScores = Object.entries(studentSubjectGroups).map(([key, groupGrades]) => {
         const [studentId, subjectId] = key.split('__');
-        return calculateWeightedScore(filteredGrades, categoryData || [], studentId, subjectId).overall;
+        const classId = groupGrades[0]?.classId;
+        const classCats = (categoryData || []).filter(c => !c.classId || c.classId === classId);
+        return calculateWeightedScore(groupGrades, classCats, studentId, subjectId).overall;
       }).filter(s => s > 0);
 
       const averageGrade = weightedScores.length > 0
