@@ -176,53 +176,53 @@ export default function BookCatalogPanel({ books, search, onRefresh }) {
     }
   };
 
-  if (filteredBooks.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
-        <p className="text-muted-foreground mb-4">{books.length === 0 ? 'No books in catalog' : 'No matching books found'}</p>
-        <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
-      </div>
+      {filteredBooks.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-muted-foreground mb-4">{books.length === 0 ? 'No books in catalog' : 'No matching books found'}</p>
+          <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Add Book</Button>
+          </div>
 
-      <div className="grid gap-4">
-        {filteredBooks.map(book => (
-          <Card key={book.id} className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    <h3 className="font-semibold">{book.title}</h3>
-                    <Badge variant="outline" className="text-xs">{categoryLabel[book.category]}</Badge>
+          <div className="grid gap-4">
+            {filteredBooks.map(book => (
+              <Card key={book.id} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <h3 className="font-semibold">{book.title}</h3>
+                        <Badge variant="outline" className="text-xs">{categoryLabel[book.category]}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">By {book.author}</p>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {book.isbn && <p><span className="font-medium">ISBN:</span> {book.isbn}</p>}
+                        <p><span className="font-medium">Copies:</span> {book.availableCopies}/{book.totalCopies} available</p>
+                        <p><span className="font-medium">Type:</span> {book.resourceType.replace(/_/g, ' ')} • <span className="font-medium">Location:</span> {book.location || 'N/A'}</p>
+                        {book.description && <p className="italic text-xs mt-1">{book.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => handleOpenDialog(book)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteConfirm(book)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">By {book.author}</p>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    {book.isbn && <p><span className="font-medium">ISBN:</span> {book.isbn}</p>}
-                    <p><span className="font-medium">Copies:</span> {book.availableCopies}/{book.totalCopies} available</p>
-                    <p><span className="font-medium">Type:</span> {book.resourceType.replace(/_/g, ' ')} • <span className="font-medium">Location:</span> {book.location || 'N/A'}</p>
-                    {book.description && <p className="italic text-xs mt-1">{book.description}</p>}
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Button size="sm" variant="outline" onClick={() => handleOpenDialog(book)}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteConfirm(book)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
