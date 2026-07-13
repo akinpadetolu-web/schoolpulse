@@ -3,14 +3,18 @@ import { base44 } from '@/api/base44Client';
 /**
  * Grade Weight Calculation Engine
  *
- * Formula (missing assessments = 0, no weight rescaling):
+ * Formula (normalize weights based only on categories with data):
  *   For each category (e.g. Exam 60%, Quiz 20%, Assignment 20%):
  *     1. Collect all Grade records for this student/subject/term matching that assessmentType
  *     2. Compute the average percentage for that category: avg(score/maxScore * 100)
- *        (If no records: category score = 0, contribution = 0)
- *     3. Contribution = categoryAvg * (weight / 100)
- *   Overall = sum of all category contributions
- *   Example: Quiz 100% (20% weight) + Assignment 0% (20% weight) + Exam 0% (60% weight) = 20%
+ *        (If no records: category is excluded from the calculation)
+ *     3. Rescale weights so only categories with data sum to 100%
+ *     4. Contribution = categoryAvg * (rescaledWeight / 100)
+ *   Overall = sum of contributions from categories with data only
+ *   Example: Quiz 100% (20% weight), no Assignment or Exam data
+ *     → Only Quiz has data → rescaled to 100% → Overall = 100%
+ *   Example: Quiz 80% (20% weight) + Assignment 90% (20% weight), no Exam data
+ *     → Quiz+Assignment weights = 40% → rescale to 50%/50% → Overall = 85%
  *   Rounds to 2 decimal places.
  */
 
@@ -76,10 +80,18 @@ export function calculateWeightedScore(grades, categories, studentId, subjectId,
     };
   });
 
-  // Missing categories count as 0 — no weight rescaling
+  // Normalize: only include categories with actual grade data, rescale weights to sum to 100%
+  const categoriesWithData = breakdown.filter(b => b.categoryAvg !== null);
+  const totalWeightWithData = categoriesWithData.reduce((sum, b) => sum + b.weight, 0);
+
   const finalBreakdown = breakdown.map(b => {
-    const contribution = b.categoryAvg !== null ? b.categoryAvg * (b.weight / 100) : 0;
-    return { ...b, contribution: Math.round(contribution * 100) / 100 };
+    let contribution = 0;
+    let rescaledWeight = null;
+    if (b.categoryAvg !== null && totalWeightWithData > 0) {
+      rescaledWeight = Math.round((b.weight / totalWeightWithData) * 10000) / 100;
+      contribution = b.categoryAvg * (b.weight / totalWeightWithData);
+    }
+    return { ...b, rescaledWeight, contribution: Math.round(contribution * 100) / 100 };
   });
 
   const overall = Math.round(finalBreakdown.reduce((sum, b) => sum + b.contribution, 0) * 100) / 100;
@@ -93,9 +105,11 @@ export function calculateWeightedScore(grades, categories, studentId, subjectId,
  */
 export function formatBreakdown(breakdown, overall) {
   if (!breakdown || breakdown.length === 0) return '';
-  const parts = breakdown.map(b =>
-    `${b.categoryName} ${b.weight}% (${b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}) → ${b.contribution.toFixed(0)}`
-  );
+  const parts = breakdown.map(b => {
+    const avg = b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—';
+    const weight = b.rescaledWeight !== null ? `${b.weight}%→${b.rescaledWeight}%` : `${b.weight}%`;
+    return `${b.categoryName} ${weight} (${avg}) → ${b.contribution.toFixed(0)}`;
+  });
   return `${parts.join(' | ')} | Total: ${overall.toFixed(0)}%`;
 }
 
