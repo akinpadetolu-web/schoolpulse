@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Loader2, Trash2, TrendingUp, CheckCircle2, AlertCircle, Clock, Play, Download, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 function getLetterGrade(score, gradingSystem) {
   if (!gradingSystem?.grades) {
@@ -44,6 +45,7 @@ export default function AdminPromotion() {
   const [grades, setGrades] = useState([]);
   const [terms, setTerms] = useState([]);
   const [gradingSystems, setGradingSystems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRule, setShowRule] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
@@ -62,7 +64,7 @@ export default function AdminPromotion() {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const [r, res, cls, subj, stud, grd, termData, gs] = await Promise.all([
+    const [r, res, cls, subj, stud, grd, termData, gs, cats] = await Promise.all([
       base44.entities.PromotionRule.filter({ schoolId: user?.schoolId }),
       base44.entities.PromotionResult.filter({ schoolId: user?.schoolId }),
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
@@ -71,6 +73,7 @@ export default function AdminPromotion() {
       base44.entities.Grade.filter({ schoolId: user?.schoolId }),
       getTerms(user?.schoolId),
       base44.entities.GradingSystem.filter({ schoolId: user?.schoolId }),
+      base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }),
     ]);
     setRules(r || []);
     setResults(res || []);
@@ -80,6 +83,7 @@ export default function AdminPromotion() {
     setGrades(grd || []);
     setTerms(termData || []);
     setGradingSystems(gs || []);
+    setCategories(cats || []);
     setLoading(false);
   }
 
@@ -140,15 +144,14 @@ export default function AdminPromotion() {
           return g.studentId === student.id && d >= termStart && d <= termEnd;
         });
 
-        const subjectMap = {};
-        studentGrades.forEach(g => {
-          if (!subjectMap[g.subjectId]) subjectMap[g.subjectId] = [];
-          subjectMap[g.subjectId].push((g.score / (g.maxScore || 100)) * 100);
-        });
+        const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
 
-        const subjectBreakdown = Object.entries(subjectMap).map(([subjectId, scores]) => {
-          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const subjectBreakdown = subjectIds.map(subjectId => {
           const subj = subjects.find(s => s.id === subjectId);
+          const classId = student.classId || runForm.classId;
+          const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
+          const avg = result.overall;
           const passed = isPassing(avg, gradingSystem);
           return { subjectId, subjectName: subj?.name || 'Unknown', average: Math.round(avg), letterGrade: getLetterGrade(avg, gradingSystem), passed };
         });

@@ -94,7 +94,7 @@ export function calculateWeightedScore(grades, categories, studentId, subjectId,
 export function formatBreakdown(breakdown, overall) {
   if (!breakdown || breakdown.length === 0) return '';
   const parts = breakdown.map(b =>
-    `${b.categoryName} ${b.weight}% (${b.categoryAvg.toFixed(0)}) → ${b.contribution.toFixed(0)}`
+    `${b.categoryName} ${b.weight}% (${b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}) → ${b.contribution.toFixed(0)}`
   );
   return `${parts.join(' | ')} | Total: ${overall.toFixed(0)}%`;
 }

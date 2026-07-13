@@ -147,7 +147,7 @@ export default function StudentGrades() {
                             <span key={b.assessmentType}>
                               <span className="capitalize">{b.categoryName}</span>
                               {' '}<span className="text-muted-foreground/70">{b.weight}%</span>
-                              {' '}(<span className={b.categoryAvg > 0 ? 'text-foreground' : 'text-red-400'}>{b.categoryAvg.toFixed(0)}</span>)
+                              {' '}(<span className={b.categoryAvg !== null && b.categoryAvg > 0 ? 'text-foreground' : 'text-red-400'}>{b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}</span>)
                               {' → '}<strong>{b.contribution.toFixed(1)}</strong>
                               {b.count === 0 && <span className="text-red-400"> [no scores]</span>}
                             </span>

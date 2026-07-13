@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Send, Eye, FileText, Pencil, CheckCircle, Download, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReportCardViewer from '@/components/school/ReportCardViewer';
 
@@ -24,6 +25,7 @@ export default function AdminReportCards() {
   const [attendance, setAttendance] = useState([]);
   const [terms, setTerms] = useState([]);
   const [gradingSystem, setGradingSystem] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -43,7 +45,7 @@ export default function AdminReportCards() {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const [cards, stud, cls, subj, tmpl, grd, att, termData, gradingSystems] = await Promise.all([
+    const [cards, stud, cls, subj, tmpl, grd, att, termData, gradingSystems, cats] = await Promise.all([
       base44.entities.ReportCard.filter({ schoolId: user?.schoolId }),
       base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
       base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
@@ -53,6 +55,7 @@ export default function AdminReportCards() {
       base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
       getTerms(user?.schoolId),
       base44.entities.GradingSystem.filter({ schoolId: user?.schoolId }),
+      base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }),
     ]);
     setReportCards(cards || []);
     setStudents(stud || []);
@@ -63,6 +66,7 @@ export default function AdminReportCards() {
     setAttendance(att || []);
     setTerms(termData || []);
     setGradingSystem((gradingSystems || [])[0] || null);
+    setCategories(cats || []);
     setLoading(false);
   }
 
@@ -91,21 +95,21 @@ export default function AdminReportCards() {
     const selectedStudentObjects = students.filter(s => form.selectedStudents.includes(s.id));
 
     try {
-      // Calculate class position for all students in the class
+      // Calculate class position for all students in the class using weighted formula
       const classStudentsData = selectedStudentObjects.map(student => {
         const studentGrades = grades.filter(g => {
           const gradeDate = new Date(g.created_date);
           return g.studentId === student.id && gradeDate >= new Date(selectedTerm.startDate) && gradeDate <= new Date(selectedTerm.endDate);
         });
         const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
-        const subjectGrades = subjectIds.map(subjectId => {
-          const subjectGradeList = studentGrades.filter(g => g.subjectId === subjectId);
-          return subjectGradeList.length > 0
-            ? Math.round(subjectGradeList.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / subjectGradeList.length)
-            : 0;
+        const subjectAverages = subjectIds.map(subjectId => {
+          const classId = student.classId || form.selectedClass;
+          const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
+          return result.overall;
         });
-        const overallAverage = subjectGrades.length > 0
-          ? Math.round(subjectGrades.reduce((sum, sg) => sum + sg, 0) / subjectGrades.length)
+        const overallAverage = subjectAverages.length > 0
+          ? Math.round(subjectAverages.reduce((sum, sg) => sum + sg, 0) / subjectAverages.length)
           : 0;
         return { id: student.id, overallAverage };
       });
@@ -127,16 +131,15 @@ export default function AdminReportCards() {
 
         const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
         const subjectGrades = subjectIds.map(subjectId => {
-          const subjectGradeList = studentGrades.filter(g => g.subjectId === subjectId);
-          const avg = subjectGradeList.length > 0
-            ? Math.round(subjectGradeList.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / subjectGradeList.length)
-            : 0;
           const subject = subjects.find(s => s.id === subjectId);
+          const classId = student.classId || form.selectedClass;
+          const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
           return {
             subjectId,
             subjectName: subject?.name || 'Unknown',
-            weightedAverage: avg,
-            letterGrade: getLetterGrade(avg),
+            weightedAverage: Math.round(result.overall),
+            letterGrade: getLetterGrade(result.overall),
           };
         });
 
