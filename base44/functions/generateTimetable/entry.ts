@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 Deno.serve(async (req) => {
   try {
@@ -46,7 +46,13 @@ Deno.serve(async (req) => {
         return assignments.some(a => a.classId === cls.id) ||
                classSubjects.some(s => (t.assignedSubjects || []).includes(s.id));
       });
-      const llmTeachers = classTeachersInfo.length > 0 ? classTeachersInfo : teachersInfo;
+      // Strip each teacher to only assignments/subjects relevant to THIS class — minimizes LLM payload
+      const llmTeachers = (classTeachersInfo.length > 0 ? classTeachersInfo : teachersInfo).map(t => ({
+        id: t.id,
+        name: t.name,
+        teachingAssignments: (t.teachingAssignments || []).filter(a => a.classId === cls.id),
+        assignedSubjects: (t.assignedSubjects || []).filter(sid => classSubjects.some(s => s.id === sid)),
+      }));
 
       const llmPrompt = `
 You are a school timetable scheduling expert. Generate a weekly timetable for ONE class strictly following the user's instructions.

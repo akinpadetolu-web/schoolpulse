@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 Deno.serve(async (req) => {
   try {
@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
 Content/Topic: ${topic || 'General Knowledge'}
 Subject: ${subjectName || 'General'}
 
-Content to analyze:
-${fileContent.substring(0, 3000)}
+Content to analyze (truncated to 2000 chars to minimize payload):
+${fileContent.substring(0, 2000)}
 
 Generate exactly:
 - ${counts.multiple_choice} multiple choice questions (with 4 options each)
