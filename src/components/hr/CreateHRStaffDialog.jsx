@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { hashPassword } from '@/lib/auth';
 import { toast } from 'sonner';
 
 export default function CreateHRStaffDialog({ open, onOpenChange, schoolUser, onCreated }) {
@@ -16,12 +17,8 @@ export default function CreateHRStaffDialog({ open, onOpenChange, schoolUser, on
     if (!form.fullName || !form.email || !form.password) return toast.error('Name, email and password are required');
     setSaving(true);
 
-    // Hash password using the same pattern as existing changePassword function
-    const encoder = new TextEncoder();
-    const data = encoder.encode(form.password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Use the same base64 hash as the login flow (auth.js hashPassword)
+    const passwordHash = hashPassword(form.password);
 
     await base44.entities.SchoolUser.create({
       fullName: form.fullName,

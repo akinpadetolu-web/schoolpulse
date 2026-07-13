@@ -1,5 +1,23 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import bcrypt from 'npm:bcryptjs@2.4.3';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+
+// Must match the hashPassword/comparePassword logic in src/lib/auth.js
+const SALT = "SP2024_";
+
+function hashPassword(password) {
+  const salted = SALT + password;
+  // btoa(unescape(encodeURIComponent(...))) — same encoding as auth.js
+  return btoa(unescape(encodeURIComponent(salted)));
+}
+
+function comparePassword(inputPassword, storedHash) {
+  if (!inputPassword || !storedHash) return false;
+  if (hashPassword(inputPassword) === storedHash) return true;
+  try {
+    return btoa(SALT + inputPassword) === storedHash;
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
   try {
@@ -27,16 +45,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No password set for this account. Please contact your administrator.' }, { status: 400 });
     }
 
-    // Use async bcrypt methods (sync versions do not work reliably in Deno)
-    const isPasswordValid = await bcrypt.compare(currentPassword, targetUser.passwordHash);
-    if (!isPasswordValid) {
+    // Use the same base64 hash comparison as the login flow (auth.js)
+    if (!comparePassword(currentPassword, targetUser.passwordHash)) {
       return Response.json({ error: 'Current password is incorrect' }, { status: 401 });
     }
 
-    // Hash and save new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Hash and save new password using the same base64 format
+    const newHash = hashPassword(newPassword);
     await base44.asServiceRole.entities.SchoolUser.update(userId, {
-      passwordHash: hashedPassword,
+      passwordHash: newHash,
       mustChangePassword: false,
     });
 
