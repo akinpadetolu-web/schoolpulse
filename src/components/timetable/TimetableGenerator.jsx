@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, Wand2, CheckCircle2, AlertTriangle, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { getGenerationState, subscribeToGeneration, startGeneration, clearGeneration } from '@/lib/timetableGenerationStore';
 
 export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
   const [prompt, setPrompt] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState(null);
   const [selectedClassIds, setSelectedClassIds] = useState([]);
 
+  // Sync with module-level store — survives navigation away and back
+  const genState = useSyncExternalStore(subscribeToGeneration, getGenerationState, getGenerationState);
+  const generating = genState.status === 'generating';
+  const result = genState.status === 'success' ? genState.result : (genState.status === 'error' ? { error: genState.error } : null);
+
+  // Restore prompt if a generation is in-flight (e.g. user navigated away and came back)
+  useEffect(() => {
+    if (genState.status === 'generating' && genState.prompt && !prompt) {
+      setPrompt(genState.prompt);
+      if (genState.classIds?.length) setSelectedClassIds(genState.classIds);
+    }
+  }, [genState.status]);
+
   // Default: select all classes on first load
-  React.useEffect(() => {
-    if (classes.length > 0 && selectedClassIds.length === 0) {
+  useEffect(() => {
+    if (classes.length > 0 && selectedClassIds.length === 0 && genState.status === 'idle') {
       setSelectedClassIds(classes.map(c => c.id));
     }
   }, [classes]);
@@ -27,30 +38,12 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
   async function handleGenerate() {
     if (!prompt.trim()) return toast.error('Please enter your timetable instructions');
     if (selectedClassIds.length === 0) return toast.error('Please select at least one class');
-    setGenerating(true);
-    setResult(null);
-    try {
-      const res = await base44.functions.invoke('generateTimetable', {
-        schoolId,
-        targetClassIds: selectedClassIds,
-        prompt,
-      });
-      setResult(res.data);
-      if (res.data?.slots?.length > 0) {
-        toast.success(`Generated ${res.data.slots.length} timetable entries`);
-      } else {
-        toast.error(res.data?.error || 'No entries were generated');
-      }
-    } catch (err) {
-       const errorMsg = err?.message || 'Generation failed';
-       const displayMsg = errorMsg.includes('504') 
-         ? 'Request timeout (504): AI generation took too long'
-         : errorMsg;
-       toast.error(displayMsg);
-       setResult({ error: displayMsg });
-     } finally {
-       setGenerating(false);
-     }
+    // startGeneration lives at module level — the promise survives component unmount
+    await startGeneration(schoolId, selectedClassIds, prompt);
+  }
+
+  function handleClearResult() {
+    clearGeneration();
   }
 
   return (
@@ -110,6 +103,13 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
         />
       </div>
 
+      {generating && (
+        <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+          <span>Generating timetable in the background — you can navigate to other pages and come back anytime.</span>
+        </div>
+      )}
+
       {result?.error && (
          <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
@@ -122,7 +122,7 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
 
       <Button className="w-full h-11" onClick={handleGenerate} disabled={generating}>
         {generating
-          ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating... (this may take up to 60s)</>
+          ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating... (this may take up to 70s)</>
           : <><Wand2 className="w-4 h-4 mr-2" /> Generate Timetable</>
         }
       </Button>
@@ -135,6 +135,7 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
               : <AlertTriangle className="w-4 h-4 text-amber-500" />}
             {result.slots?.length || 0} entries generated
             {result.stats?.clashes > 0 && ` · ${result.stats.clashes} clash(es) removed`}
+            <button onClick={handleClearResult} className="ml-auto text-xs text-muted-foreground hover:underline">Dismiss</button>
           </div>
 
           {result.warnings?.length > 0 && (
