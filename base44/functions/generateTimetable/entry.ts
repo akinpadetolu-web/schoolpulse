@@ -107,7 +107,7 @@ Return ONLY valid JSON — no markdown, no explanation:
       try {
         llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: llmPrompt,
-          model: 'claude_opus_4_8',
+          model: 'claude_sonnet_4_6',
           response_json_schema: {
             type: 'object',
             properties: {
@@ -140,20 +140,26 @@ Return ONLY valid JSON — no markdown, no explanation:
       }
       console.timeEnd(`[generateTimetable] LLM_Class_${cls.className}`);
 
-      const entries = llmResult?.entries || [];
-      const warnings = llmResult?.warnings || [];
+      // Handle both wrapped {response: {...}} and direct {...} LLM response formats
+      const llmData = llmResult?.response || llmResult;
+      const entries = (llmData?.entries || []).filter(e =>
+        e.subjectId && e.subjectId !== '<UNKNOWN>' &&
+        e.dayOfWeek && e.startTime && e.endTime
+      );
+      const warnings = llmData?.warnings || [];
 
       if (warnings.length) allWarnings.push(...warnings.map(w => `[${cls.className}] ${w}`));
 
-      // Clash check and register teacher slots
+      // Clash check and register teacher slots — skip placeholder teacher IDs
       for (const entry of entries) {
-        const teacherKey = entry.teacherId ? `${entry.teacherId}|${entry.dayOfWeek}|${entry.startTime}` : null;
+        const validTeacher = entry.teacherId && entry.teacherId !== '<UNKNOWN>' && entry.teacherId !== 'null';
+        const teacherKey = validTeacher ? `${entry.teacherId}|${entry.dayOfWeek}|${entry.startTime}` : null;
         if (teacherKey && scheduledTeacherSlots[teacherKey]) {
           allWarnings.push(`TEACHER CLASH removed: ${entry.teacherName} on ${entry.dayOfWeek} at ${entry.startTime} (${cls.className})`);
           continue;
         }
         if (teacherKey) scheduledTeacherSlots[teacherKey] = true;
-        allEntries.push({ ...entry, schoolId });
+        allEntries.push({ ...entry, schoolId, teacherId: validTeacher ? entry.teacherId : '', teacherName: validTeacher ? entry.teacherName : '' });
       }
 
       console.log(`[generateTimetable] Class ${cls.className}: ${entries.length} entries`);

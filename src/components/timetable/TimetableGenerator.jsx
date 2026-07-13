@@ -9,15 +9,30 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
+  const [selectedClassIds, setSelectedClassIds] = useState([]);
+
+  // Default: select all classes on first load
+  React.useEffect(() => {
+    if (classes.length > 0 && selectedClassIds.length === 0) {
+      setSelectedClassIds(classes.map(c => c.id));
+    }
+  }, [classes]);
+
+  function toggleClass(classId) {
+    setSelectedClassIds(prev =>
+      prev.includes(classId) ? prev.filter(id => id !== classId) : [...prev, classId]
+    );
+  }
 
   async function handleGenerate() {
     if (!prompt.trim()) return toast.error('Please enter your timetable instructions');
+    if (selectedClassIds.length === 0) return toast.error('Please select at least one class');
     setGenerating(true);
     setResult(null);
     try {
       const res = await base44.functions.invoke('generateTimetable', {
         schoolId,
-        targetClassIds: classes.map(c => c.id),
+        targetClassIds: selectedClassIds,
         prompt,
       });
       setResult(res.data);
@@ -47,6 +62,42 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
         <p className="text-sm text-muted-foreground mt-1">
           Describe your timetable requirements. The AI will schedule all classes based on your instructions.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold">Select Classes</Label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedClassIds(classes.map(c => c.id))}
+              className="text-xs text-primary hover:underline"
+            >
+              Select All
+            </button>
+            <span className="text-muted-foreground">|</span>
+            <button
+              onClick={() => setSelectedClassIds([])}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {classes.map(c => (
+            <button
+              key={c.id}
+              onClick={() => toggleClass(c.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                selectedClassIds.includes(c.id)
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-input hover:bg-accent'
+              }`}
+            >
+              {c.className}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-1.5">
