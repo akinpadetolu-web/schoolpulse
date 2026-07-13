@@ -7,20 +7,45 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+const staffPermissionFeatures = [
+  { id: 'adminHR', label: 'HR Management', description: 'Manage HR operations' },
+  { id: 'staffAttendance', label: 'Staff Attendance', description: 'Track staff clock in/out' },
+  { id: 'leaveRequests', label: 'Leave Requests', description: 'Manage leave requests' },
+  { id: 'teacherWorkload', label: 'Teacher Workload', description: 'View teacher workload' },
+  { id: 'adminStudents', label: 'Manage Students', description: 'View and manage student records' },
+  { id: 'adminTeachers', label: 'Manage Teachers', description: 'View and manage teacher records' },
+  { id: 'attendance', label: 'Student Attendance', description: 'View and manage attendance' },
+  { id: 'announcements', label: 'Announcements', description: 'View and create announcements' },
+  { id: 'adminHealth', label: 'Health & Medical', description: 'Master toggle for all health features' },
+  { id: 'healthNurseVisits', label: 'Nurse Visits', description: 'Access to nurse visits' },
+  { id: 'healthIncidents', label: 'Medical Incidents', description: 'Access to medical incidents' },
+  { id: 'healthVaccinations', label: 'Vaccinations', description: 'Access to vaccinations' },
+  { id: 'healthSpecialNeeds', label: 'Special Needs', description: 'Access to special needs' },
+  { id: 'healthAnalytics', label: 'Health Analytics', description: 'Access to health analytics' },
+  { id: 'adminLibrary', label: 'Library', description: 'Manage library' },
+  { id: 'adminHostel', label: 'Hostel Management', description: 'Manage hostels' },
+  { id: 'adminInventory', label: 'Inventory', description: 'Manage inventory' },
+  { id: 'adminFinance', label: 'Finance', description: 'Manage fees and payments' },
+];
 
 export default function CreateUserDialog({ open, onOpenChange, role, school, classes, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("form");
-  const [form, setForm] = useState({ fullName: "", email: "", classId: "", gender: "" });
+  const [form, setForm] = useState({ fullName: "", email: "", classId: "", gender: "", jobTitle: "", department: "" });
+  const [permissions, setPermissions] = useState({});
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const roleLabel = { admin: "School Admin", teacher: "Teacher", student: "Student", parent: "Parent" }[role] || role;
+  const roleLabel = { admin: "School Admin", teacher: "Teacher", student: "Student", parent: "Parent", hr_staff: "Non-Teaching Staff" }[role] || role;
 
   function reset() {
     setStep("form");
-    setForm({ fullName: "", email: "", classId: "", gender: "" });
+    setForm({ fullName: "", email: "", classId: "", gender: "", jobTitle: "", department: "" });
+    setPermissions({});
     setCredentials(null);
     setCopied(false);
   }
@@ -50,7 +75,6 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
       let parentLinkCode = "";
       if (role === "student") {
         if (form.gender) userData.gender = form.gender;
-        // Generate a unique 8-char alphanumeric link code
         parentLinkCode = Math.random().toString(36).substring(2, 6).toUpperCase() +
                          Math.random().toString(36).substring(2, 6).toUpperCase();
         userData.parentLinkCode = parentLinkCode;
@@ -64,25 +88,35 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
         }
       }
 
-      // Create the custom SchoolUser record
+      if (role === "hr_staff") {
+        userData.jobTitle = form.jobTitle || "";
+        userData.department = form.department || "Administration";
+        // Build permittedFeatures from the toggled permissions
+        const pf = {};
+        staffPermissionFeatures.forEach(f => {
+          pf[f.id] = permissions[f.id] || false;
+        });
+        userData.permittedFeatures = pf;
+      }
+
       await base44.entities.SchoolUser.create(userData);
-      
-      // Invite the user to Base44 auth system so they can log in
+
       if (form.email) {
-        const inviteRole = role === "teacher" ? "user" : role === "student" ? "user" : role;
+        const inviteRole = "user";
         try {
           await base44.users.inviteUser(form.email, inviteRole);
         } catch (inviteErr) {
           console.warn("Base44 invite failed (user may already exist):", inviteErr);
         }
       }
-      
+
       await logAudit({ schoolId: school.id, schoolName: school.schoolName, action: `${role}_created`, entityType: "SchoolUser", performedBy: "superAdmin", performedByName: "Super Admin", details: `${roleLabel} "${form.fullName}" created` });
 
       setCredentials({ username, password: tempPassword, parentLinkCode });
       setStep("done");
     } catch (err) {
       console.error(err);
+      toast.error("Failed to create user");
     }
     setLoading(false);
   }
@@ -103,7 +137,7 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={role === "hr_staff" ? "max-w-2xl" : "max-w-md"}>
         <DialogHeader>
           <DialogTitle>{step === "form" ? `Add ${roleLabel}` : "Credentials Created"}</DialogTitle>
         </DialogHeader>
@@ -115,31 +149,74 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
             </div>
             <div className="space-y-2"><Label>Full Name *</Label><Input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-            
+
             {role === "student" && (
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(classes || []).length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Class</Label>
+                    <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                      <SelectContent>
+                        {(classes || []).map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
             )}
-            {role === "student" && (classes || []).length > 0 && (
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                  <SelectContent>
-                    {(classes || []).map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>
+
+            {role === "hr_staff" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Job Title *</Label>
+                  <Input value={form.jobTitle} onChange={e => setForm({ ...form, jobTitle: e.target.value })} placeholder="e.g. School Nurse, Bursar, Librarian" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Select value={form.department} onValueChange={v => setForm({ ...form, department: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                    <SelectContent>
+                      {(school?.departments?.length ? school.departments : ["Administration", "Finance", "Health", "Library", "Hostel", "Inventory", "Transport", "Maintenance"]).map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="mb-2 block">Permissions — grant access to specific modules</Label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+                    {staffPermissionFeatures.map(f => (
+                      <div key={f.id} className="flex items-center justify-between p-2 rounded hover:bg-accent/50">
+                        <div className="min-w-0 mr-3">
+                          <p className="font-medium text-sm">{f.label}</p>
+                          <p className="text-xs text-muted-foreground">{f.description}</p>
+                        </div>
+                        <Switch
+                          checked={permissions[f.id] || false}
+                          onCheckedChange={checked =>
+                            setPermissions({ ...permissions, [f.id]: checked })
+                          }
+                        />
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">Toggle on the modules this staff member should access. You can change these later from the school admin panel.</p>
+                </div>
+              </>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>

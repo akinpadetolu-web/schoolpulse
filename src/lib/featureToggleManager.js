@@ -152,6 +152,20 @@ export function getDefaultFeatures(role) {
     // HR staff get no features by default — only what admin explicitly grants via permittedFeatures
     Object.keys(defaults).forEach(k => { defaults[k] = false; });
     defaults.adminDashboard = true; // always show dashboard so they can navigate
+    // Add staff-specific features to the defaults map so FeatureToggles can manage them
+    defaults.adminHealth = false;
+    defaults.healthNurseVisits = false;
+    defaults.healthIncidents = false;
+    defaults.healthVaccinations = false;
+    defaults.healthSpecialNeeds = false;
+    defaults.healthAnalytics = false;
+    defaults.adminLibrary = false;
+    defaults.adminHostel = false;
+    defaults.adminInventory = false;
+    defaults.adminFinance = false;
+    defaults.adminSessions = false;
+    defaults.adminStaff = false;
+    defaults.staffDashboard = false;
   }
 
   if (role === 'parent') {

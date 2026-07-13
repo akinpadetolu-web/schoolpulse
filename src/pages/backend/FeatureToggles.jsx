@@ -44,6 +44,19 @@ const ALL_FEATURES = [
   { id: 'gradingSystem', label: 'Grading System', description: 'Configure grading system' },
   { id: 'promotion', label: 'Promotion', description: 'Manage student promotion' },
   { id: 'academicTerms', label: 'Academic Terms', description: 'Manage academic terms' },
+  { id: 'adminSessions', label: 'Academic Sessions', description: 'Manage academic sessions' },
+  { id: 'adminStaff', label: 'Non-Teaching Staff', description: 'Manage non-teaching staff' },
+  { id: 'staffDashboard', label: 'Staff Dashboard', description: 'Staff self-service dashboard' },
+  { id: 'adminFinance', label: 'Finance Management', description: 'Manage fees, invoices, and payments' },
+  { id: 'adminInventory', label: 'Inventory', description: 'Manage school inventory and assets' },
+  { id: 'adminLibrary', label: 'Library', description: 'Manage library books and circulation' },
+  { id: 'adminHostel', label: 'Hostel Management', description: 'Manage hostels and allocations' },
+  { id: 'adminHealth', label: 'Health & Medical', description: 'Master toggle for all health features' },
+  { id: 'healthNurseVisits', label: 'Nurse Visits', description: 'Access to nurse visit logs' },
+  { id: 'healthIncidents', label: 'Medical Incidents', description: 'Access to medical incidents' },
+  { id: 'healthVaccinations', label: 'Vaccinations', description: 'Access to vaccination records' },
+  { id: 'healthSpecialNeeds', label: 'Special Needs', description: 'Access to special needs records' },
+  { id: 'healthAnalytics', label: 'Health Analytics', description: 'Access to health analytics dashboard' },
   { id: 'lessonPlans', label: 'Lesson Plans', description: 'View lesson plans' },
   { id: 'materials', label: 'Lesson Materials', description: 'View course materials' },
   { id: 'quizzes', label: 'Quizzes', description: 'View and take quizzes' },
@@ -60,6 +73,7 @@ const ROLES = [
   { value: 'teacher', label: 'Teacher' },
   { value: 'student', label: 'Student' },
   { value: 'parent', label: 'Parent' },
+  { value: 'hr_staff', label: 'Non-Teaching Staff' },
 ];
 
 export default function FeatureToggles() {

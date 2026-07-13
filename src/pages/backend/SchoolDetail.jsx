@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, UserCog, Users, GraduationCap, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, UserCog, Users, GraduationCap, BookOpen, Loader2, Briefcase } from 'lucide-react';
 import UserTable from '@/components/backend/UserTable';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
 import CreateClassDialog from '@/components/backend/CreateClassDialog';
@@ -20,6 +20,7 @@ export default function SchoolDetail() {
   const [admins, setAdmins] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
+  const [hrStaff, setHrStaff] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createRole, setCreateRole] = useState(null);
@@ -38,6 +39,7 @@ export default function SchoolDetail() {
       setAdmins(users.filter(u => u.role === "admin"));
       setTeachers(users.filter(u => u.role === "teacher"));
       setStudents(users.filter(u => u.role === "student"));
+      setHrStaff(users.filter(u => u.role === "hr_staff"));
       setClasses(allClasses || []);
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -72,6 +74,7 @@ export default function SchoolDetail() {
     { label: "Teachers", count: teachers.filter(u => !u.isArchived).length, icon: Users, color: "text-emerald-600 bg-emerald-100" },
     { label: "Students", count: students.filter(u => !u.isArchived).length, icon: GraduationCap, color: "text-amber-600 bg-amber-100" },
     { label: "Classes", count: classes.filter(c => !c.isArchived).length, icon: BookOpen, color: "text-blue-600 bg-blue-100" },
+    { label: "Non-Teaching Staff", count: hrStaff.filter(u => !u.isArchived).length, icon: Briefcase, color: "text-cyan-600 bg-cyan-100" },
   ];
 
   return (
@@ -112,6 +115,7 @@ export default function SchoolDetail() {
         <Button size="sm" variant="outline" onClick={() => setCreateRole("admin")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Admin</Button>
         <Button size="sm" variant="outline" onClick={() => setCreateRole("teacher")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Teacher</Button>
         <Button size="sm" variant="outline" onClick={() => setCreateRole("student")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Student</Button>
+        <Button size="sm" variant="outline" onClick={() => setCreateRole("hr_staff")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Staff</Button>
         <Button size="sm" variant="outline" onClick={() => setShowClassDialog(true)}><Plus className="w-3.5 h-3.5 mr-1" /> Add Class</Button>
       </div>
 
@@ -121,6 +125,7 @@ export default function SchoolDetail() {
           <TabsTrigger value="admins">School Admins</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="staff">Non-Teaching Staff</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
         </TabsList>
 
@@ -146,6 +151,14 @@ export default function SchoolDetail() {
             <Button size="sm" onClick={() => setCreateRole("student")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Student</Button>
           </div>
           <UserTable users={students} onResetPassword={handleResetPassword} onArchive={handleArchive} onRestore={handleRestore} />
+        </TabsContent>
+
+        <TabsContent value="staff">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Non-Teaching Staff</h2>
+            <Button size="sm" onClick={() => setCreateRole("hr_staff")}><Plus className="w-3.5 h-3.5 mr-1" /> Add Staff</Button>
+          </div>
+          <UserTable users={hrStaff} onResetPassword={handleResetPassword} onArchive={handleArchive} onRestore={handleRestore} />
         </TabsContent>
 
         <TabsContent value="classes">
