@@ -68,6 +68,7 @@ export default function SchoolPortal() {
       else if (schoolUser.role === "teacher") navigate("/teacher");
       else if (schoolUser.role === "student") navigate("/student");
       else if (schoolUser.role === "parent") navigate("/parent");
+      else if (schoolUser.role === "hr_staff") navigate("/school-admin");
     }
   }, [isLoadingSchoolAuth, schoolUser, navigate]);
 
@@ -201,7 +202,8 @@ export default function SchoolPortal() {
       if (user.role === "admin") navigate("/school-admin");else
       if (user.role === "teacher") navigate("/teacher");else
       if (user.role === "student") navigate("/student");else
-      if (user.role === "parent") navigate("/parent");
+      if (user.role === "parent") navigate("/parent");else
+      if (user.role === "hr_staff") navigate("/school-admin");
     } catch (err) {
       console.error('Login error:', err);
       setError("Sign in failed. Please check your connection and try again.");

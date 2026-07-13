@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
+import { hashPassword } from '@/lib/auth';
 import { Plus, Search, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,13 +67,27 @@ export default function AdminStaff() {
 
   const handleCreate = async (data) => {
     try {
-      await base44.entities.NonTeachingStaff.create({ ...data, schoolId, schoolName: user?.schoolName });
+      const { password, ...staffData } = data;
+      // Create login account so non-teaching staff can sign in
+      await base44.entities.SchoolUser.create({
+        fullName: data.fullName,
+        email: data.email,
+        username: data.email,
+        passwordHash: hashPassword(password),
+        role: 'hr_staff',
+        schoolId,
+        schoolName: user?.schoolName,
+        mustChangePassword: false,
+        isArchived: false,
+        permittedFeatures: {},
+      });
+      await base44.entities.NonTeachingStaff.create({ ...staffData, schoolId, schoolName: user?.schoolName });
       setShowCreateDialog(false);
       const updated = await base44.entities.NonTeachingStaff.filter({ schoolId, isArchived: false });
       setStaff(updated || []);
-      toast.success('Staff member created');
+      toast.success('Staff member created with login access');
     } catch (err) {
-      toast.error('Failed to create staff');
+      toast.error('Failed to create staff — this email may already be in use');
     }
   };
 
