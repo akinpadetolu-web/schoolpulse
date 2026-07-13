@@ -3,7 +3,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { gradeId, schoolId, studentId, subjectName, score, maxScore, assessmentType } = await req.json();
+    const body = await req.json();
+
+    // Support both entity-automation payloads { event, data } and manual calls
+    const eventData = body?.data;
+    const gradeId = body?.gradeId || eventData?.id || body?.event?.entity_id;
+    const schoolId = body?.schoolId || eventData?.schoolId;
+    const studentId = body?.studentId || eventData?.studentId;
+    const subjectName = body?.subjectName || eventData?.subjectName;
+    const score = body?.score ?? eventData?.score;
+    const maxScore = body?.maxScore ?? eventData?.maxScore;
+    const assessmentType = body?.assessmentType || eventData?.assessmentType;
 
     if (!gradeId || !schoolId || !studentId || !subjectName) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -18,12 +28,13 @@ Deno.serve(async (req) => {
     const schools = await base44.asServiceRole.entities.School.filter({ id: schoolId });
     const school = schools?.[0];
 
-    // Get parents linked to this student
-    const parents = await base44.asServiceRole.entities.SchoolUser.filter({
+    // Get parents linked to this student (filter in JS — $in not reliable in SDK filter)
+    const allParents = await base44.asServiceRole.entities.SchoolUser.filter({
       schoolId,
       role: 'parent',
-      linkedStudentIds: { $in: [studentId] },
+      isArchived: false,
     });
+    const parents = (allParents || []).filter(p => (p.linkedStudentIds || []).includes(studentId));
 
     if (parents.length === 0) {
       return Response.json({ success: true, message: 'No parents linked to student' });
@@ -71,7 +82,7 @@ Deno.serve(async (req) => {
           title: `Grade Alert: ${student.fullName}`,
           message: `${subjectName} - ${assessmentType}: ${score}/${maxScore} (${percentage}%)`,
           targetRole: 'parent',
-          targetUserId: parent.id,
+          targetUserIds: [parent.id],
           relatedEntityId: gradeId,
           relatedEntityType: 'Grade',
           isRead: false,

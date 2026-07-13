@@ -3,7 +3,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { gradeId, schoolId, studentId, teacherId, subjectId } = await req.json();
+    const body = await req.json();
+
+    // Support both entity-automation payloads { event, data } and manual calls
+    const eventData = body?.data;
+    const gradeId = body?.gradeId || eventData?.id || body?.event?.entity_id;
+    const schoolId = body?.schoolId || eventData?.schoolId;
+    const studentId = body?.studentId || eventData?.studentId;
+    const teacherId = body?.teacherId || eventData?.teacherId || eventData?.created_by_id;
+    const subjectId = body?.subjectId || eventData?.subjectId;
 
     if (!gradeId || !schoolId || !studentId || !subjectId) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -45,12 +53,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get parent linked to this student
-    const parents = await base44.asServiceRole.entities.SchoolUser.filter({
+    // Get parents linked to this student (filter in JS — $in not reliable in SDK filter)
+    const allParents = await base44.asServiceRole.entities.SchoolUser.filter({
       schoolId,
       role: 'parent',
-      linkedStudentIds: { $in: [studentId] },
+      isArchived: false,
     });
+    const parents = (allParents || []).filter(p => (p.linkedStudentIds || []).includes(studentId));
 
     // Get admin
     const admins = await base44.asServiceRole.entities.SchoolUser.filter({

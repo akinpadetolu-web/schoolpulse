@@ -61,13 +61,16 @@ Warm regards,
 ${schoolName} Administration
       `.trim();
 
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to: parent.email,
-        subject,
-        body: body_html,
-      });
-
-      sent++;
+      try {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: parent.email,
+          subject,
+          body: body_html,
+        });
+        sent++;
+      } catch (emailErr) {
+        console.error(`[notifyParentsNewTerm] Email failed for ${parent.email}:`, emailErr.message);
+      }
     }
 
     return Response.json({ sent, total: parentsWithEmail.length });

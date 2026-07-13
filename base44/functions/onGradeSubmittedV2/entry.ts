@@ -84,12 +84,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get parent linked to this student
-    const parents = await base44.asServiceRole.entities.SchoolUser.filter({
+    // Get parents linked to this student (filter in JS — $in not reliable in SDK filter)
+    const allParents = await base44.asServiceRole.entities.SchoolUser.filter({
       schoolId,
       role: 'parent',
-      linkedStudentIds: { $in: [studentId] }
+      isArchived: false
     });
+    const parents = (allParents || []).filter(p => (p.linkedStudentIds || []).includes(studentId));
 
     // Get admin
     const admins = await base44.asServiceRole.entities.SchoolUser.filter({
