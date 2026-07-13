@@ -101,7 +101,7 @@ Return ONLY valid JSON — no markdown, no explanation:
       try {
         llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: llmPrompt,
-          model: 'gemini_3_1_pro',
+          model: 'claude_opus_4_8',
           response_json_schema: {
             type: 'object',
             properties: {
