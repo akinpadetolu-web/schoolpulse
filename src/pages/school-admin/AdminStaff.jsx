@@ -10,6 +10,15 @@ import { toast } from 'sonner';
 import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
 import EditStaffDialog from '@/components/staff/EditStaffDialog';
 
+const MODULE_TO_FEATURE = {
+  medical: 'adminHealth',
+  library: 'adminLibrary',
+  hostel: 'adminHostel',
+  inventory: 'adminInventory',
+  finance: 'adminFinance',
+  hr: 'adminHR',
+};
+
 export default function AdminStaff() {
   const { schoolUser: user } = useSchoolAuth();
   const schoolId = user?.schoolId;
@@ -68,6 +77,14 @@ export default function AdminStaff() {
   const handleCreate = async (data) => {
     try {
       const { password, ...staffData } = data;
+      // Map module permissions to permittedFeatures for sidebar visibility
+      const permittedFeatures = {};
+      if (data.permissions) {
+        Object.entries(data.permissions).forEach(([moduleKey, perms]) => {
+          const featureKey = MODULE_TO_FEATURE[moduleKey];
+          if (featureKey && perms) permittedFeatures[featureKey] = true;
+        });
+      }
       // Create login account so non-teaching staff can sign in
       await base44.entities.SchoolUser.create({
         fullName: data.fullName,
@@ -79,7 +96,10 @@ export default function AdminStaff() {
         schoolName: user?.schoolName,
         mustChangePassword: false,
         isArchived: false,
-        permittedFeatures: {},
+        permittedFeatures,
+        staffPermissions: data.permissions || {},
+        jobTitle: data.jobTitle || '',
+        department: data.department || '',
       });
       await base44.entities.NonTeachingStaff.create({ ...staffData, schoolId, schoolName: user?.schoolName });
       setShowCreateDialog(false);

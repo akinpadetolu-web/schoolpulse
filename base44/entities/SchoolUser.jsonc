@@ -112,9 +112,31 @@
       "type": "boolean",
       "default": false
     },
+    "jobTitle": {
+      "type": "string",
+      "description": "Job title for non-teaching staff (e.g. School Nurse, Bursar)"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department for non-teaching staff"
+    },
+    "staffPermissions": {
+      "type": "object",
+      "description": "Module-level permissions assigned to non-teaching staff. Keys are module names (medical, finance, library, hostel, inventory, hr, transport, reports), values are 'full', 'view', or an array of permission keys.",
+      "properties": {
+        "medical": {},
+        "finance": {},
+        "library": {},
+        "hostel": {},
+        "inventory": {},
+        "hr": {},
+        "transport": {},
+        "reports": {}
+      }
+    },
     "permittedFeatures": {
       "type": "object",
-      "description": "Feature permissions granted to this HR staff member by the school admin. Key-value pairs where key is feature name and value is boolean.",
+      "description": "Feature permissions granted to this staff member by the school admin. Key-value pairs where key is feature name and value is boolean.",
       "properties": {
         "adminHR": {
           "type": "boolean",
@@ -147,6 +169,26 @@
         "announcements": {
           "type": "boolean",
           "default": false
+        },
+        "adminHealth": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminLibrary": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminHostel": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminInventory": {
+          "type": "boolean",
+          "default": false
+        },
+        "adminFinance": {
+          "type": "boolean",
+          "default": false
         }
       }
     },
@@ -161,12 +203,12 @@
           "average": {
             "type": "number"
           }
-        },
-        "required": [
-          "subjectId",
-          "average"
-        ]
+        }
       },
+      "required": [
+        "subjectId",
+        "average"
+      ],
       "description": "Cumulative average scores per subject (all terms)"
     },
     "termSubjectGrades": {
@@ -189,13 +231,13 @@
             "type": "string",
             "format": "date-time"
           }
-        },
-        "required": [
-          "term",
-          "subjectId",
-          "weightedAverage"
-        ]
+        }
       },
+      "required": [
+        "term",
+        "subjectId",
+        "weightedAverage"
+      ],
       "description": "Term-specific weighted averages by subject"
     }
   },

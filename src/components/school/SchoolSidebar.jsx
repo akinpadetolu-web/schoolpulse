@@ -133,6 +133,12 @@ const featureMap = {
   "/school-admin/library": "adminLibrary",
   "/school-admin/health": "adminHealth",
   "/school-admin/hostel": "adminHostel",
+  "/school-admin/fee-management": "adminFinance",
+  "/school-admin/invoices": "adminFinance",
+  "/school-admin/payments": "adminFinance",
+  "/school-admin/financial-reports": "adminFinance",
+  "/school-admin/payment-settings": "adminFinance",
+  "/school-admin/staff-dashboard": "staffDashboard",
   };
 
 export default function SchoolSidebar({ isOpen, onClose }) {
@@ -152,16 +158,23 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     if (user?.schoolId) loadFeatures();
   }, [user?.schoolId, user?.role, user?.id]);
 
-  // For hr_staff: build nav from their permittedFeatures
+  // For hr_staff: add "My Account" at top, then filter by permittedFeatures
+  const staffAccountGroup = {
+    label: 'ACCOUNT',
+    items: [{ label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }]
+  };
   const adminNavGroups = user?.role === 'hr_staff'
-    ? baseAdminNavGroups.map(group => ({
-        ...group,
-        items: group.items.filter(item => {
-          const requiredFeature = featureMap[item.path];
-          if (!requiredFeature) return item.path === '/school-admin'; // always show dashboard
-          return user?.permittedFeatures?.[requiredFeature] === true;
-        })
-      })).filter(g => g.items.length > 0)
+    ? [
+        staffAccountGroup,
+        ...baseAdminNavGroups.map(group => ({
+          ...group,
+          items: group.items.filter(item => {
+            const requiredFeature = featureMap[item.path];
+            if (!requiredFeature) return item.path === '/school-admin';
+            return user?.permittedFeatures?.[requiredFeature] === true;
+          })
+        })).filter(g => g.items.length > 0)
+      ]
     : baseAdminNavGroups;
 
   useEffect(() => {
