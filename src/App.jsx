@@ -71,6 +71,7 @@ const AdminPromotion = lazy(() => import('./pages/school-admin/AdminPromotion'))
 const AdminHR = lazy(() => import('./pages/school-admin/AdminHR'));
 const AdminStaff = lazy(() => import('./pages/school-admin/AdminStaff'));
 const StaffDashboard = lazy(() => import('./pages/school-admin/StaffDashboard'));
+const StaffAccessControl = lazy(() => import('./pages/school-admin/StaffAccessControl'));
 const AdminSessions = lazy(() => import('./pages/school-admin/AdminSessions'));
 const AdminFeeManagement = lazy(() => import('./pages/school-admin/AdminFeeManagement'));
 const AdminInvoices = lazy(() => import('./pages/school-admin/AdminInvoices'));
@@ -217,6 +218,7 @@ const AuthenticatedApp = () => {
           <Route path="hr" element={<AdminHR />} />
           <Route path="staff" element={<AdminStaff />} />
           <Route path="staff-dashboard" element={<StaffDashboard />} />
+          <Route path="staff-access" element={<StaffAccessControl />} />
           <Route path="sessions" element={<AdminSessions />} />
           <Route path="fee-management" element={<AdminFeeManagement />} />
           <Route path="invoices" element={<AdminInvoices />} />
