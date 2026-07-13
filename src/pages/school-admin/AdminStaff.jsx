@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
 import EditStaffDialog from '@/components/staff/EditStaffDialog';
+import StaffAccessControlPanel from '@/components/staff/StaffAccessControlPanel';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const MODULE_TO_FEATURE = {
   medical: 'adminHealth',
@@ -151,6 +153,12 @@ export default function AdminStaff() {
         </Button>
       </div>
 
+      <Tabs defaultValue="directory" className="w-full">
+        <TabsList>
+          <TabsTrigger value="directory">Staff Directory</TabsTrigger>
+          <TabsTrigger value="access">Access Control</TabsTrigger>
+        </TabsList>
+        <TabsContent value="directory" className="space-y-4">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 bg-slate-50 dark:bg-slate-900/30 p-4 rounded-lg">
         <div className="flex-1 relative">
@@ -254,6 +262,11 @@ export default function AdminStaff() {
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">On Leave</p>
         </div>
       </div>
+        </TabsContent>
+        <TabsContent value="access">
+          <StaffAccessControlPanel schoolId={schoolId} />
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       {showCreateDialog && <CreateStaffDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSave={handleCreate} departments={departments} />}

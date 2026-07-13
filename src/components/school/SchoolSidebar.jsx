@@ -70,7 +70,6 @@ const baseAdminNavGroups = [
     label: 'STAFF',
     items: [
       { label: "Non-Teaching Staff", path: "/school-admin/staff", icon: Users },
-      { label: "Staff Access Control", path: "/school-admin/staff-access", icon: Shield },
       { label: "Teacher Workload", path: "/school-admin/teacher-workload", icon: TrendingUp },
       { label: "Clock In/Out", path: "/school-admin/staff-attendance", icon: Clock },
       { label: "Leave Requests", path: "/school-admin/leave-requests", icon: AlertCircle },
@@ -140,7 +139,6 @@ const featureMap = {
   "/school-admin/financial-reports": "adminFinance",
   "/school-admin/payment-settings": "adminFinance",
   "/school-admin/staff-dashboard": "staffDashboard",
-  "/school-admin/staff-access": "adminStaff",
   };
 
 export default function SchoolSidebar({ isOpen, onClose }) {
