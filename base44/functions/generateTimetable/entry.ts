@@ -80,6 +80,9 @@ ${JSON.stringify(Object.keys(scheduledTeacherSlots), null, 2)}
 3. For break/free period entries use: subjectId="", teacherId="", teacherName="".
 4. All times must be in "HH:MM" 24-hour format (e.g. "08:30", "13:00").
 5. dayOfWeek must be exactly one of: Monday, Tuesday, Wednesday, Thursday, Friday.
+6. Do NOT schedule the same subject more than ONCE per day. Spread each subject across different days of the week.
+7. Distribute subjects evenly — aim for variety so students don't see the same subject twice in a day.
+8. Do not create fragmented slots shorter than a full period (e.g. no 15-minute leftover slots before breaks).
 
 ## REQUIRED OUTPUT FORMAT:
 Return ONLY valid JSON — no markdown, no explanation:
