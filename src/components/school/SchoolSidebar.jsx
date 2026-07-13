@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield, Stethoscope, AlertTriangle, Syringe, Accessibility
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -158,26 +158,44 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     if (user?.schoolId) loadFeatures();
   }, [user?.schoolId, user?.role, user?.id]);
 
-  // For hr_staff: add "My Account" at top, then filter by permittedFeatures
-  const staffAccountGroup = {
-    label: 'ACCOUNT',
-    items: [{ label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }]
-  };
+  // Health sub-navigation for hr_staff (nurse portal): each feature is a separate sidebar page
+  const healthNavItems = [
+    { label: "Health Analytics", path: "/school-admin/health-analytics", icon: BarChart3, feature: 'healthAnalytics' },
+    { label: "Medical Records", path: "/school-admin/health-records", icon: Heart, feature: 'adminHealth' },
+    { label: "Nurse Visits", path: "/school-admin/health-nurse-visits", icon: Stethoscope, feature: 'healthNurseVisits' },
+    { label: "Incidents", path: "/school-admin/health-incidents", icon: AlertTriangle, feature: 'healthIncidents' },
+    { label: "Vaccinations", path: "/school-admin/health-vaccinations", icon: Syringe, feature: 'healthVaccinations' },
+    { label: "Special Needs", path: "/school-admin/health-special-needs", icon: Accessibility, feature: 'healthSpecialNeeds' },
+  ];
+
   const adminNavGroups = user?.role === 'hr_staff'
     ? [
-        staffAccountGroup,
-        ...baseAdminNavGroups.map(group => ({
-          ...group,
-          items: group.items.filter(item => {
-            const requiredFeature = featureMap[item.path];
-            if (!requiredFeature) return item.path === '/school-admin';
-            if (item.path === '/school-admin/health') {
-              const pf = user?.permittedFeatures || {};
-              return pf.adminHealth || pf.healthNurseVisits || pf.healthIncidents || pf.healthVaccinations || pf.healthSpecialNeeds || pf.healthAnalytics;
-            }
-            return user?.permittedFeatures?.[requiredFeature] === true;
-          })
-        })).filter(g => g.items.length > 0)
+        ...baseAdminNavGroups.map(group => {
+          const pf = user?.permittedFeatures || {};
+          if (group.label === 'OPERATIONS') {
+            const nonHealthItems = group.items
+              .filter(item => item.path !== '/school-admin/health')
+              .filter(item => {
+                const requiredFeature = featureMap[item.path];
+                if (!requiredFeature) return true;
+                return pf[requiredFeature] === true;
+              });
+            const visibleHealthItems = healthNavItems.filter(item =>
+              pf.adminHealth === true || pf[item.feature] === true
+            );
+            return { ...group, items: [...visibleHealthItems, ...nonHealthItems] };
+          }
+          return {
+            ...group,
+            items: group.items.filter(item => {
+              const requiredFeature = featureMap[item.path];
+              if (!requiredFeature) return item.path === '/school-admin';
+              return pf[requiredFeature] === true;
+            })
+          };
+        }).filter(g => g.items.length > 0),
+        // "My Account" moved to the bottom
+        { label: 'ACCOUNT', items: [{ label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }] }
       ]
     : baseAdminNavGroups;
 
@@ -225,7 +243,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
             <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
             <div>
               <span className="font-bold text-sm">SchoolEduPulse</span>
-              <p className="text-xs text-sidebar-foreground/60">{user?.role === 'hr_staff' ? 'HR Staff' : (user?.schoolName || "Admin Panel")}</p>
+              <p className="text-xs text-sidebar-foreground/60">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>
