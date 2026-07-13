@@ -9,7 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Loader2, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 export default function AdminSchoolReport() {
   const { schoolUser: user } = useSchoolAuth();
@@ -79,10 +79,10 @@ export default function AdminSchoolReport() {
       });
 
       const weightedScores = Object.entries(studentSubjectGroups).map(([key, groupGrades]) => {
-        const [studentId, subjectId] = key.split('__');
+        const subjectId = key.split('__')[1];
         const classId = groupGrades[0]?.classId;
-        const classCats = (categoryData || []).filter(c => !c.classId || c.classId === classId);
-        return calculateWeightedScore(groupGrades, classCats, studentId, subjectId).overall;
+        const classCats = (categoryData || []).filter(c => (!c.classId || c.classId === classId) && c.subjectId === subjectId);
+        return getSubjectFinalGrade(groupGrades, classCats).overall ?? 0;
       }).filter(s => s > 0);
 
       const averageGrade = weightedScores.length > 0

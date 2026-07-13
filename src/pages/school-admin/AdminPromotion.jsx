@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Loader2, Trash2, TrendingUp, CheckCircle2, AlertCircle, Clock, Play, Download, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 function getLetterGrade(score, gradingSystem) {
   if (!gradingSystem?.grades) {
@@ -150,8 +150,9 @@ export default function AdminPromotion() {
           const subj = subjects.find(s => s.id === subjectId);
           const classId = student.classId || runForm.classId;
           const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
-          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
-          const avg = result.overall;
+          const subjGrades = studentGrades.filter(g => g.subjectId === subjectId);
+          const result = getSubjectFinalGrade(subjGrades, classCats);
+          const avg = result.overall ?? 0;
           const passed = isPassing(avg, gradingSystem);
           return { subjectId, subjectName: subj?.name || 'Unknown', average: Math.round(avg), letterGrade: getLetterGrade(avg, gradingSystem), passed };
         });

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, TrendingUp } from 'lucide-react';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 export default function MyStudentsSection({ teachingAssignments, students, grades, subjects, classes }) {
   const { schoolUser: user } = useSchoolAuth();
@@ -55,8 +55,8 @@ export default function MyStudentsSection({ teachingAssignments, students, grade
     const studentGrades = grades.filter(g => g.studentId === studentId && g.subjectId === subjectId);
     if (studentGrades.length === 0) return null;
     const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
-    const result = calculateWeightedScore(grades, classCats, studentId, subjectId);
-    return Math.round(result.overall);
+    const result = getSubjectFinalGrade(studentGrades, classCats);
+    return Math.round(result.overall ?? 0);
   };
 
   const getGradeColor = (avg) => {

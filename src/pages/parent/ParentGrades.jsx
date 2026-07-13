@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 function getColor(pct) {
   if (pct >= 70) return 'text-emerald-600';
@@ -134,7 +134,7 @@ export default function ParentGrades() {
         // Weighted subject results
         const subjectResults = Object.values(bySubject).map(({ name, subjectId, grades: sg }) => {
           const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === child.classId);
-          const result = calculateWeightedScore(childGrades, classCats, child.id, subjectId);
+          const result = getSubjectFinalGrade(sg, classCats);
           return { name, subjectId, grades: sg, ...result };
         });
 

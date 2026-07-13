@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, Award, Info } from 'lucide-react';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 function gradeLabel(p) {
   if (p >= 70) return { label: "A", color: "text-emerald-600", bg: "bg-emerald-50" };
@@ -54,15 +54,15 @@ export default function TermAverages({ grades, classes, subjects }) {
     const subjectIds = [...new Set(termGrades.map(g => g.subjectId))];
 
     return Object.entries(studentMap).map(([studentId, sData]) => {
+      const studentTermGrades = termGrades.filter(g => g.studentId === studentId);
       const subjectAverages = subjectIds.map(subjectId => {
-        const subjectName = termGrades.find(g => g.subjectId === subjectId)?.subjectName || subjectId;
-        // Try to find class-specific categories
+        const subjectName = studentTermGrades.find(g => g.subjectId === subjectId)?.subjectName || subjectId;
         const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === sData.classId);
-        const result = calculateWeightedScore(termGrades, classCats, studentId, subjectId, effectiveTerm);
-        return { subjectId, subjectName, avg: result.overall, hasWeights: result.hasWeights, breakdown: result.breakdown };
+        const subjGrades = studentTermGrades.filter(g => g.subjectId === subjectId);
+        const result = getSubjectFinalGrade(subjGrades, classCats);
+        return { subjectId, subjectName, avg: result.overall ?? 0, hasWeights: result.hasWeights, breakdown: result.breakdown };
       }).filter(s => {
-        // Only include subjects where this student has at least one grade
-        return termGrades.some(g => g.studentId === studentId && g.subjectId === s.subjectId);
+        return studentTermGrades.some(g => g.subjectId === s.subjectId);
       });
 
       const overallAvg = subjectAverages.length

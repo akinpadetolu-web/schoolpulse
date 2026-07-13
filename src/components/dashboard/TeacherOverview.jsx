@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Users, TrendingUp, Activity, BookOpen, CheckSquare, Star, Award } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import ChartWidget from './ChartWidget';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 const PASS_MARK = 40;
 function pct(num, denom) { return denom > 0 ? parseFloat(((num / denom) * 100).toFixed(1)) : 0; }
@@ -37,9 +37,9 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
     Object.entries(teacherSubjectGroups).forEach(([key, groupGrades]) => {
       const [teacherId, studentId, subjectId] = key.split('__');
       const classId = groupGrades[0]?.classId;
-      const classCats = gradeCategories.filter(c => !c.classId || c.classId === classId);
-      const result = calculateWeightedScore(groupGrades, classCats, studentId, subjectId);
-      teacherMap[teacherId].scores.push(result.overall);
+      const classCats = gradeCategories.filter(c => (!c.classId || c.classId === classId) && c.subjectId === subjectId);
+      const result = getSubjectFinalGrade(groupGrades, classCats);
+      teacherMap[teacherId].scores.push(result.overall ?? 0);
     });
 
     assignments.forEach(a => {

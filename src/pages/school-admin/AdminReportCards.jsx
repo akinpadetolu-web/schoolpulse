@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, Send, Eye, FileText, Pencil, CheckCircle, Download, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTerms } from '@/lib/academicTermUtils';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReportCardViewer from '@/components/school/ReportCardViewer';
 
@@ -105,8 +105,9 @@ export default function AdminReportCards() {
         const subjectAverages = subjectIds.map(subjectId => {
           const classId = student.classId || form.selectedClass;
           const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
-          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
-          return result.overall;
+          const subjGrades = studentGrades.filter(g => g.subjectId === subjectId);
+          const result = getSubjectFinalGrade(subjGrades, classCats);
+          return result.overall ?? 0;
         });
         const overallAverage = subjectAverages.length > 0
           ? Math.round(subjectAverages.reduce((sum, sg) => sum + sg, 0) / subjectAverages.length)
@@ -130,21 +131,22 @@ export default function AdminReportCards() {
         });
 
         const subjectIds = [...new Set(studentGrades.map(g => g.subjectId))];
-        const subjectGrades = subjectIds.map(subjectId => {
+        const subjectResults = subjectIds.map(subjectId => {
           const subject = subjects.find(s => s.id === subjectId);
           const classId = student.classId || form.selectedClass;
           const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
-          const result = calculateWeightedScore(studentGrades, classCats, student.id, subjectId);
+          const subjGrades = studentGrades.filter(g => g.subjectId === subjectId);
+          const result = getSubjectFinalGrade(subjGrades, classCats);
           return {
             subjectId,
             subjectName: subject?.name || 'Unknown',
-            weightedAverage: Math.round(result.overall),
-            letterGrade: getLetterGrade(result.overall),
+            weightedAverage: Math.round(result.overall ?? 0),
+            letterGrade: getLetterGrade(result.overall ?? 0),
           };
         });
 
-        const overallAverage = subjectGrades.length > 0
-          ? Math.round(subjectGrades.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectGrades.length)
+        const overallAverage = subjectResults.length > 0
+          ? Math.round(subjectResults.reduce((sum, sg) => sum + sg.weightedAverage, 0) / subjectResults.length)
           : 0;
         const attendanceRate = studentAttendance.length > 0
           ? Math.round((studentAttendance.filter(a => a.status === 'present').length / studentAttendance.length) * 100)
@@ -166,7 +168,7 @@ export default function AdminReportCards() {
           templateName: template.name,
           period: selectedTerm.name,
           generatedDate: new Date().toISOString().split('T')[0],
-          subjectGrades,
+          subjectGrades: subjectResults,
           overallAverage,
           overallLetterGrade: getLetterGrade(overallAverage),
           attendanceRate,

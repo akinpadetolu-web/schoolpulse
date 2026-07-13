@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       }
 
       const subjectName = subjectMap[item.subjectId] || 'Unknown';
-      const average = item.average.toFixed(1);
+      const average = (item.average != null ? item.average : 0).toFixed(1);
       const bgColor = rowIndex % 2 === 0 ? [245, 245, 245] : [255, 255, 255];
       
       doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Users, TrendingUp, Activity, BookOpen, CheckSquare, AlertTriangle, Star } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import ChartWidget from './ChartWidget';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 const PASS_MARK = 40;
 
@@ -45,8 +45,8 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       if (subjectIds.length === 0) { st.avg = 0; st.pass = false; return; }
       const classCats = gradeCategories.filter(c => !c.classId || c.classId === st.classId);
       const subjectScores = subjectIds.map(subjectId => {
-        const result = calculateWeightedScore(studentGrades, classCats, st.id, subjectId);
-        return result.overall;
+        const subjGrades = studentGrades.filter(g => g.subjectId === subjectId);
+        return getSubjectFinalGrade(subjGrades, classCats.filter(c => c.subjectId === subjectId)).overall ?? 0;
       });
       st.avg = avg(subjectScores);
       st.pass = st.avg >= PASS_MARK;
@@ -105,7 +105,8 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       const subjectScores = studentsWithSubject.map(studentId => {
         const st = studentMap[studentId];
         const classCats = gradeCategories.filter(c => !c.classId || c.classId === st?.classId);
-        return calculateWeightedScore(gradesForCalc.filter(g => g.studentId === studentId), classCats, studentId, subjectId).overall;
+        const subjGrades = gradesForCalc.filter(g => g.studentId === studentId && g.subjectId === subjectId);
+        return getSubjectFinalGrade(subjGrades, classCats.filter(c => c.subjectId === subjectId)).overall ?? 0;
       }).filter(s => s > 0);
       return { name: shortName, score: avg(subjectScores), value: avg(subjectScores) };
     }).filter(s => s.value > 0);

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, TrendingUp, Info } from 'lucide-react';
 import { getGradeLabel } from '@/lib/gradeMapper';
-import { calculateWeightedScore, formatBreakdown } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade, formatBreakdown } from '@/lib/gradeWeightCalculator';
 
 function pct(score, max) {
   if (!max) return 0;
@@ -75,10 +75,10 @@ export default function StudentGrades() {
   const subjectResults = useMemo(() => {
     return groupedBySubject.map(({ name, subjectId, grades: subjectGrades }) => {
       const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === user?.classId);
-      const result = calculateWeightedScore(grades, classCats, user?.id, subjectId);
+      const result = getSubjectFinalGrade(subjectGrades, classCats);
       return { name, subjectId, grades: subjectGrades, ...result };
     });
-  }, [groupedBySubject, categories, grades, user?.id, user?.classId]);
+  }, [groupedBySubject, categories, user?.classId]);
 
   const overallAverage = subjectResults.length > 0
     ? Math.round(subjectResults.reduce((sum, s) => sum + s.overall, 0) / subjectResults.length * 100) / 100

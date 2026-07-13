@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
-import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 function gradeLabel(p) {
   if (p >= 70) return { label: "A", color: "#10b981" };
@@ -86,7 +86,8 @@ export default function StudentGradeTrends() {
   // Calculate subject performance summary using weighted scores
   const subjectSummary = Object.entries(groupedBySubject).map(([name, subjectGrades]) => {
     const subjectId = subjectGrades[0]?.subjectId;
-    const { overall: weightedAvg } = calculateWeightedScore(grades, gradeCategories, user?.id, subjectId);
+    const classCats = gradeCategories.filter(c => c.subjectId === subjectId);
+    const { overall: weightedAvg } = getSubjectFinalGrade(subjectGrades, classCats);
     const avg = weightedAvg || Math.round(subjectGrades.reduce((sum, g) => sum + g.percentage, 0) / subjectGrades.length);
     const latest = subjectGrades[subjectGrades.length - 1];
     const previous = subjectGrades[Math.max(0, subjectGrades.length - 2)];
