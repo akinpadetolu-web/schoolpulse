@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import StudentPicker from '@/components/health/StudentPicker';
 
-export default function NurseVisitPanel({ visits, onRefresh }) {
+export default function NurseVisitPanel({ visits, students, classes, onRefresh }) {
   const { schoolUser: user } = useSchoolAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,16 +87,7 @@ export default function NurseVisitPanel({ visits, onRefresh }) {
             <DialogTitle>Log Nurse Visit</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Student ID *</Label>
-                <Input value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })} placeholder="Student ID" disabled={saving} />
-              </div>
-              <div>
-                <Label>Student Name *</Label>
-                <Input value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Student name" disabled={saving} />
-              </div>
-            </div>
+            <StudentPicker students={students} classes={classes} value={form.studentId} onChange={(id, name) => setForm({ ...form, studentId: id, studentName: name })} disabled={saving} />
 
             <div className="grid grid-cols-2 gap-4">
               <div>

@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
+import StudentPicker from '@/components/health/StudentPicker';
 
-export default function MedicalRecordPanel({ records, onRefresh }) {
+export default function MedicalRecordPanel({ records, students, classes, onRefresh }) {
   const { schoolUser: user } = useSchoolAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -121,16 +122,7 @@ export default function MedicalRecordPanel({ records, onRefresh }) {
             <DialogTitle>{selectedRecord?.id ? 'Edit Medical Record' : 'Add Medical Record'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Student ID</Label>
-                <Input value={form.studentId} onChange={e => setForm({ ...form, studentId: e.target.value })} placeholder="Student ID (optional)" disabled={saving} />
-              </div>
-              <div>
-                <Label>Student Name *</Label>
-                <Input value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Student name" disabled={saving} />
-              </div>
-            </div>
+            <StudentPicker students={students} classes={classes} value={form.studentId} onChange={(id, name) => setForm({ ...form, studentId: id, studentName: name })} disabled={saving} />
 
             <div className="grid grid-cols-2 gap-4">
               <div>

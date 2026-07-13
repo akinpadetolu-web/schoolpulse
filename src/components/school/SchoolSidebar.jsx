@@ -171,6 +171,10 @@ export default function SchoolSidebar({ isOpen, onClose }) {
           items: group.items.filter(item => {
             const requiredFeature = featureMap[item.path];
             if (!requiredFeature) return item.path === '/school-admin';
+            if (item.path === '/school-admin/health') {
+              const pf = user?.permittedFeatures || {};
+              return pf.adminHealth || pf.healthNurseVisits || pf.healthIncidents || pf.healthVaccinations || pf.healthSpecialNeeds || pf.healthAnalytics;
+            }
             return user?.permittedFeatures?.[requiredFeature] === true;
           })
         })).filter(g => g.items.length > 0)

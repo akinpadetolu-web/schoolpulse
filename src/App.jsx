@@ -78,6 +78,7 @@ const AdminPayments = lazy(() => import('./pages/school-admin/AdminPayments'));
 const AdminFinancialReports = lazy(() => import('./pages/school-admin/AdminFinancialReports'));
 const AdminPaymentSettings = lazy(() => import('./pages/school-admin/AdminPaymentSettings'));
 const ParentFeesPayments = lazy(() => import('./pages/parent/ParentFeesPayments'));
+const ParentHealth = lazy(() => import('./pages/parent/ParentHealth'));
 const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
 const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
@@ -301,6 +302,7 @@ const AuthenticatedApp = () => {
           <Route path="lesson-plans" element={<ParentLessonPlans />} />
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="fees-payments" element={<ParentFeesPayments />} />
+          <Route path="health" element={<ParentHealth />} />
           <Route path="calendar" element={<ParentCalendar />} />
           <Route path="profile" element={<ParentProfile />} />
           <Route path="settings" element={<ParentSettings />} />

@@ -172,7 +172,33 @@
         },
         "adminHealth": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Master toggle for all Health & Medical features"
+        },
+        "healthNurseVisits": {
+          "type": "boolean",
+          "default": false,
+          "description": "Access to Nurse Visits tab"
+        },
+        "healthIncidents": {
+          "type": "boolean",
+          "default": false,
+          "description": "Access to Medical Incidents tab"
+        },
+        "healthVaccinations": {
+          "type": "boolean",
+          "default": false,
+          "description": "Access to Vaccinations tab"
+        },
+        "healthSpecialNeeds": {
+          "type": "boolean",
+          "default": false,
+          "description": "Access to Special Needs tab"
+        },
+        "healthAnalytics": {
+          "type": "boolean",
+          "default": false,
+          "description": "Access to Health Analytics tab"
         },
         "adminLibrary": {
           "type": "boolean",

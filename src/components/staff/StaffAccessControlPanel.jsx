@@ -8,7 +8,12 @@ import { toast } from 'sonner';
 import { clearFeatureCache } from '@/lib/featureToggleManager';
 
 const FEATURE_OPTIONS = [
-  { key: 'adminHealth',      label: 'Health & Medical' },
+  { key: 'adminHealth',           label: 'Health & Medical (Master)' },
+  { key: 'healthNurseVisits',     label: '↳ Nurse Visits' },
+  { key: 'healthIncidents',       label: '↳ Medical Incidents' },
+  { key: 'healthVaccinations',    label: '↳ Vaccinations' },
+  { key: 'healthSpecialNeeds',    label: '↳ Special Needs' },
+  { key: 'healthAnalytics',       label: '↳ Health Analytics' },
   { key: 'adminLibrary',     label: 'Library' },
   { key: 'adminHostel',      label: 'Hostel Management' },
   { key: 'adminInventory',   label: 'Inventory' },
