@@ -78,28 +78,37 @@ Rules:
 - Questions must align with the provided content
 `;
 
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      model: 'gemini_3_1_pro',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          questions: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                question: { type: 'string' },
-                type: { type: 'string' },
-                options: { type: 'array', items: { type: 'string' } },
-                correctAnswer: { type: 'string' },
-                points: { type: 'number' }
+    console.time('[smartQuizImport] AI_Generation');
+    let response;
+    try {
+      response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        model: 'gemini_3_1_pro',
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            questions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  question: { type: 'string' },
+                  type: { type: 'string' },
+                  options: { type: 'array', items: { type: 'string' } },
+                  correctAnswer: { type: 'string' },
+                  points: { type: 'number' }
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+    } catch (aiErr) {
+      console.timeEnd('[smartQuizImport] AI_Generation');
+      console.error('[smartQuizImport] AI call failed:', aiErr.message);
+      return Response.json({ error: 'AI generation failed: ' + aiErr.message }, { status: 502 });
+    }
+    console.timeEnd('[smartQuizImport] AI_Generation');
 
     // Parse response
     let questions = [];

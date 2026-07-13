@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[generateTimetable] Fetching school data for ${schoolId}...`);
+    console.time('[generateTimetable] Total generation');
 
     const [allClasses, allSubjects, allTeachers] = await Promise.all([
       base44.asServiceRole.entities.SchoolClass.filter({ schoolId, isArchived: false }),
@@ -39,6 +40,14 @@ Deno.serve(async (req) => {
         !s.applicableClasses || s.applicableClasses.length === 0 || s.applicableClasses.includes(cls.id)
       );
 
+      // Filter teachers to only those relevant to this class — minimizes LLM input
+      const classTeachersInfo = teachersInfo.filter(t => {
+        const assignments = t.teachingAssignments || [];
+        return assignments.some(a => a.classId === cls.id) ||
+               classSubjects.some(s => (t.assignedSubjects || []).includes(s.id));
+      });
+      const llmTeachers = classTeachersInfo.length > 0 ? classTeachersInfo : teachersInfo;
+
       const llmPrompt = `
 You are a school timetable scheduling expert. Generate a weekly timetable for ONE class strictly following the user's instructions.
 
@@ -53,7 +62,7 @@ Name: ${cls.className}
 ${JSON.stringify(classSubjects.map(s => ({ id: s.id, name: s.name })), null, 2)}
 
 ## TEACHERS (with assignments):
-${JSON.stringify(teachersInfo, null, 2)}
+${JSON.stringify(llmTeachers, null, 2)}
 
 ## ALREADY BOOKED TEACHER SLOTS (DO NOT use these teacher+day+time combinations):
 ${JSON.stringify(Object.keys(scheduledTeacherSlots), null, 2)}
@@ -85,35 +94,45 @@ Return ONLY valid JSON — no markdown, no explanation:
   "warnings": ["string"]
 }`;
 
-      console.log(`[generateTimetable] Generating for class: ${cls.className}`);
+      console.log(`[generateTimetable] Generating for class: ${cls.className} (${classSubjects.length} subjects, ${llmTeachers.length} teachers)`);
+      console.time(`[generateTimetable] LLM_Class_${cls.className}`);
 
-      const llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        prompt: llmPrompt,
-        model: 'gemini_3_1_pro',
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            entries: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  classId: { type: 'string' },
-                  className: { type: 'string' },
-                  subjectId: { type: 'string' },
-                  subjectName: { type: 'string' },
-                  teacherId: { type: 'string' },
-                  teacherName: { type: 'string' },
-                  dayOfWeek: { type: 'string' },
-                  startTime: { type: 'string' },
-                  endTime: { type: 'string' },
+      let llmResult;
+      try {
+        llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: llmPrompt,
+          model: 'gemini_3_1_pro',
+          response_json_schema: {
+            type: 'object',
+            properties: {
+              entries: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    classId: { type: 'string' },
+                    className: { type: 'string' },
+                    subjectId: { type: 'string' },
+                    subjectName: { type: 'string' },
+                    teacherId: { type: 'string' },
+                    teacherName: { type: 'string' },
+                    dayOfWeek: { type: 'string' },
+                    startTime: { type: 'string' },
+                    endTime: { type: 'string' },
+                  },
                 },
               },
+              warnings: { type: 'array', items: { type: 'string' } },
             },
-            warnings: { type: 'array', items: { type: 'string' } },
           },
-        },
-      });
+        });
+      } catch (llmErr) {
+        console.error(`[generateTimetable] LLM failed for ${cls.className}:`, llmErr.message);
+        console.timeEnd(`[generateTimetable] LLM_Class_${cls.className}`);
+        allWarnings.push(`[${cls.className}] Generation failed: ${llmErr.message}`);
+        continue;
+      }
+      console.timeEnd(`[generateTimetable] LLM_Class_${cls.className}`);
 
       const entries = llmResult?.entries || [];
       const warnings = llmResult?.warnings || [];
@@ -135,12 +154,16 @@ Return ONLY valid JSON — no markdown, no explanation:
     }
 
     if (allEntries.length === 0) {
+      console.timeEnd('[generateTimetable] Total generation');
       return Response.json({ error: 'No entries were generated. Try adjusting your prompt.' }, { status: 400 });
     }
 
     // Bulk save all entries
+    console.time('[generateTimetable] BulkSave');
     await base44.asServiceRole.entities.TimetableEntry.bulkCreate(allEntries);
+    console.timeEnd('[generateTimetable] BulkSave');
 
+    console.timeEnd('[generateTimetable] Total generation');
     return Response.json({
       slots: allEntries,
       warnings: allWarnings,
