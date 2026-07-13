@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import { Users, TrendingUp, Activity, BookOpen, CheckSquare, Star, Award } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import ChartWidget from './ChartWidget';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 const PASS_MARK = 40;
 function pct(num, denom) { return denom > 0 ? parseFloat(((num / denom) * 100).toFixed(1)) : 0; }
 function avg(arr) { return arr.length > 0 ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)) : 0; }
-function score(g) { return (g.score / (g.maxScore || 100)) * 100; }
 
-export default function TeacherOverview({ teachers, students, grades, classes, assignments, submissions, attendance, staffAttendance, visibleWidgets }) {
+export default function TeacherOverview({ teachers, students, grades, classes, assignments, submissions, attendance, staffAttendance, gradeCategories = [], visibleWidgets }) {
   const data = useMemo(() => {
     // Per-teacher metrics
     const teacherMap = {};
@@ -20,10 +20,24 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
       };
     });
 
+    // Track studentIds per teacher
     grades.forEach(g => {
       if (!g.teacherId || !teacherMap[g.teacherId]) return;
-      teacherMap[g.teacherId].scores.push(score(g));
       if (g.studentId) teacherMap[g.teacherId].studentIds.add(g.studentId);
+    });
+
+    // Compute weighted score per teacher-student-subject, then push to teacher's scores
+    const teacherSubjectGroups = {};
+    grades.forEach(g => {
+      if (!g.teacherId || !teacherMap[g.teacherId] || !g.studentId || !g.subjectId) return;
+      const key = `${g.teacherId}__${g.studentId}__${g.subjectId}`;
+      if (!teacherSubjectGroups[key]) teacherSubjectGroups[key] = [];
+      teacherSubjectGroups[key].push(g);
+    });
+    Object.entries(teacherSubjectGroups).forEach(([key, groupGrades]) => {
+      const [teacherId, studentId, subjectId] = key.split('__');
+      const result = calculateWeightedScore(groupGrades, gradeCategories, studentId, subjectId);
+      teacherMap[teacherId].scores.push(result.overall);
     });
 
     assignments.forEach(a => {
@@ -93,7 +107,7 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
     });
 
     return { teacherList, sortedByPassRate, mostActive, overallTeacherAvg, performanceRanking, workloadData, assignData, attTrend };
-  }, [teachers, students, grades, classes, assignments, submissions, attendance, staffAttendance]);
+  }, [teachers, students, grades, classes, assignments, submissions, attendance, staffAttendance, gradeCategories]);
 
   const KPI_CARDS = [
     { label: 'Total Teachers', value: teachers.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },

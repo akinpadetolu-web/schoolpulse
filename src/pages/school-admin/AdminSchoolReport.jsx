@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Loader2, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { calculateWeightedScore } from '@/lib/gradeWeightCalculator';
 
 export default function AdminSchoolReport() {
   const { schoolUser: user } = useSchoolAuth();
@@ -28,12 +29,13 @@ export default function AdminSchoolReport() {
       const start = new Date(dateRange.startDate);
       const end = new Date(dateRange.endDate);
 
-      const [attendanceData, submissionData, gradeData, assignmentData, studentData] = await Promise.all([
+      const [attendanceData, submissionData, gradeData, assignmentData, studentData, categoryData] = await Promise.all([
         base44.entities.Attendance.filter({ schoolId: user?.schoolId }),
         base44.entities.Submission.filter({ schoolId: user?.schoolId }),
         base44.entities.Grade.filter({ schoolId: user?.schoolId }),
         base44.entities.Assignment.filter({ schoolId: user?.schoolId }),
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' }),
+        base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }),
       ]);
 
       // Filter by date range
@@ -68,11 +70,24 @@ export default function AdminSchoolReport() {
         ? Math.round((filteredSubmissions.filter(s => !s.isGraded).length / filteredSubmissions.length) * 100)
         : 0;
 
-      const averageGrade = filteredGrades.length > 0
-        ? Math.round(filteredGrades.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / filteredGrades.length)
+      // Compute weighted scores per student-subject pair
+      const studentSubjectGroups = {};
+      filteredGrades.forEach(g => {
+        const key = `${g.studentId}__${g.subjectId}`;
+        if (!studentSubjectGroups[key]) studentSubjectGroups[key] = [];
+        studentSubjectGroups[key].push(g);
+      });
+
+      const weightedScores = Object.entries(studentSubjectGroups).map(([key, groupGrades]) => {
+        const [studentId, subjectId] = key.split('__');
+        return calculateWeightedScore(filteredGrades, categoryData || [], studentId, subjectId).overall;
+      }).filter(s => s > 0);
+
+      const averageGrade = weightedScores.length > 0
+        ? Math.round(weightedScores.reduce((sum, s) => sum + s, 0) / weightedScores.length)
         : 0;
 
-      // Grade distribution
+      // Grade distribution based on weighted scores
       const gradeDistribution = {
         A: 0,
         B: 0,
@@ -81,12 +96,11 @@ export default function AdminSchoolReport() {
         F: 0,
       };
 
-      filteredGrades.forEach(g => {
-        const percent = (g.score / g.maxScore) * 100;
-        if (percent >= 90) gradeDistribution.A++;
-        else if (percent >= 80) gradeDistribution.B++;
-        else if (percent >= 70) gradeDistribution.C++;
-        else if (percent >= 60) gradeDistribution.D++;
+      weightedScores.forEach(score => {
+        if (score >= 90) gradeDistribution.A++;
+        else if (score >= 80) gradeDistribution.B++;
+        else if (score >= 70) gradeDistribution.C++;
+        else if (score >= 60) gradeDistribution.D++;
         else gradeDistribution.F++;
       });
 

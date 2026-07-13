@@ -239,6 +239,7 @@ export default function AdminDashboard() {
           submissions={filtered.submissions}
           attendance={filtered.attendance}
           staffAttendance={raw.staffAttendance}
+          gradeCategories={raw.gradeCategories}
           visibleWidgets={teacherVisible}
         />
       )}
