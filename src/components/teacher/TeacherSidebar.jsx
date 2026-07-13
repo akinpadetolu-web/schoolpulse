@@ -13,6 +13,7 @@ const baseTeacherNavGroups = [
     label: 'MAIN',
     items: [
       { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
+      { label: "Live Dashboard", path: "/teacher/live-dashboard", icon: Radio },
       { label: "My Students", path: "/teacher/students", icon: Users },
     ]
   },
