@@ -19,19 +19,7 @@
     },
     "department": {
       "type": "string",
-      "enum": [
-        "HR",
-        "Accounts",
-        "Security",
-        "Maintenance",
-        "IT",
-        "Administration",
-        "Transport",
-        "Catering",
-        "Library",
-        "Other"
-      ],
-      "default": "HR"
+      "default": "Administration"
     },
     "jobTitle": {
       "type": "string"

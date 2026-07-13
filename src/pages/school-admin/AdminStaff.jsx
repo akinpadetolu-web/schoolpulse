@@ -14,6 +14,7 @@ export default function AdminStaff() {
   const schoolId = user?.schoolId;
 
   const [staff, setStaff] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -25,8 +26,12 @@ export default function AdminStaff() {
     if (!schoolId) { setLoading(false); return; }
     async function load() {
       try {
-        const data = await base44.entities.NonTeachingStaff.filter({ schoolId, isArchived: false });
+        const [data, schoolData] = await Promise.all([
+          base44.entities.NonTeachingStaff.filter({ schoolId, isArchived: false }),
+          base44.entities.School.filter({ id: schoolId }),
+        ]);
         setStaff(data || []);
+        setDepartments(schoolData?.[0]?.departments || []);
       } catch (err) {
         toast.error('Failed to load staff');
       }
@@ -216,8 +221,8 @@ export default function AdminStaff() {
       </div>
 
       {/* Dialogs */}
-      {showCreateDialog && <CreateStaffDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSave={handleCreate} />}
-      {editingStaff && <EditStaffDialog open={!!editingStaff} onOpenChange={() => setEditingStaff(null)} staff={editingStaff} onSave={handleUpdate} />}
+      {showCreateDialog && <CreateStaffDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSave={handleCreate} departments={departments} />}
+      {editingStaff && <EditStaffDialog open={!!editingStaff} onOpenChange={() => setEditingStaff(null)} staff={editingStaff} onSave={handleUpdate} departments={departments} />}
     </div>
   );
 }

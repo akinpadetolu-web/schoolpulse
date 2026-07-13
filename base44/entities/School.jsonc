@@ -153,6 +153,13 @@
       "type": "boolean",
       "default": true,
       "description": "Send notifications for attendance events"
+    },
+    "departments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "School-configured departments for non-teaching staff"
     }
   },
   "required": [

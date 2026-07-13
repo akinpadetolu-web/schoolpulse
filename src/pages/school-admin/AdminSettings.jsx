@@ -8,6 +8,7 @@ import GeneralSchoolSettings from '@/components/school/settings/GeneralSchoolSet
 import CommunicationSettings from '@/components/school/settings/CommunicationSettings';
 import AcademicQuickLinks from '@/components/school/settings/AcademicQuickLinks';
 import BrandColorsSettings from '@/components/school/settings/BrandColorsSettings';
+import DepartmentsSettings from '@/components/school/settings/DepartmentsSettings';
 
 export default function AdminSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -54,6 +55,9 @@ export default function AdminSettings() {
 
       {/* Brand Colors */}
       <BrandColorsSettings school={school} onSaved={loadSchool} />
+
+      {/* Departments */}
+      <DepartmentsSettings school={school} onSaved={loadSchool} />
 
       {/* Academic Settings Quick Links */}
       <AcademicQuickLinks />

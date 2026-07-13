@@ -20,7 +20,7 @@ const PRESET_ROLES = {
   'School Nurse': { department: 'Administration', permissions: { medical: 'full' } },
 };
 
-export default function CreateStaffDialog({ open, onOpenChange, onSave }) {
+export default function CreateStaffDialog({ open, onOpenChange, onSave, departments }) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -125,7 +125,7 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave }) {
                   onChange={handleChange}
                   className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
                 >
-                  {DEPARTMENTS.map(d => (
+                  {(departments?.length ? departments : DEPARTMENTS).map(d => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>

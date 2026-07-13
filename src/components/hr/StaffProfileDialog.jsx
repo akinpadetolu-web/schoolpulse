@@ -18,7 +18,7 @@ const EMPTY_FORM = {
   startDate: '', employmentType: 'full_time', status: 'active', notes: '',
 };
 
-export default function StaffProfileDialog({ open, onOpenChange, member, schoolUser, onSaved }) {
+export default function StaffProfileDialog({ open, onOpenChange, member, schoolUser, onSaved, departments }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -78,7 +78,7 @@ export default function StaffProfileDialog({ open, onOpenChange, member, schoolU
               <Label>Department *</Label>
               <Select value={form.department} onValueChange={v => set('department', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                <SelectContent>{(departments?.length ? departments : DEPARTMENTS).map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>

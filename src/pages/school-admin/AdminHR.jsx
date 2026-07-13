@@ -45,6 +45,7 @@ export default function AdminHR() {
   const [nonTeachingStaff, setNonTeachingStaff] = useState([]);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [departments, setDepartments] = useState([]);
   const [deptFilter, setDeptFilter] = useState('all');
   const [staffSearch, setStaffSearch] = useState('');
 
@@ -63,13 +64,14 @@ export default function AdminHR() {
 
   async function loadData() {
     try {
-      const [teachers, admins, hrStaffList, lv, att, nonTeaching] = await Promise.all([
+      const [teachers, admins, hrStaffList, lv, att, nonTeaching, schoolData] = await Promise.all([
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'teacher', isArchived: false }),
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'admin', isArchived: false }),
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'hr_staff', isArchived: false }),
         base44.entities.StaffLeave.filter({ schoolId: user?.schoolId }),
         base44.entities.StaffAttendance.filter({ schoolId: user?.schoolId }),
         base44.entities.NonTeachingStaff.filter({ schoolId: user?.schoolId, isArchived: false }),
+        base44.entities.School.filter({ id: user?.schoolId }),
       ]);
       const allStaff = [...(teachers || []), ...(admins || [])];
       setStaff(allStaff);
@@ -77,6 +79,7 @@ export default function AdminHR() {
       setLeaves(lv || []);
       setStaffAttendance(att || []);
       setNonTeachingStaff(nonTeaching || []);
+      setDepartments(schoolData?.[0]?.departments || []);
     } catch (err) {
       console.error('HR loadData error:', err);
       toast.error('Failed to load some HR data. Please refresh and try again.');
@@ -372,7 +375,7 @@ export default function AdminHR() {
               <SelectTrigger className="w-40"><SelectValue placeholder="All Departments" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                {['HR', 'Accounts', 'Security', 'Maintenance', 'IT', 'Administration', 'Transport', 'Catering', 'Library', 'Other'].map(d => (
+                {(departments?.length ? departments : ['HR', 'Accounts', 'Security', 'Maintenance', 'IT', 'Administration', 'Transport', 'Catering', 'Library', 'Other']).map(d => (
                   <SelectItem key={d} value={d}>{d}</SelectItem>
                 ))}
               </SelectContent>
@@ -531,7 +534,7 @@ export default function AdminHR() {
         </TabsContent>
       </Tabs>
 
-      <StaffProfileDialog open={showStaffDialog} onOpenChange={setShowStaffDialog} member={editingStaff} schoolUser={user} onSaved={loadData} />
+      <StaffProfileDialog open={showStaffDialog} onOpenChange={setShowStaffDialog} member={editingStaff} schoolUser={user} onSaved={loadData} departments={departments} />
       <CreateHRStaffDialog open={showCreateHR} onOpenChange={setShowCreateHR} schoolUser={user} onCreated={loadData} />
       {selectedHRMember && (
         <HRStaffPermissionsDialog
