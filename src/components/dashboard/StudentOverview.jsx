@@ -18,7 +18,7 @@ const GRADE_DIST = [
   { label: 'F', range: [0, 40], color: '#ef4444' },
 ];
 
-export default function StudentOverview({ students, grades, allGrades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets }) {
+export default function StudentOverview({ students, grades, allGrades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets, selectedSubjectId = 'all' }) {
   // allGrades = unfiltered grades for accurate weighted score calculation
   // grades = filtered grades for display/filtering context
   const gradesForCalc = allGrades || grades;
@@ -50,6 +50,12 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       });
       st.avg = avg(subjectScores);
       st.pass = st.avg >= PASS_MARK;
+      st.subjectScores = {};
+      subjectIds.forEach((subjectId, idx) => {
+        const subjName = studentGrades.find(g => g.subjectId === subjectId)?.subjectName
+          || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+        st.subjectScores[subjectId] = { name: subjName, score: subjectScores[idx] };
+      });
     });
 
     const studentList = Object.values(studentMap).filter(s => s.avg > 0 || grades.some(g => g.studentId === s.id));
@@ -88,6 +94,22 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
         const last = avg(arr.slice(Math.floor(arr.length / 2)).map(x => x.score));
         s.trend = last > first + 2 ? 'improving' : last < first - 2 ? 'declining' : 'stable';
       } else s.trend = 'stable';
+    });
+
+    // Per-subject top 10 (for "All Subjects" mode)
+    const allSubjectIds = [...new Set(gradesForCalc.map(g => g.subjectId).filter(Boolean))];
+    const subjectNameMap = {};
+    allSubjectIds.forEach(subjectId => {
+      subjectNameMap[subjectId] = gradesForCalc.find(g => g.subjectId === subjectId)?.subjectName
+        || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+    });
+    const perSubjectTop10 = allSubjectIds.map(subjectId => {
+      const studentsWithSubject = studentList
+        .filter(st => st.subjectScores && st.subjectScores[subjectId] && st.subjectScores[subjectId].score > 0)
+        .map(st => ({ id: st.id, name: st.name, className: st.className, score: st.subjectScores[subjectId].score }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      return { subjectId, subjectName: subjectNameMap[subjectId], students: studentsWithSubject };
     });
 
     const top10 = [...studentList].sort((a, b) => b.avg - a.avg).slice(0, 10);
@@ -168,6 +190,7 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       studentList, top10, bottom10, atRisk, overallPassRate, overallAvg,
       subjectAvgs, gradeDist, trendData, classEnrollment, attTrend, genderData, assignmentByClass,
       attRate, assignCompletion: Math.min(assignCompletion, 100),
+      perSubjectTop10, allSubjectIds, subjectNameMap,
     };
   }, [students, grades, gradesForCalc, classes, subjects, attendance, assignments, submissions, gradeCategories]);
 
@@ -251,20 +274,39 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       </div>
 
       {/* Top 10 & Bottom 10 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${selectedSubjectId === 'all' ? '' : 'lg:grid-cols-2'}`}>
         {visibleWidgets.topStudents && (
           <div className="bg-[#1e2340] rounded-2xl p-5">
             <p className="font-semibold mb-3">Top 10 Performing Students</p>
-            <div className="space-y-2">
-              {data.top10.length > 0 ? data.top10.map((s, i) => (
-                <div key={s.id} className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
-                  <span className="flex-1 text-sm truncate">{s.name}</span>
-                  <span className="text-xs text-slate-400">{s.className}</span>
-                  <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
-                </div>
-              )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
-            </div>
+            {selectedSubjectId === 'all' && data.perSubjectTop10 && data.perSubjectTop10.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {data.perSubjectTop10.map(subj => (
+                  <div key={subj.subjectId} className="min-w-[180px] flex-1">
+                    <p className="text-xs text-slate-300 font-medium mb-2 truncate border-b border-slate-700 pb-1">{subj.subjectName}</p>
+                    <div className="space-y-1.5">
+                      {subj.students.length > 0 ? subj.students.map((s, i) => (
+                        <div key={s.id} className="flex items-center gap-2">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                          <span className="flex-1 text-xs truncate">{s.name}</span>
+                          <span className="text-emerald-400 text-xs font-semibold shrink-0">{s.score}%</span>
+                        </div>
+                      )) : <p className="text-slate-500 text-xs text-center py-2">No data</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {data.top10.length > 0 ? data.top10.map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                    <span className="flex-1 text-sm truncate">{s.name}</span>
+                    <span className="text-xs text-slate-400">{s.className}</span>
+                    <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
+                  </div>
+                )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
+              </div>
+            )}
           </div>
         )}
         {visibleWidgets.underperforming && (
@@ -295,7 +337,13 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
                   <th className="text-left pb-2 pr-3">Student</th>
                   <th className="text-left pb-2 pr-3">Class</th>
                   <th className="text-left pb-2 pr-3">Gender</th>
-                  <th className="text-right pb-2 pr-3">Avg Score</th>
+                  {selectedSubjectId === 'all' && data.allSubjectIds && data.allSubjectIds.length > 0 ? (
+                    data.allSubjectIds.map(subjectId => (
+                      <th key={subjectId} className="text-right pb-2 pr-3 whitespace-nowrap text-xs">{(data.subjectNameMap[subjectId] || '—').slice(0, 10)}</th>
+                    ))
+                  ) : (
+                    <th className="text-right pb-2 pr-3">Avg Score</th>
+                  )}
                   <th className="text-left pb-2 pr-3">Status</th>
                   <th className="text-right pb-2 pr-3">Attendance</th>
                   <th className="text-right pb-2 pr-3">Assignments</th>
@@ -308,7 +356,13 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
                     <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{s.name}</td>
                     <td className="py-2 pr-3 text-slate-400 text-xs">{s.className || '—'}</td>
                     <td className="py-2 pr-3 text-slate-400 text-xs">{s.gender || '—'}</td>
-                    <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
+                    {selectedSubjectId === 'all' && data.allSubjectIds && data.allSubjectIds.length > 0 ? (
+                      data.allSubjectIds.map(subjectId => (
+                        <td key={subjectId} className="py-2 pr-3 text-right text-slate-300">{s.subjectScores && s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
+                      ))
+                    ) : (
+                      <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
+                    )}
                     <td className="py-2 pr-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                         {s.pass ? 'Pass' : 'Fail'}

@@ -228,6 +228,7 @@ export default function AdminDashboard() {
           submissions={filtered.submissions}
           gradeCategories={raw.gradeCategories}
           visibleWidgets={studentVisible}
+          selectedSubjectId={appliedFilters.subjectId}
         />
       ) : (
         <TeacherOverview
