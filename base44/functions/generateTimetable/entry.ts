@@ -12,11 +12,21 @@ Deno.serve(async (req) => {
     console.log(`[generateTimetable] Fetching school data for ${schoolId}...`);
     console.time('[generateTimetable] Total generation');
 
-    const [allClasses, allSubjects, allTeachers] = await Promise.all([
+    const [allClasses, allSubjects, allTeachers, existingEntries] = await Promise.all([
       base44.asServiceRole.entities.SchoolClass.filter({ schoolId, isArchived: false }),
       base44.asServiceRole.entities.Subject.filter({ schoolId, isArchived: false }),
       base44.asServiceRole.entities.SchoolUser.filter({ schoolId, role: 'teacher', isArchived: false }),
+      base44.asServiceRole.entities.TimetableEntry.filter({ schoolId }),
     ]);
+
+    // Derive the school's own time structure from existing timetable entries (no hardcoding)
+    const slotMap = {};
+    for (const e of (existingEntries || [])) {
+      if (e.startTime && e.endTime) {
+        slotMap[`${e.startTime}-${e.endTime}`] = { start: e.startTime, end: e.endTime };
+      }
+    }
+    const schoolTimeSlots = Object.values(slotMap).sort((a, b) => a.start.localeCompare(b.start));
 
     const targetClasses = (allClasses || []).filter(c => targetClassIds.includes(c.id));
     if (targetClasses.length === 0) {
@@ -74,30 +84,20 @@ ${JSON.stringify(llmTeachers, null, 2)}
 ${JSON.stringify(Object.keys(scheduledTeacherSlots), null, 2)}
 (Format: "teacherId|dayOfWeek|startTime")
 
-## EXACT DAILY TIME SLOTS (MANDATORY — you MUST use ONLY these exact start/end times for every day):
-Slot 1:  08:30 - 09:15  (Period 1)
-Slot 2:  09:15 - 10:00  (Period 2)
-         10:00 - 10:30  (Short Break — do NOT assign a subject here)
-Slot 3:  10:30 - 11:15  (Period 3)
-Slot 4:  11:15 - 12:00  (Period 4)
-         12:00 - 13:00  (Long Break — do NOT assign a subject here)
-Slot 5:  13:00 - 13:45  (Period 5)
-Slot 6:  13:45 - 14:30  (Period 6)
-Slot 7:  14:30 - 15:15  (Period 7)
+${schoolTimeSlots.length > 0 ? `## SCHOOL'S EXISTING DAILY TIME SLOTS (MANDATORY — you MUST use ONLY these exact start/end times):
+${schoolTimeSlots.map((s, i) => `Slot ${i + 1}: ${s.start} - ${s.end}`).join('\n')}
 
-There are exactly 7 teaching periods per day (Slots 1-4 morning, Slots 5-7 afternoon).
-Each teaching period is exactly 45 minutes. Do NOT change period durations.
-Do NOT invent, round, or alter any times. Use the start and end times EXACTLY as listed above.
+These are the time periods already established by this school. Do NOT invent, round, or alter any times. Every entry's startTime and endTime must match one of these slots exactly. Generate one entry per slot per day.` : `## TIME STRUCTURE
+No existing timetable entries found for this school. Follow the time structure described in the USER INSTRUCTIONS above. If none is specified, use a standard school day with consistent period durations.`}
 
 ## NON-NEGOTIABLE RULES:
-1. You MUST use ONLY the exact time slots listed above. Every entry's startTime and endTime must match one of the 7 teaching slots exactly. Do NOT use 1-hour periods, do NOT use 08:00, do NOT invent times.
-2. Do NOT schedule a subject during break times (10:00-10:30 or 12:00-13:00). Simply omit those slots.
-3. No teacher should be in two classes at the same time — check the booked slots above.
-4. Assign the correct teacher per subject using teachingAssignments. Fall back to assignedSubjects if needed.
+1. ${schoolTimeSlots.length > 0 ? 'You MUST use ONLY the exact time slots listed above. Do NOT invent times or change period durations.' : 'Use the time structure from the USER INSTRUCTIONS. Keep period durations consistent throughout the day.'}
+2. No teacher should be in two classes at the same time — check the booked slots above.
+3. Assign the correct teacher per subject using teachingAssignments. Fall back to assignedSubjects if needed.
+4. All times must be in "HH:MM" 24-hour format (e.g. "08:30", "13:00").
 5. dayOfWeek must be exactly one of: Monday, Tuesday, Wednesday, Thursday, Friday.
 6. Do NOT schedule the same subject more than ONCE per day. Spread each subject across different days of the week.
 7. Distribute subjects evenly — aim for variety so students don't see the same subject twice in a day.
-8. Generate exactly 7 entries per day (one per teaching slot), 35 entries total for the 5-day week.
 
 ## REQUIRED OUTPUT FORMAT:
 Return ONLY valid JSON — no markdown, no explanation:
@@ -161,38 +161,34 @@ Return ONLY valid JSON — no markdown, no explanation:
       // Handle both wrapped {response: {...}} and direct {...} LLM response formats
       const llmData = llmResult?.response || llmResult;
 
-      // Allowed exact time slots — entries must match one of these
-      const VALID_SLOTS = [
-        { start: '08:30', end: '09:15' },
-        { start: '09:15', end: '10:00' },
-        { start: '10:30', end: '11:15' },
-        { start: '11:15', end: '12:00' },
-        { start: '13:00', end: '13:45' },
-        { start: '13:45', end: '14:30' },
-        { start: '14:30', end: '15:15' },
-      ];
-
-      // Sanitize entries: snap times to nearest valid slot and dedupe same-day same-slot
+      // If the school has established time slots, snap entries to those; dedupe same-day same-slot
       const seenDaySlots = {};
       const sanitizedEntries = [];
       for (const e of (llmData?.entries || [])) {
         if (!e.subjectId || e.subjectId === '<UNKNOWN>' || !e.dayOfWeek || !e.startTime || !e.endTime) continue;
 
-        // Find the matching valid slot by startTime, or snap to nearest
-        let matchedSlot = VALID_SLOTS.find(s => s.start === e.startTime && s.end === e.endTime);
-        if (!matchedSlot) {
-          matchedSlot = VALID_SLOTS.find(s => s.start === e.startTime) ||
-                        VALID_SLOTS.reduce((closest, slot) => {
-                          const diff = Math.abs(parseInt(slot.start) - parseInt(e.startTime));
-                          return diff < Math.abs(parseInt(closest.start) - parseInt(e.startTime)) ? slot : closest;
-                        });
+        let finalStart = e.startTime;
+        let finalEnd = e.endTime;
+
+        if (schoolTimeSlots.length > 0) {
+          // Match exact slot, or snap to nearest by startTime
+          let matchedSlot = schoolTimeSlots.find(s => s.start === e.startTime && s.end === e.endTime);
+          if (!matchedSlot) {
+            matchedSlot = schoolTimeSlots.find(s => s.start === e.startTime) ||
+                          schoolTimeSlots.reduce((closest, slot) => {
+                            const diff = Math.abs(parseInt(slot.start) - parseInt(e.startTime));
+                            return diff < Math.abs(parseInt(closest.start) - parseInt(e.startTime)) ? slot : closest;
+                          });
+          }
+          finalStart = matchedSlot.start;
+          finalEnd = matchedSlot.end;
         }
 
-        const daySlotKey = `${e.dayOfWeek}|${matchedSlot.start}`;
-        if (seenDaySlots[daySlotKey]) continue; // skip duplicate slot on same day
+        const daySlotKey = `${e.dayOfWeek}|${finalStart}`;
+        if (seenDaySlots[daySlotKey]) continue;
         seenDaySlots[daySlotKey] = true;
 
-        sanitizedEntries.push({ ...e, startTime: matchedSlot.start, endTime: matchedSlot.end });
+        sanitizedEntries.push({ ...e, startTime: finalStart, endTime: finalEnd });
       }
       const entries = sanitizedEntries;
       const warnings = llmData?.warnings || [];
