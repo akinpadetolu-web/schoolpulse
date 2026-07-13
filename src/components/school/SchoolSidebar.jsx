@@ -169,34 +169,37 @@ export default function SchoolSidebar({ isOpen, onClose }) {
   ];
 
   const adminNavGroups = user?.role === 'hr_staff'
-    ? [
-        ...baseAdminNavGroups.map(group => {
-          const pf = user?.permittedFeatures || {};
+    ? (() => {
+        const pf = user?.permittedFeatures || {};
+        const filteredGroups = baseAdminNavGroups.map(group => {
           if (group.label === 'OPERATIONS') {
             const nonHealthItems = group.items
               .filter(item => item.path !== '/school-admin/health')
               .filter(item => {
                 const requiredFeature = featureMap[item.path];
-                if (!requiredFeature) return true;
-                return pf[requiredFeature] === true;
+                return requiredFeature && pf[requiredFeature] === true;
               });
             const visibleHealthItems = healthNavItems.filter(item =>
               pf.adminHealth === true || pf[item.feature] === true
             );
             return { ...group, items: [...visibleHealthItems, ...nonHealthItems] };
           }
+          // Non-operations groups: strictly show only items explicitly enabled in permittedFeatures
+          // Exclude the admin Dashboard — hr_staff uses their own Staff Dashboard
           return {
             ...group,
             items: group.items.filter(item => {
+              if (item.path === '/school-admin') return false;
               const requiredFeature = featureMap[item.path];
-              if (!requiredFeature) return item.path === '/school-admin';
-              return pf[requiredFeature] === true;
+              return requiredFeature && pf[requiredFeature] === true;
             })
           };
-        }).filter(g => g.items.length > 0),
-        // "My Account" moved to the bottom
-        { label: 'ACCOUNT', items: [{ label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }] }
-      ]
+        }).filter(g => g.items.length > 0);
+        return [
+          ...filteredGroups,
+          { label: 'ACCOUNT', items: [{ label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }] }
+        ];
+      })()
     : baseAdminNavGroups;
 
   useEffect(() => {
@@ -252,7 +255,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
-          {loading ? (
+          {loading && user?.role !== 'hr_staff' ? (
             <div className="p-4 text-xs text-sidebar-foreground/60">Loading menu...</div>
           ) : (
             <SidebarNavGroups 
