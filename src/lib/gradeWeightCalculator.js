@@ -18,11 +18,9 @@ import { base44 } from '@/api/base44Client';
  *   Final = 16 + 14 + 54 = 84%
  *
  * Edge cases:
- *   - Missing category (no grades) → categoryAvg = null, excluded from final;
- *                                    weights are normalized so the grade reflects
- *                                    only categories that have data (no artificial zeros)
+ *   - Missing category (no grades) → categoryAvg = null, contributes 0 to final
  *   - No grades at all            → finalGrade = null
- *   - Weights ≠ 100               → contributions normalized by total weight of categories with data
+ *   - Weights ≠ 100               → just sum existing contributions (no auto-normalization)
  *   - No category config          → falls back to simple average of all grades
  */
 
@@ -132,15 +130,14 @@ export function calculateWeightedFinalGrade(grades, gradeCategories) {
     };
   });
 
-  // Final = normalized weighted average — only categories that have data contribute,
-  // and the weight is rescaled so missing categories don't artificially zero the grade.
-  const categoriesWithData = breakdown.filter(b => b.categoryAvg !== null);
-  const totalWeightWithData = categoriesWithData.reduce((sum, b) => sum + b.weight, 0);
-  const finalGrade = totalWeightWithData > 0
-    ? Math.round(
-        (categoriesWithData.reduce((sum, b) => sum + b.contribution, 0) / (totalWeightWithData / 100)) * 100
-      ) / 100
-    : null;
+  // Final = sum of contributions from categories that have data (no rescaling).
+  // Categories without grades contribute 0 — the student has only earned that
+  // portion of their total possible grade.
+  const finalGrade = Math.round(
+    breakdown
+      .filter(b => b.categoryAvg !== null)
+      .reduce((sum, b) => sum + b.contribution, 0) * 100
+  ) / 100;
 
   return { finalGrade, breakdown, hasWeights: true };
 }
