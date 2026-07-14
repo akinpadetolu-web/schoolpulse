@@ -2,20 +2,39 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, AlertCircle, Wand2 } from 'lucide-react';
+import { Loader2, Upload, AlertCircle, Wand2, FileText, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+
+const QUESTIONS_SCHEMA = {
+  type: 'object',
+  properties: {
+    questions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          question: { type: 'string' },
+          type: { type: 'string', enum: ['multiple_choice', 'true_false', 'short_answer', 'long_answer'] },
+          correctAnswer: { type: 'string' },
+          options: { type: 'array', items: { type: 'string' } },
+          points: { type: 'number' },
+        },
+      },
+    },
+  },
+};
 
 export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('manual'); // manual or ai
-  const [format, setFormat] = useState('csv'); // csv, json, pdf, docx
-  const [content, setContent] = useState('');
+  const [format, setFormat] = useState('pdf'); // pdf, docx
   const [error, setError] = useState('');
   const [topic, setTopic] = useState('');
+  const [fileName, setFileName] = useState('');
   const [fileUrl, setFileUrl] = useState('');
+  const [extractedQuestions, setExtractedQuestions] = useState([]);
   const [questionCounts, setQuestionCounts] = useState({
     multiple_choice: 2,
     true_false: 1,
@@ -27,108 +46,60 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (mode === 'ai' && (format === 'pdf' || format === 'docx' || format === 'txt')) {
-      // Upload file for AI processing
-      try {
-        setLoading(true);
-        const res = await base44.integrations.Core.UploadFile({ file });
-        setFileUrl(res.file_url);
-        setError('');
-        toast.success('File uploaded. Click "Generate with AI" to create questions.');
-      } catch (err) {
-        setError('Failed to upload file');
-      } finally {
-        setLoading(false);
-      }
-    } else if (mode === 'manual' && (format === 'pdf' || format === 'docx')) {
-      // Extract text from PDF/DOCX for manual processing
-      try {
-        setLoading(true);
-        const res = await base44.integrations.Core.UploadFile({ file });
-        // Fetch and display the file content
-        const fileRes = await fetch(res.file_url);
-        const text = await fileRes.text();
-        setContent(text.substring(0, 4000)); // Limit to 4000 chars
-        setError('');
-        toast.success('File extracted. Format the text as CSV or JSON below.');
-      } catch (err) {
-        setError('Failed to extract file content');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // CSV/JSON manual parsing
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setContent(event.target?.result || '');
-        setError('');
-      };
-      reader.readAsText(file);
-    }
-  };
+    setFileName(file.name);
+    setError('');
 
-  const parseQuestions = () => {
     try {
-      setError('');
-      let questions = [];
+      setLoading(true);
+      const res = await base44.integrations.Core.UploadFile({ file });
+      const uploadedUrl = res.file_url;
+      setFileUrl(uploadedUrl);
 
-      if (format === 'csv') {
-        const lines = content.trim().split('\n');
-        if (lines.length < 2) throw new Error('CSV must have at least a header and one question');
+      if (mode === 'manual') {
+        // Extract structured questions from the PDF/DOCX using AI
+        const extractRes = await base44.integrations.Core.ExtractDataFromUploadedFile({
+          file_url: uploadedUrl,
+          json_schema: QUESTIONS_SCHEMA,
+        });
 
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-        const qIdx = headers.indexOf('question');
-        const tIdx = headers.indexOf('type');
-        const ansIdx = headers.indexOf('answer');
-        const optIdx = headers.indexOf('options');
-        const pIdx = headers.indexOf('points');
-
-        if (qIdx === -1) throw new Error('CSV must have "question" column');
-        if (tIdx === -1) throw new Error('CSV must have "type" column (multiple_choice, true_false, short_answer)');
-
-        for (let i = 1; i < lines.length; i++) {
-          const parts = lines[i].split(',').map(p => p.trim());
-          if (parts.length < 2) continue;
-
-          const type = parts[tIdx]?.toLowerCase() || 'short_answer';
-          const q = {
-            question: parts[qIdx],
-            type,
-            points: Number(parts[pIdx]) || 1,
-            correctAnswer: parts[ansIdx] || '',
-            options: parts[optIdx] ? parts[optIdx].split('|').map(o => o.trim()) : [],
-          };
-          questions.push(q);
+        if (extractRes.status === 'success' && extractRes.output) {
+          const questions = Array.isArray(extractRes.output)
+            ? extractRes.output
+            : extractRes.output.questions || [];
+          setExtractedQuestions(questions);
+          if (questions.length > 0) {
+            toast.success(`Extracted ${questions.length} questions from the document.`);
+          } else {
+            setError('No questions were found in the uploaded document. Try the AI Generator mode instead.');
+          }
+        } else {
+          setError(extractRes.details || 'Failed to extract questions from the document.');
         }
       } else {
-        // JSON format
-        const parsed = JSON.parse(content);
-        questions = Array.isArray(parsed) ? parsed : parsed.questions || [];
-        if (!Array.isArray(questions)) throw new Error('JSON must be an array of questions or have a "questions" property');
+        toast.success('File uploaded. Click "Generate with AI" to create questions.');
       }
-
-      if (questions.length === 0) throw new Error('No questions found in file');
-      return questions;
     } catch (err) {
-      setError(err.message || 'Failed to parse questions');
-      throw err;
+      setError('Failed to upload file. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleImport = async () => {
+    if (extractedQuestions.length === 0) {
+      setError('No questions to import. Please upload a document first.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const questions = parseQuestions();
-
-      // Use AI to arrange and validate questions
       const response = await base44.functions.invoke('arrangeQuizQuestions', {
-        questions,
+        questions: extractedQuestions,
       });
 
       if (response.data?.arranged) {
         onImport(response.data.arranged);
-        setContent('');
-        setError('');
+        resetState();
         onOpenChange(false);
         toast.success(`Imported and arranged ${response.data.arranged.length} questions`);
       }
@@ -164,12 +135,9 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
 
       if (response.data?.questions) {
         onImport(response.data.questions);
-        setFileUrl('');
-        setTopic('');
-        setContent('');
-        setError('');
+        resetState();
         onOpenChange(false);
-        toast.success(`Generated ${response.data.questions.length} questions with Gemini Pro`);
+        toast.success(`Generated ${response.data.questions.length} questions with AI`);
       } else {
         setError(response.data?.error || 'Failed to generate questions');
       }
@@ -180,6 +148,14 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
       setLoading(false);
     }
   };
+
+  function resetState() {
+    setFileUrl('');
+    setFileName('');
+    setExtractedQuestions([]);
+    setTopic('');
+    setError('');
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,14 +171,14 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
             <div className="flex gap-2 mt-2">
               <Button
                 variant={mode === 'manual' ? 'default' : 'outline'}
-                onClick={() => { setMode('manual'); setError(''); }}
+                onClick={() => { setMode('manual'); resetState(); }}
                 disabled={loading}
               >
                 Manual Entry
               </Button>
               <Button
                 variant={mode === 'ai' ? 'default' : 'outline'}
-                onClick={() => { setMode('ai'); setError(''); }}
+                onClick={() => { setMode('ai'); resetState(); }}
                 disabled={loading}
               >
                 <Wand2 className="w-4 h-4 mr-2" />
@@ -217,11 +193,11 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               <div>
                 <Label>Format</Label>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {['csv', 'json', 'pdf', 'docx'].map(f => (
+                  {['pdf', 'docx'].map(f => (
                     <Button
                       key={f}
                       variant={format === f ? 'default' : 'outline'}
-                      onClick={() => { setFormat(f); setContent(''); setError(''); }}
+                      onClick={() => { setFormat(f); resetState(); }}
                       disabled={loading}
                       size="sm"
                     >
@@ -239,11 +215,11 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               <div>
                 <Label>Document Type</Label>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {['pdf', 'docx', 'txt'].map(f => (
+                  {['pdf', 'docx'].map(f => (
                     <Button
                       key={f}
                       variant={format === f ? 'default' : 'outline'}
-                      onClick={() => { setFormat(f); setFileUrl(''); setError(''); }}
+                      onClick={() => { setFormat(f); resetState(); }}
                       disabled={loading}
                       size="sm"
                     >
@@ -324,50 +300,48 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
             <>
               {/* Manual File Upload */}
               <div>
-                <Label>Upload or Paste Content</Label>
+                <Label>Upload Document</Label>
                 <div className="mt-2 space-y-2">
                   <Input
                     type="file"
-                    accept={format === 'csv' ? '.csv' : format === 'json' ? '.json' : format === 'pdf' ? '.pdf' : '.docx'}
+                    accept={format === 'pdf' ? '.pdf' : '.docx'}
                     onChange={handleFileUpload}
                     disabled={loading}
                   />
-                  <div className="relative">
-                    <Textarea
-                      value={content}
-                      onChange={(e) => { setContent(e.target.value); setError(''); }}
-                      placeholder={format === 'csv' 
-                        ? `question,type,answer,options,points\nWhat is 2+2?,multiple_choice,4,2|3|4|5,1\nIs the sky blue?,true_false,true,,1`
-                        : format === 'json'
-                        ? `[{"question": "What is 2+2?", "type": "multiple_choice", "correctAnswer": "4", "options": ["2", "3", "4", "5"], "points": 1}]`
-                        : `Paste extracted text from PDF/Word document here. You can manually format it as CSV or JSON.`
-                      }
-                      className="font-mono text-sm h-40 resize-none"
-                      disabled={loading}
-                    />
-                  </div>
+                  {fileName && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{fileName}</span>
+                      {extractedQuestions.length > 0 && (
+                        <span className="flex items-center gap-1 text-emerald-600 ml-auto flex-shrink-0">
+                          <CheckCircle2 className="w-4 h-4" />
+                          {extractedQuestions.length} questions found
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {extractedQuestions.length > 0 && (
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 p-3 bg-muted/30 rounded-lg">
+                      {extractedQuestions.map((q, i) => (
+                        <div key={i} className="text-sm p-2 bg-background rounded border">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase mr-2">{q.type || 'unknown'}</span>
+                          <span>{q.question || '(no question text)'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Help Text */}
               <div className="bg-muted p-3 rounded text-sm text-muted-foreground">
-                <p className="font-semibold mb-1">Supported Formats & Types:</p>
-                {(format === 'pdf' || format === 'docx') ? (
-                  <ul className="list-disc list-inside space-y-0.5 text-xs">
-                    <li>Upload PDF or Word documents with questions</li>
-                    <li>Text will be extracted and displayed above</li>
-                    <li>Manually format as CSV or JSON before importing</li>
-                    <li>Or paste the content into a CSV/JSON formatted text</li>
-                  </ul>
-                ) : (
-                  <ul className="list-disc list-inside space-y-0.5">
-                    <li><code>multiple_choice</code> - options separated by |</li>
-                    <li><code>true_false</code> - answer is "true" or "false"</li>
-                    <li><code>short_answer</code> - free text answer</li>
-                    <li><code>long_answer</code> - essay questions</li>
-                    <li><code>passage_based</code> - reading comprehension</li>
-                  </ul>
-                )}
+                <p className="font-semibold mb-1">How it works:</p>
+                <ul className="list-disc list-inside space-y-0.5 text-xs">
+                  <li>Upload a PDF or Word document containing your questions</li>
+                  <li>Questions are automatically extracted using AI</li>
+                  <li>Review the extracted questions above</li>
+                  <li>Click "Import & Arrange" to add them to your quiz</li>
+                </ul>
               </div>
             </>
           ) : (
@@ -378,7 +352,7 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
                 <div className="mt-2">
                   <Input
                     type="file"
-                    accept={format === 'pdf' ? '.pdf' : format === 'docx' ? '.docx' : '.txt'}
+                    accept={format === 'pdf' ? '.pdf' : '.docx'}
                     onChange={handleFileUpload}
                     disabled={loading}
                   />
@@ -386,8 +360,9 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               </div>
 
               {fileUrl && (
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded text-sm text-emerald-700">
-                  ✓ File uploaded. Ready to generate questions.
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded text-sm text-emerald-700 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  File uploaded. Ready to generate questions.
                 </div>
               )}
 
@@ -395,10 +370,10 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               <div className="bg-muted p-3 rounded text-sm text-muted-foreground">
                 <p className="font-semibold mb-1">How it works:</p>
                 <ul className="list-disc list-inside space-y-0.5 text-xs">
-                  <li>Upload a document (PDF, DOCX, or TXT)</li>
+                  <li>Upload a PDF or Word document</li>
                   <li>Enter the topic/subject (optional)</li>
                   <li>Click "Generate with AI"</li>
-                  <li>Gemini Pro will create diverse questions automatically</li>
+                  <li>AI will create diverse questions automatically</li>
                 </ul>
               </div>
             </>
@@ -418,7 +393,7 @@ export default function QuizBulkImportDialog({ open, onOpenChange, onImport }) {
               Cancel
             </Button>
             {mode === 'manual' ? (
-              <Button onClick={handleImport} disabled={loading || !content}>
+              <Button onClick={handleImport} disabled={loading || extractedQuestions.length === 0}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                 {loading ? 'Importing...' : 'Import & Arrange'}
               </Button>
