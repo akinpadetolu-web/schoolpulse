@@ -6,7 +6,6 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import TeacherLiveAnalytics from '@/components/teacher/TeacherLiveAnalytics';
-import TeacherLeaveRequestWidget from '@/components/teacher/TeacherLeaveRequestWidget';
 
 export default function TeacherDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -51,10 +50,6 @@ export default function TeacherDashboard() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TeacherLeaveRequestWidget />
       </div>
 
       <TeacherLiveAnalytics />
