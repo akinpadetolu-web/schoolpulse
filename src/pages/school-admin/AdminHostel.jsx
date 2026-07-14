@@ -21,12 +21,13 @@ export default function AdminHostel() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    if (!user?.schoolId) return;
     loadData();
     const unsub = base44.entities.Hostel.subscribe(event => {
       if (event.type === 'create' || event.type === 'update') loadData();
     });
     return unsub;
-  }, []);
+  }, [user?.schoolId]);
 
   async function loadData() {
     try {
