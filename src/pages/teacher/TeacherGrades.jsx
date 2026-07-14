@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Plus, Loader2, Pencil, Trash2, Search, BookOpen, TrendingUp } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Search, BookOpen, TrendingUp, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import TermAverages from '@/components/teacher/TermAverages';
 import MyStudentsSection from '@/components/teacher/MyStudentsSection';
+import BulkGradeEntryDialog from '@/components/teacher/BulkGradeEntryDialog';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -55,6 +56,7 @@ export default function TeacherGrades() {
   const [allSubjects, setAllSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -266,7 +268,10 @@ export default function TeacherGrades() {
           <h1 className="text-2xl font-bold">Grades & Scores</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Record and manage student performance</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Grade</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBulkDialog(true)}><Users className="w-4 h-4 mr-2" /> Bulk Entry</Button>
+          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Grade</Button>
+        </div>
       </div>
 
       <Tabs defaultValue="my-students">
@@ -510,6 +515,16 @@ export default function TeacherGrades() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Entry Dialog */}
+      <BulkGradeEntryDialog
+        open={showBulkDialog}
+        onOpenChange={setShowBulkDialog}
+        classes={classes}
+        subjects={allSubjects}
+        students={allStudents}
+        schoolUser={user}
+      />
     </div>
   );
 }
