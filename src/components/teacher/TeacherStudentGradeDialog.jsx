@@ -50,15 +50,17 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
       base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }),
       base44.entities.GradeCategory.filter({ schoolId: user.schoolId }),
     ]);
-    setGrades(g || []);
-    setCategories(cats || []);
     // Filter subjects to those the teacher teaches in this student's class
     const teachingPairs = (user?.teachingAssignments || []).filter(a => a.classId === student.classId);
     const assignedSubjectIds = [...new Set(teachingPairs.map(a => a.subjectId))];
     const relevantSubs = assignedSubjectIds.length > 0
       ? (subs || []).filter(s => assignedSubjectIds.includes(s.id))
       : (subs || []).filter(s => (s.applicableClasses || []).includes(student.classId));
+    const assignedSubjectIdSet = new Set(relevantSubs.map(s => s.id));
     setSubjects(relevantSubs);
+    // Only show grades for subjects this teacher is assigned to teach in this class
+    setGrades((g || []).filter(grade => assignedSubjectIdSet.has(grade.subjectId)));
+    setCategories((cats || []).filter(c => assignedSubjectIdSet.has(c.subjectId)));
     setLoading(false);
   }, [student?.id, student?.classId, user?.schoolId, user?.id, user?.teachingAssignments]);
 
