@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import UserAvatar from '@/components/common/UserAvatar';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -34,6 +35,7 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
   const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
@@ -43,11 +45,13 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
   const load = useCallback(async () => {
     if (!student?.id || !user?.schoolId) return;
     setLoading(true);
-    const [g, subs] = await Promise.all([
+    const [g, subs, cats] = await Promise.all([
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: student.id }),
       base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }),
+      base44.entities.GradeCategory.filter({ schoolId: user.schoolId }),
     ]);
     setGrades(g || []);
+    setCategories(cats || []);
     // Filter subjects to those the teacher teaches in this student's class
     const teachingPairs = (user?.teachingAssignments || []).filter(a => a.classId === student.classId);
     const assignedSubjectIds = [...new Set(teachingPairs.map(a => a.subjectId))];
@@ -87,10 +91,27 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
     return map;
   }, [grades]);
 
+  // Per-subject weighted results
+  const subjectResults = useMemo(() => {
+    const map = {};
+    grades.forEach(g => {
+      if (!map[g.subjectId]) map[g.subjectId] = { name: g.subjectName, subjectId: g.subjectId, classId: g.classId, grades: [] };
+      map[g.subjectId].grades.push(g);
+    });
+    return Object.values(map).map(({ name, subjectId, classId, grades: sg }) => {
+      const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+      const result = getSubjectFinalGrade(sg, classCats);
+      return { name, subjectId, grades: sg, ...result };
+    });
+  }, [grades, categories]);
+
   const overallAvg = useMemo(() => {
-    if (grades.length === 0) return null;
-    return Math.round(grades.reduce((s, g) => s + pct(g.score, g.maxScore), 0) / grades.length);
-  }, [grades]);
+    const valid = subjectResults.filter(s => s.overall !== null);
+    if (valid.length === 0) return null;
+    return Math.round(valid.reduce((s, r) => s + r.overall, 0) / valid.length);
+  }, [subjectResults]);
+
+  const anyWeighted = subjectResults.some(s => s.hasWeights);
 
   function openAdd() {
     setEditingGrade(null);
@@ -218,7 +239,7 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
               </Card>
               <Card className="border-0 shadow-sm bg-secondary/30">
                 <CardContent className="p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Overall Avg</p>
+                  <p className="text-xs text-muted-foreground">Overall Avg {anyWeighted && <span className="text-primary">(weighted)</span>}</p>
                   <p className="text-xl font-bold mt-0.5">{overallAvg !== null ? `${overallAvg}%` : "—"}</p>
                 </CardContent>
               </Card>
@@ -256,6 +277,33 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
                 })}
               </div>
             </div>
+
+            {/* Subject weighted breakdown */}
+            {subjectResults.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Subject Averages {anyWeighted && <span className="text-xs font-normal text-primary">(weighted)</span>}</h3>
+                <div className="space-y-2">
+                  {subjectResults.map(s => (
+                    <div key={s.subjectId} className="p-3 rounded-lg bg-secondary/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{s.name}</span>
+                        <span className="text-sm font-bold">{s.overall !== null ? `${Math.round(s.overall)}%` : '—'}</span>
+                      </div>
+                      {s.hasWeights && s.breakdown.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                          {s.breakdown.map((b, i) => (
+                            <span key={i}>
+                              {b.categoryName} {b.weight}% ({b.categoryAvg !== null ? `${Math.round(b.categoryAvg)}%` : 'N/A'}) → <strong>{b.contribution?.toFixed(1)}</strong>
+                              {i < s.breakdown.length - 1 && ' | '}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Add Grade button / form */}
             {!showForm ? (

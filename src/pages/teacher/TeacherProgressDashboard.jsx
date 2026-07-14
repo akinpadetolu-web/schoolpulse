@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
 import { AlertCircle, TrendingUp, TrendingDown, Loader2, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 export default function TeacherProgressDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -17,6 +18,7 @@ export default function TeacherProgressDashboard() {
   const [grades, setGrades] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [quizSubmissions, setQuizSubmissions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,6 +76,9 @@ export default function TeacherProgressDashboard() {
         schoolId: user?.schoolId
       });
       setQuizSubmissions(quizSubs || []);
+
+      const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId });
+      setCategories(cats || []);
     } catch (error) {
       console.error('Failed to load student data:', error);
     } finally {
@@ -88,10 +93,21 @@ export default function TeacherProgressDashboard() {
       const studentSubmissions = submissions.filter(s => s.studentId === student.id);
       const studentQuizzes = quizSubmissions.filter(q => q.studentId === student.id);
 
-      // Average grade
-      const avgGrade = studentGrades.length > 0
-        ? Math.round(studentGrades.reduce((sum, g) => sum + (g.score || 0), 0) / studentGrades.length)
-        : 0;
+      // Weighted average grade across subjects
+      let avgGrade = 0;
+      if (studentGrades.length > 0) {
+        const subjMap = {};
+        studentGrades.forEach(g => {
+          if (!subjMap[g.subjectId]) subjMap[g.subjectId] = { classId: g.classId, grades: [] };
+          subjMap[g.subjectId].grades.push(g);
+        });
+        const subjAvgs = Object.entries(subjMap).map(([subjectId, { classId, grades: sg }]) => {
+          const classCats = categories.filter(c => c.subjectId === subjectId && c.classId === classId);
+          const { overall } = getSubjectFinalGrade(sg, classCats);
+          return overall;
+        }).filter(v => v !== null);
+        avgGrade = subjAvgs.length > 0 ? Math.round(subjAvgs.reduce((a, b) => a + b, 0) / subjAvgs.length) : 0;
+      }
 
       // Assignment submission rate
       const submissionRate = studentSubmissions.length > 0
@@ -125,7 +141,7 @@ export default function TeacherProgressDashboard() {
         })).sort((a, b) => a.date.localeCompare(b.date))
       };
     });
-  }, [students, grades, submissions, quizSubmissions]);
+  }, [students, grades, submissions, quizSubmissions, categories]);
 
   // Students needing support (sorted by lowest performance)
   const needsSupportList = useMemo(() => {
