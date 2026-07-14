@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, TrendingUp, Award, BookOpen } from 'lucide-react';
+import { Loader2, TrendingUp, Award, BookOpen, Scale } from 'lucide-react';
 import { getGradeLabel } from '@/lib/gradeMapper';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 const TERMS = ["First Term", "Second Term", "Third Term"];
 
@@ -26,11 +27,16 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
   const [filterTerm, setFilterTerm] = useState("all");
   const [filterSubject, setFilterSubject] = useState("all");
   const [gradeLabels, setGradeLabels] = useState({});
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     if (!studentId || !schoolId) { setLoading(false); return; }
-    base44.entities.Grade.filter({ schoolId, studentId }).then(async (g) => {
+    Promise.all([
+      base44.entities.Grade.filter({ schoolId, studentId }),
+      base44.entities.GradeCategory.filter({ schoolId }),
+    ]).then(async ([g, cats]) => {
       setGrades(g || []);
+      setCategories(cats || []);
       
       // Pre-compute grade labels using school rubric
       const labels = {};
@@ -68,20 +74,26 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
   // Unique subjects for filter
   const subjects = [...new Map(grades.map(g => [g.subjectId, { id: g.subjectId, name: g.subjectName }])).values()];
 
-  // Overall average
-  const overall = filtered.length
-    ? Math.round(filtered.reduce((sum, g) => sum + pct(g.score, g.maxScore), 0) / filtered.length)
-    : null;
-
-  // Per-subject summary
+  // Per-subject summary using weighted grade calculation
   const bySubject = subjects
     .filter(s => filterSubject === "all" || s.id === filterSubject)
     .map(s => {
       const sg = filtered.filter(g => g.subjectId === s.id);
-      const avg = sg.length ? Math.round(sg.reduce((sum, g) => sum + pct(g.score, g.maxScore), 0) / sg.length) : null;
-      return { ...s, grades: sg, avg };
+      const classId = sg[0]?.classId;
+      const subjectCats = categories.filter(c => c.subjectId === s.id && c.classId === classId);
+      const { overall: weightedAvg, breakdown, hasWeights } = sg.length
+        ? getSubjectFinalGrade(sg, subjectCats)
+        : { overall: null, breakdown: [], hasWeights: false };
+      const avg = weightedAvg !== null ? Math.round(weightedAvg) : null;
+      return { ...s, grades: sg, avg, breakdown, hasWeights };
     })
     .filter(s => s.grades.length > 0);
+
+  // Overall average = average of weighted per-subject averages
+  const subjectsWithAvg = bySubject.filter(s => s.avg !== null);
+  const overall = subjectsWithAvg.length > 0
+    ? Math.round(subjectsWithAvg.reduce((sum, s) => sum + s.avg, 0) / subjectsWithAvg.length)
+    : null;
 
   const { label: ovLabel, color: ovColor } = gradeLabels[overall] || { label: "—", color: "text-muted-foreground" };
 
@@ -140,13 +152,36 @@ export default function StudentGradeHistory({ studentId, schoolId }) {
                   <span className="font-semibold text-sm">{s.name}</span>
                   <span className="text-xs text-muted-foreground">({s.grades.length} record{s.grades.length !== 1 ? "s" : ""})</span>
                 </div>
-                {s.avg !== null && (
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${sBg} ${sColor}`}>
-                    <TrendingUp className="w-3 h-3" />
-                    {s.avg}% · {sLabel}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {s.hasWeights && (
+                    <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0">
+                      <Scale className="w-3 h-3" /> Weighted
+                    </Badge>
+                  )}
+                  {s.avg !== null && (
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${sBg} ${sColor}`}>
+                      <TrendingUp className="w-3 h-3" />
+                      {s.avg}% · {sLabel}
+                    </div>
+                  )}
+                </div>
               </div>
+              {/* Weighted breakdown */}
+              {s.hasWeights && s.breakdown.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-4 py-2 bg-muted/20 border-b text-[11px]">
+                  {s.breakdown.map((b, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 text-muted-foreground">
+                      <span className="font-medium text-foreground">{b.categoryName}</span>
+                      <span className="text-xs">{b.weight}%</span>
+                      <span>·</span>
+                      <span className="font-mono">{b.categoryAvg !== null ? `${Math.round(b.categoryAvg)}%` : 'N/A'}</span>
+                      <span>→</span>
+                      <span className="font-mono font-semibold">{b.contribution?.toFixed(1) ?? '0'}</span>
+                      {i < s.breakdown.length - 1 && <span className="text-border">|</span>}
+                    </span>
+                  ))}
+                </div>
+              )}
               {/* Grade rows */}
               <div className="divide-y">
                 {s.grades.map(g => {
