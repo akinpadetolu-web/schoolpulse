@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -68,72 +68,89 @@ export default function TeacherGrades() {
   const [filterType, setFilterType] = useState("all");
   const [search, setSearch] = useState("");
 
+  const loadingRef = useRef(false);
+  const debounceRef = useRef(null);
+
+  const debouncedLoad = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (!loadingRef.current) loadData();
+    }, 800);
+  };
+
   useEffect(() => { 
     loadData(); 
-    // Subscribe to grade updates for real-time sync
+    // Subscribe to grade updates for real-time sync (debounced to avoid rate limits)
     const unsubGrade = base44.entities.Grade.subscribe((event) => {
-      if (event.data?.schoolId === user?.schoolId) loadData();
+      if (event.data?.schoolId === user?.schoolId) debouncedLoad();
     });
     // Subscribe to quiz submission updates (remark resolved → grade upserted)
     const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
-      if (event.data?.schoolId === user?.schoolId) loadData();
+      if (event.data?.schoolId === user?.schoolId) debouncedLoad();
     });
-    return () => { unsubGrade(); unsubQuiz(); };
+    return () => { unsubGrade(); unsubQuiz(); if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [user?.id, user?.schoolId]);
 
   async function loadData() {
-    const assignedClassIds = [...new Set(
-      (user?.teachingAssignments || []).map(a => a.classId).filter(Boolean)
-    )];
-    const assignedSubjectIds = [...new Set(
-      (user?.teachingAssignments || []).map(a => a.subjectId).filter(Boolean)
-    )];
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const assignedClassIds = [...new Set(
+        (user?.teachingAssignments || []).map(a => a.classId).filter(Boolean)
+      )];
+      const assignedSubjectIds = [...new Set(
+        (user?.teachingAssignments || []).map(a => a.subjectId).filter(Boolean)
+      )];
 
-    const [allGrades, cls, studs, subjs] = await Promise.all([
-      // Fetch ALL grades for this school — needed so Term Averages shows complete data
-      // for all students across all subjects, not just grades entered by this teacher
-      base44.entities.Grade.filter({ schoolId: user?.schoolId }),
-      base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
-      base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: "student", isArchived: false }),
-      base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
-    ]);
+      const [allGrades, cls, studs, subjs] = await Promise.all([
+        base44.entities.Grade.filter({ schoolId: user?.schoolId }),
+        base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
+        base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: "student", isArchived: false }),
+        base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
+      ]);
 
-    // Limit to assigned classes/subjects if teacher has assignments
-    const filteredCls = assignedClassIds.length
-      ? (cls || []).filter(c => assignedClassIds.includes(c.id))
-      : (cls || []);
-    const filteredSubjs = assignedSubjectIds.length
-      ? (subjs || []).filter(s => assignedSubjectIds.includes(s.id))
-      : (subjs || []);
+      // Limit to assigned classes/subjects if teacher has assignments
+      const filteredCls = assignedClassIds.length
+        ? (cls || []).filter(c => assignedClassIds.includes(c.id))
+        : (cls || []);
+      const filteredSubjs = assignedSubjectIds.length
+        ? (subjs || []).filter(s => assignedSubjectIds.includes(s.id))
+        : (subjs || []);
 
-    const filteredStudents = studs || [];
+      const filteredStudents = studs || [];
 
-    // For "All Records" tab: only show grades entered by this teacher
-    const myGrades = (allGrades || []).filter(g => g.teacherId === user?.id);
+      // For "All Records" tab: only show grades entered by this teacher
+      const myGrades = (allGrades || []).filter(g => g.teacherId === user?.id);
 
-    // For Term Averages & My Students: all grades for students in teacher's assigned classes.
-    // If teacher has no assignments, show all students in school (fallback for unassigned teachers).
-    const relevantStudents = assignedClassIds.length
-      ? filteredStudents.filter(s => assignedClassIds.includes(s.classId))
-      : filteredStudents;
-    const classStudentIds = new Set(relevantStudents.map(s => s.id));
-    const classGrades = assignedClassIds.length
-      ? (allGrades || []).filter(g => classStudentIds.has(g.studentId))
-      : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
+      // For Term Averages & My Students: all grades for students in teacher's assigned classes.
+      // If teacher has no assignments, show all students in school (fallback for unassigned teachers).
+      const relevantStudents = assignedClassIds.length
+        ? filteredStudents.filter(s => assignedClassIds.includes(s.classId))
+        : filteredStudents;
+      const classStudentIds = new Set(relevantStudents.map(s => s.id));
+      const classGrades = assignedClassIds.length
+        ? (allGrades || []).filter(g => classStudentIds.has(g.studentId))
+        : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
 
-    // For Term Averages: grades scoped to teacher's exact class+subject assignments
-    const teachingPairs = (user?.teachingAssignments || []).filter(a => a.classId && a.subjectId);
-    const termAveragesGrades = teachingPairs.length
-      ? (allGrades || []).filter(g => teachingPairs.some(a => a.classId === g.classId && a.subjectId === g.subjectId))
-      : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
+      // For Term Averages: grades scoped to teacher's exact class+subject assignments
+      const teachingPairs = (user?.teachingAssignments || []).filter(a => a.classId && a.subjectId);
+      const termAveragesGrades = teachingPairs.length
+        ? (allGrades || []).filter(g => teachingPairs.some(a => a.classId === g.classId && a.subjectId === g.subjectId))
+        : (allGrades || []).filter(g => g.schoolId === user?.schoolId);
 
-    setGrades({ myGrades, classGrades });
-    setAllGrades(termAveragesGrades);
-    setClasses(filteredCls);
-    setAllClasses(filteredCls);
-    setAllStudents(filteredStudents);
-    setAllSubjects(filteredSubjs);
-    setLoading(false);
+      setGrades({ myGrades, classGrades });
+      setAllGrades(termAveragesGrades);
+      setClasses(filteredCls);
+      setAllClasses(filteredCls);
+      setAllStudents(filteredStudents);
+      setAllSubjects(filteredSubjs);
+      setLoading(false);
+    } catch (err) {
+      console.error('[TeacherGrades] loadData error:', err);
+      setLoading(false);
+    } finally {
+      loadingRef.current = false;
+    }
   }
 
   // Students in selected class
