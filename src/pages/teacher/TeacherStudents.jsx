@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, Users } from 'lucide-react';
+import { Loader2, Search, Users, ChevronRight } from 'lucide-react';
 import UserAvatar from '@/components/common/UserAvatar';
+import TeacherStudentGradeDialog from '@/components/teacher/TeacherStudentGradeDialog';
 
 export default function TeacherStudents() {
   const { schoolUser: user } = useSchoolAuth();
@@ -14,6 +15,7 @@ export default function TeacherStudents() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClass, setFilterClass] = useState('all');
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     async function loadStudents() {
@@ -121,7 +123,7 @@ export default function TeacherStudents() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(student => (
-            <Card key={student.id} className="shadow-sm">
+            <Card key={student.id} className="shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedStudent(student)}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-3">
                   <UserAvatar user={student} size="md" className="flex-shrink-0" />
@@ -129,6 +131,7 @@ export default function TeacherStudents() {
                     <p className="font-medium text-sm">{student.fullName}</p>
                     <p className="text-xs text-muted-foreground truncate">{student.email}</p>
                   </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </div>
                 <div className="space-y-2">
                   {student.className && <Badge variant="outline" className="text-xs">{student.className}</Badge>}
@@ -139,6 +142,12 @@ export default function TeacherStudents() {
           ))}
         </div>
       )}
+
+      <TeacherStudentGradeDialog
+        open={!!selectedStudent}
+        onOpenChange={(v) => { if (!v) setSelectedStudent(null); }}
+        student={selectedStudent}
+      />
     </div>
   );
 }
