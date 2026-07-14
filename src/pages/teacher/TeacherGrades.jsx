@@ -78,9 +78,7 @@ export default function TeacherGrades() {
     const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
       if (event.data?.schoolId === user?.schoolId) loadData();
     });
-    // Poll every second so grading is always live
-    const poll = setInterval(loadData, 1000);
-    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
+    return () => { unsubGrade(); unsubQuiz(); };
   }, [user?.id, user?.schoolId]);
 
   async function loadData() {
