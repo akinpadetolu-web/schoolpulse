@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
-import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Radio, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings, HelpCircle, Share2, BookOpenCheck, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone, LogOut, X, GraduationCap, UserCheck, NotebookPen, Clock, Inbox, CalendarDays, Bell, BarChart3, Award, Video, Users, Settings, HelpCircle, Share2, BookOpenCheck, MessageSquare } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ const baseTeacherNavGroups = [
     label: 'MAIN',
     items: [
       { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
-      { label: "Live Dashboard", path: "/teacher/live-dashboard", icon: Radio },
+      { label: "Clock In / Out", path: "/teacher/clock-in-out", icon: Clock },
       { label: "My Students", path: "/teacher/students", icon: Users },
     ]
   },

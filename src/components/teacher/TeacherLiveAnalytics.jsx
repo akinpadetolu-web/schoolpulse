@@ -3,10 +3,8 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
-import { Users, TrendingUp, Activity, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, TrendingUp, Activity, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 
 const PASS_MARK = 40;
 
@@ -23,7 +21,7 @@ function timeAgo(date) {
   return format(new Date(date), 'MMM d');
 }
 
-export default function TeacherLiveDashboard() {
+export default function TeacherLiveAnalytics({ onLoaded }) {
   const { schoolUser: user } = useSchoolAuth();
   const [data, setData] = useState({ grades: [], students: [], classes: [], subjects: [], gradeCategories: [] });
   const [loading, setLoading] = useState(true);
@@ -62,6 +60,7 @@ export default function TeacherLiveDashboard() {
     });
     setLastUpdated(new Date());
     setLoading(false);
+    if (onLoaded) onLoaded();
   }, [user?.id, user?.schoolId]);
 
   useEffect(() => {
@@ -71,8 +70,6 @@ export default function TeacherLiveDashboard() {
     const poll = setInterval(load, 10000);
     return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
   }, [load]);
-
-  const ptr = usePullToRefresh(load);
 
   const filteredGrades = useMemo(() => {
     let g = data.grades;
@@ -146,11 +143,7 @@ export default function TeacherLiveDashboard() {
     return { studentList, top10, perSubjectTop10, atRisk, overallPassRate, overallAvg, recentUpdates, allSubjectIds, subjectNameMap };
   }, [filteredGrades, filteredStudents, data.gradeCategories, data.subjects]);
 
-  if (loading) return (
-    <div className="flex justify-center py-20">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-    </div>
-  );
+  if (loading) return null;
 
   const KPI_CARDS = [
     { label: 'Total Students', value: computed.studentList.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },
@@ -183,139 +176,131 @@ export default function TeacherLiveDashboard() {
   );
 
   return (
-    <PullToRefreshWrapper {...ptr}>
-      <div className="min-h-full bg-[#12152a] text-white p-4 md:p-6 rounded-xl space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Live Grade Dashboard</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              {user?.fullName} · {lastUpdated ? `Updated ${format(lastUpdated, 'h:mm:ss a')}` : 'Loading…'}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 bg-[#1e2340] rounded-full px-3 py-1.5 text-xs text-emerald-400 font-medium w-fit">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live
-          </div>
+    <div className="bg-[#12152a] text-white p-4 md:p-6 rounded-xl space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold">Live Grade Dashboard</h2>
+          <p className="text-slate-400 text-sm mt-1">
+            {lastUpdated ? `Updated ${format(lastUpdated, 'h:mm:ss a')}` : 'Loading…'}
+          </p>
         </div>
+        <div className="flex items-center gap-1.5 bg-[#1e2340] rounded-full px-3 py-1.5 text-xs text-emerald-400 font-medium w-fit">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live
+        </div>
+      </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {KPI_CARDS.map(card => (
-            <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
-                  <card.icon className={`w-4 h-4 ${card.color}`} />
-                </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {KPI_CARDS.map(card => (
+          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
+                <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
-              <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-              <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
             </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <Select value={filterClass} onValueChange={setFilterClass}>
-            <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Classes" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All My Classes</SelectItem>
-              {data.classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filterSubject} onValueChange={setFilterSubject}>
-            <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Subjects" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subjects</SelectItem>
-              {data.subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Top 10 & Recent Activity */}
-        <div className={`grid grid-cols-1 gap-4 ${showPerSubject ? '' : 'lg:grid-cols-2'}`}>
-          <div className="bg-[#1e2340] rounded-2xl p-5">
-            <p className="font-semibold mb-3">Top 10 Performing Students</p>
-            {showPerSubject && computed.perSubjectTop10 && computed.perSubjectTop10.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {computed.perSubjectTop10.map(subj => (
-                  <div key={subj.subjectId} className="min-w-[180px] flex-1">
-                    <p className="text-xs text-slate-300 font-medium mb-2 truncate border-b border-slate-700 pb-1">{subj.subjectName}</p>
-                    <div className="space-y-1.5">
-                      {subj.students.length > 0 ? subj.students.map((s, i) => (
-                        <div key={s.id} className="flex items-center gap-2">
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
-                          <span className="flex-1 text-xs truncate">{s.name}</span>
-                          <span className="text-emerald-400 text-xs font-semibold shrink-0">{s.score}%</span>
-                        </div>
-                      )) : <p className="text-slate-500 text-xs text-center py-2">No data</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {computed.top10.length > 0 ? computed.top10.map((s, i) => (
-                  <div key={s.id} className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
-                    <span className="flex-1 text-sm truncate">{s.name}</span>
-                    <span className="text-xs text-slate-400">{s.className}</span>
-                    <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
-                  </div>
-                )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
-              </div>
-            )}
+            <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
+            <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
           </div>
+        ))}
+      </div>
 
-          {!showPerSubject && <RecentUpdates />}
+      <div className="flex flex-wrap gap-2">
+        <Select value={filterClass} onValueChange={setFilterClass}>
+          <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Classes" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All My Classes</SelectItem>
+            {data.classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterSubject} onValueChange={setFilterSubject}>
+          <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Subjects" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Subjects</SelectItem>
+            {data.subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className={`grid grid-cols-1 gap-4 ${showPerSubject ? '' : 'lg:grid-cols-2'}`}>
+        <div className="bg-[#1e2340] rounded-2xl p-5">
+          <p className="font-semibold mb-3">Top 10 Performing Students</p>
+          {showPerSubject && computed.perSubjectTop10 && computed.perSubjectTop10.length > 0 ? (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {computed.perSubjectTop10.map(subj => (
+                <div key={subj.subjectId} className="min-w-[180px] flex-1">
+                  <p className="text-xs text-slate-300 font-medium mb-2 truncate border-b border-slate-700 pb-1">{subj.subjectName}</p>
+                  <div className="space-y-1.5">
+                    {subj.students.length > 0 ? subj.students.map((s, i) => (
+                      <div key={s.id} className="flex items-center gap-2">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                        <span className="flex-1 text-xs truncate">{s.name}</span>
+                        <span className="text-emerald-400 text-xs font-semibold shrink-0">{s.score}%</span>
+                      </div>
+                    )) : <p className="text-slate-500 text-xs text-center py-2">No data</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {computed.top10.length > 0 ? computed.top10.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                  <span className="flex-1 text-sm truncate">{s.name}</span>
+                  <span className="text-xs text-slate-400">{s.className}</span>
+                  <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
+                </div>
+              )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
+            </div>
+          )}
         </div>
 
-        {/* Student Performance Table */}
-        <div className="bg-[#1e2340] rounded-2xl p-5">
-          <p className="font-semibold mb-3">Student Performance</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-slate-400 text-xs border-b border-slate-700">
-                  <th className="text-left pb-2 pr-3">Student</th>
-                  <th className="text-left pb-2 pr-3">Class</th>
+        {!showPerSubject && <RecentUpdates />}
+      </div>
+
+      <div className="bg-[#1e2340] rounded-2xl p-5">
+        <p className="font-semibold mb-3">Student Performance</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-slate-400 text-xs border-b border-slate-700">
+                <th className="text-left pb-2 pr-3">Student</th>
+                <th className="text-left pb-2 pr-3">Class</th>
+                {showPerSubject && computed.allSubjectIds && computed.allSubjectIds.length > 0 ? (
+                  computed.allSubjectIds.map(subjectId => (
+                    <th key={subjectId} className="text-right pb-2 pr-3 whitespace-nowrap text-xs">{(computed.subjectNameMap[subjectId] || '—').slice(0, 10)}</th>
+                  ))
+                ) : (
+                  <th className="text-right pb-2 pr-3">Score</th>
+                )}
+                <th className="text-left pb-2 pr-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {computed.studentList.slice(0, 30).map(s => (
+                <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                  <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{s.name}</td>
+                  <td className="py-2 pr-3 text-slate-400 text-xs">{s.className || '—'}</td>
                   {showPerSubject && computed.allSubjectIds && computed.allSubjectIds.length > 0 ? (
                     computed.allSubjectIds.map(subjectId => (
-                      <th key={subjectId} className="text-right pb-2 pr-3 whitespace-nowrap text-xs">{(computed.subjectNameMap[subjectId] || '—').slice(0, 10)}</th>
+                      <td key={subjectId} className="py-2 pr-3 text-right text-slate-300">{s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
                     ))
                   ) : (
-                    <th className="text-right pb-2 pr-3">Score</th>
+                    <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
                   )}
-                  <th className="text-left pb-2 pr-3">Status</th>
+                  <td className="py-2 pr-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {s.pass ? 'Pass' : 'Fail'}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {computed.studentList.slice(0, 30).map(s => (
-                  <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
-                    <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{s.name}</td>
-                    <td className="py-2 pr-3 text-slate-400 text-xs">{s.className || '—'}</td>
-                    {showPerSubject && computed.allSubjectIds && computed.allSubjectIds.length > 0 ? (
-                      computed.allSubjectIds.map(subjectId => (
-                        <td key={subjectId} className="py-2 pr-3 text-right text-slate-300">{s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
-                      ))
-                    ) : (
-                      <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
-                    )}
-                    <td className="py-2 pr-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {s.pass ? 'Pass' : 'Fail'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {computed.studentList.length > 30 && <p className="text-slate-500 text-xs text-center mt-3">Showing 30 of {computed.studentList.length} students</p>}
-          </div>
+              ))}
+            </tbody>
+          </table>
+          {computed.studentList.length > 30 && <p className="text-slate-500 text-xs text-center mt-3">Showing 30 of {computed.studentList.length} students</p>}
         </div>
-
-        {/* Recent Activity (full width when per-subject mode) */}
-        {showPerSubject && <RecentUpdates grid />}
       </div>
-    </PullToRefreshWrapper>
+
+      {showPerSubject && <RecentUpdates grid />}
+    </div>
   );
 }

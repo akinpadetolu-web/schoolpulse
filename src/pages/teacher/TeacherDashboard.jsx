@@ -5,8 +5,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
-import DashboardCalendar from '@/components/calendar/DashboardCalendar';
-import TeacherClockInWidget from '@/components/teacher/TeacherClockInWidget';
+import TeacherLiveAnalytics from '@/components/teacher/TeacherLiveAnalytics';
 import TeacherLeaveRequestWidget from '@/components/teacher/TeacherLeaveRequestWidget';
 
 export default function TeacherDashboard() {
@@ -32,14 +31,14 @@ export default function TeacherDashboard() {
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
-  const assignments = user?.teachingAssignments || [];
-
   return (
     <PullToRefreshWrapper {...ptr}>
-    <div className="p-4 md:p-0">
-      <h1 className="text-2xl font-bold mb-1">Welcome, {user?.fullName}</h1>
-      <p className="text-muted-foreground mb-6">{user?.schoolName}</p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div className="p-4 md:p-0 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-1">Welcome, {user?.fullName}</h1>
+        <p className="text-muted-foreground">{user?.schoolName}</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Timetable Entries", value: stats.timetable, icon: Calendar, color: "text-blue-600 bg-blue-100" },
           { label: "Assignments", value: stats.assignments, icon: FileText, color: "text-emerald-600 bg-emerald-100" },
@@ -54,11 +53,11 @@ export default function TeacherDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <TeacherClockInWidget />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TeacherLeaveRequestWidget />
       </div>
-      <DashboardCalendar />
+
+      <TeacherLiveAnalytics />
     </div>
     </PullToRefreshWrapper>
   );

@@ -99,7 +99,7 @@ const StudentExamTimetable = lazy(() => import('./pages/student/StudentExamTimet
 
 // Teacher
 const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
-const TeacherLiveDashboard = lazy(() => import('./pages/teacher/TeacherLiveDashboard'));
+const TeacherClockInOut = lazy(() => import('./pages/teacher/TeacherClockInOut'));
 const TeacherStudents = lazy(() => import('./pages/teacher/TeacherStudents'));
 const TeacherTimetable = lazy(() => import('./pages/teacher/TeacherTimetable'));
 const TeacherAssignments = lazy(() => import('./pages/teacher/TeacherAssignments'));
@@ -252,7 +252,7 @@ const AuthenticatedApp = () => {
         {/* Teacher */}
         <Route path="/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
-          <Route path="live-dashboard" element={<TeacherLiveDashboard />} />
+          <Route path="clock-in-out" element={<TeacherClockInOut />} />
           <Route path="students" element={<TeacherStudents />} />
           <Route path="timetable" element={<TeacherTimetable />} />
           <Route path="assignments" element={<TeacherAssignments />} />
