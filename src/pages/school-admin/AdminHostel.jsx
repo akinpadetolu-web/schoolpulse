@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search, Home, Users, UserCheck, ShieldCheck } from 'lucide-react';
+import { Loader2, Search, Home, Users, UserCheck, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import HostelManagementPanel from '@/components/hostel/HostelManagementPanel';
 import HostelAllocationPanel from '@/components/hostel/HostelAllocationPanel';
 import HostelAttendancePanel from '@/components/hostel/HostelAttendancePanel';
+import HostelDailyAttendance from '@/components/hostel/HostelDailyAttendance';
 import HostelAnalytics from '@/components/hostel/HostelAnalytics';
 
 export default function AdminHostel() {
@@ -142,12 +143,14 @@ export default function AdminHostel() {
         <TabsList>
           <TabsTrigger value="hostels"><Home className="w-4 h-4 mr-2" /> Hostels</TabsTrigger>
           <TabsTrigger value="allocations"><Users className="w-4 h-4 mr-2" /> Allocations ({filteredAllocations.length})</TabsTrigger>
-          <TabsTrigger value="attendance"><UserCheck className="w-4 h-4 mr-2" /> Attendance</TabsTrigger>
+          <TabsTrigger value="take-attendance"><ClipboardCheck className="w-4 h-4 mr-2" /> Take Attendance</TabsTrigger>
+          <TabsTrigger value="attendance"><UserCheck className="w-4 h-4 mr-2" /> Attendance Log</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hostels"><HostelManagementPanel hostels={filteredHostels} search={search} onRefresh={loadData} /></TabsContent>
         <TabsContent value="allocations"><HostelAllocationPanel allocations={filteredAllocations} hostels={filteredHostels} search={search} onRefresh={loadData} students={students} /></TabsContent>
+        <TabsContent value="take-attendance"><HostelDailyAttendance allocations={filteredAllocations} hostels={filteredHostels} attendance={filteredAttendance} onRefresh={loadData} /></TabsContent>
         <TabsContent value="attendance"><HostelAttendancePanel attendance={filteredAttendance} allocations={filteredAllocations} hostels={filteredHostels} onRefresh={loadData} /></TabsContent>
         <TabsContent value="analytics"><HostelAnalytics hostels={filteredHostels} allocations={filteredAllocations} attendance={filteredAttendance} /></TabsContent>
       </Tabs>
