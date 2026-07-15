@@ -60,10 +60,11 @@ export default function HostelManagementPanel({ hostels, search, onRefresh }) {
         checkOutTime: hostel.checkOutTime || '08:00',
       });
     } else {
+      const ga = user?.genderAccess;
       setSelectedHostel(null);
       setForm({
         name: '',
-        gender: 'male',
+        gender: ga && ga !== 'all' ? ga : 'male',
         type: 'boarding',
         capacity: 50,
         location: '',
@@ -210,9 +211,11 @@ export default function HostelManagementPanel({ hostels, search, onRefresh }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="mixed">Mixed</SelectItem>
+                    {(!user?.genderAccess || user.genderAccess === 'all') && <SelectItem value="male">Male</SelectItem>}
+                    {(!user?.genderAccess || user.genderAccess === 'all') && <SelectItem value="female">Female</SelectItem>}
+                    {user?.genderAccess === 'male' && <SelectItem value="male">Male</SelectItem>}
+                    {user?.genderAccess === 'female' && <SelectItem value="female">Female</SelectItem>}
+                    {(!user?.genderAccess || user.genderAccess === 'all') && <SelectItem value="mixed">Mixed</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
