@@ -173,27 +173,26 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
 
   return (
     <>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by student name..."
+            value={localSearch}
+            onChange={e => setLocalSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Button onClick={() => setShowDialog(true)} className="shrink-0"><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
+      </div>
+
       {filteredAllocations.length === 0 ? (
         <div className="text-center py-12">
           <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-muted-foreground mb-4">No allocations</p>
-          <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
+          <p className="text-muted-foreground">No allocations found</p>
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by student name..."
-                value={localSearch}
-                onChange={e => setLocalSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button onClick={() => setShowDialog(true)} className="shrink-0"><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
-          </div>
-
           <div className="grid gap-4">
             {filteredAllocations.map(alloc => (
               <Card key={alloc.id} className="border-0 shadow-sm">
