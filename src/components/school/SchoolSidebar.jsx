@@ -4,7 +4,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield, Stethoscope, AlertTriangle, Syringe, Accessibility
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield, Stethoscope, AlertTriangle, Syringe, Accessibility, ClipboardCheck
 } from 'lucide-react';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
@@ -168,7 +168,30 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     { label: "Special Needs", path: "/school-admin/health-special-needs", icon: Accessibility, feature: 'healthSpecialNeeds' },
   ];
 
-  const adminNavGroups = user?.role === 'hr_staff'
+  const isHostelStaff = user?.role === 'hr_staff' && !!user?.genderAccess;
+
+  const hostelNavGroups = [
+    {
+      label: 'HOSTEL MANAGEMENT',
+      items: [
+        { label: "Dashboard", path: "/school-admin/hostel-dashboard", icon: BarChart3 },
+        { label: "Hostels", path: "/school-admin/hostel-hostels", icon: Home },
+        { label: "Allocations", path: "/school-admin/hostel-allocations", icon: Users },
+        { label: "Take Attendance", path: "/school-admin/hostel-take-attendance", icon: ClipboardCheck },
+        { label: "Attendance Report", path: "/school-admin/hostel-attendance-report", icon: FileText },
+      ]
+    },
+    {
+      label: 'ACCOUNT',
+      items: [
+        { label: 'My Account', path: '/school-admin/staff-dashboard', icon: UserCog }
+      ]
+    }
+  ];
+
+  const adminNavGroups = isHostelStaff
+    ? hostelNavGroups
+    : user?.role === 'hr_staff'
     ? (() => {
         const pf = user?.permittedFeatures || {};
         const filteredGroups = baseAdminNavGroups.map(group => {

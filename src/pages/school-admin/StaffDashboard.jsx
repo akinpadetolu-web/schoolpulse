@@ -134,56 +134,6 @@ export default function StaffDashboard() {
         </CardContent>
       </Card>
 
-      {/* Assigned Roles & Permissions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CheckCircle2 className="w-5 h-5" /> Assigned Roles &amp; Permissions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {hasPermissions ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(staffPermissions).map(([moduleKey, perms]) => {
-                const config = MODULE_CONFIG[moduleKey] || MODULE_CONFIG.general;
-                const Icon = config.icon;
-                const permList = normalizePerms(perms);
-                const isFull = perms === 'full';
-                return (
-                  <div key={moduleKey} className={`rounded-lg border p-4 ${config.bg} ${config.border}`}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Icon className={`w-5 h-5 ${config.color}`} />
-                      <h4 className="font-medium text-sm">{config.name}</h4>
-                      {isFull && (
-                        <Badge className="ml-auto bg-primary/10 text-primary text-xs">Full Access</Badge>
-                      )}
-                    </div>
-                    {permList.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {permList.map(perm => (
-                          <div key={perm} className="flex items-center gap-2 text-xs">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span>{PERMISSION_LABELS[perm] || perm}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Access granted</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Settings className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No module permissions assigned yet.</p>
-              <p className="text-xs mt-1">Contact your school administrator if you need access to specific modules.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Account Settings */}
       <AccountSettings />
     </div>

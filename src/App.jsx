@@ -95,6 +95,11 @@ const VaccinationsPage = lazy(() => import('./pages/school-admin/health/Vaccinat
 const SpecialNeedsPage = lazy(() => import('./pages/school-admin/health/SpecialNeedsPage'));
 const HealthAnalyticsPage = lazy(() => import('./pages/school-admin/health/AnalyticsPage'));
 const AdminHostel = lazy(() => import('./pages/school-admin/AdminHostel'));
+const HostelDashboardPage = lazy(() => import('./pages/school-admin/hostel/HostelDashboardPage'));
+const HostelHostelsPage = lazy(() => import('./pages/school-admin/hostel/HostelHostelsPage'));
+const HostelAllocationsPage = lazy(() => import('./pages/school-admin/hostel/HostelAllocationsPage'));
+const HostelTakeAttendancePage = lazy(() => import('./pages/school-admin/hostel/HostelTakeAttendancePage'));
+const HostelAttendanceReportPage = lazy(() => import('./pages/school-admin/hostel/HostelAttendanceReportPage'));
 const StudentReportCards = lazy(() => import('./pages/student/StudentReportCards'));
 const StudentExamTimetable = lazy(() => import('./pages/student/StudentExamTimetable'));
 
@@ -248,6 +253,11 @@ const AuthenticatedApp = () => {
           <Route path="health-special-needs" element={<SpecialNeedsPage />} />
           <Route path="health-analytics" element={<HealthAnalyticsPage />} />
           <Route path="hostel" element={<AdminHostel />} />
+          <Route path="hostel-dashboard" element={<HostelDashboardPage />} />
+          <Route path="hostel-hostels" element={<HostelHostelsPage />} />
+          <Route path="hostel-allocations" element={<HostelAllocationsPage />} />
+          <Route path="hostel-take-attendance" element={<HostelTakeAttendancePage />} />
+          <Route path="hostel-attendance-report" element={<HostelAttendanceReportPage />} />
           <Route path="events" element={<AdminCalendar />} />
         </Route>
 
