@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -39,8 +37,6 @@ export default function StudentDashboard() {
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
-
-  const ptr = usePullToRefresh(load);
 
   const overallAvg = useMemo(() => {
     if (!grades.length) return null;
@@ -88,8 +84,7 @@ export default function StudentDashboard() {
   );
 
   return (
-    <PullToRefreshWrapper {...ptr}>
-      <div className="space-y-3 p-3 md:space-y-6 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
+    <div className="space-y-3 p-3 md:space-y-6 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
         <div className="mt-1 md:mt-2">
           <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-xs md:text-sm text-muted-foreground">{user?.className || user?.schoolName}</p>
@@ -289,6 +284,5 @@ export default function StudentDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </PullToRefreshWrapper>
   );
 }
