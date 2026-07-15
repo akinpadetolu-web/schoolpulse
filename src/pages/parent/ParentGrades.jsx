@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export default function ParentGrades() {
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -35,8 +36,10 @@ export default function ParentGrades() {
           const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
           const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
           setChildren(linked);
-          if (linked.length > 0) {
-            setSelectedChildId(linked[0].id);
+          // Only set initial selection once — don't override user's choice on reload
+          if (linked.length > 0 && !initializedRef.current) {
+            setSelectedChildId('all');
+            initializedRef.current = true;
           }
 
           const [allGrades, allExams] = await Promise.all([
@@ -47,10 +50,6 @@ export default function ParentGrades() {
           setExamResults(allExams.flat().filter(Boolean));
           const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []);
           setCategories(cats || []);
-          // Subscribe to category updates for real-time weight changes
-          base44.entities.GradeCategory.subscribe(() => {
-            base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).then(c => setCategories(c || [])).catch(() => {});
-          });
         }
       } catch { /* ignore */ }
       setLoading(false);
@@ -66,9 +65,7 @@ export default function ParentGrades() {
     const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
       if (linkedIds.includes(event.data?.studentId)) load();
     });
-    // Poll every second for proactive live updates
-    const poll = setInterval(load, 1000);
-    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
+    return () => { unsubGrade(); unsubQuiz(); };
   }, [user?.id, user?.linkedStudentIds, user?.schoolId]);
 
   async function downloadReport(child) {
@@ -96,7 +93,7 @@ export default function ParentGrades() {
 
   if (children.length === 0) return <div className="text-center text-muted-foreground py-12">No linked children found.</div>;
 
-  const filteredChildren = selectedChildId ? children.filter(c => c.id === selectedChildId) : children;
+  const filteredChildren = selectedChildId && selectedChildId !== 'all' ? children.filter(c => c.id === selectedChildId) : children;
 
   return (
     <div className="space-y-6">
@@ -110,7 +107,7 @@ export default function ParentGrades() {
               <SelectValue placeholder="All Children" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>All Children</SelectItem>
+              <SelectItem value="all">All Children</SelectItem>
               {children.map(child => (
                 <SelectItem key={child.id} value={child.id}>{child.fullName}</SelectItem>
               ))}

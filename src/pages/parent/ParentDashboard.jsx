@@ -13,6 +13,7 @@ import UserAvatar from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ExamProgressReport from '@/components/parent/ExamProgressReport';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -58,6 +59,7 @@ export default function ParentDashboard() {
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [loadingExams, setLoadingExams] = useState(false);
   const [examResults, setExamResults] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [showAddChild, setShowAddChild] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linking, setLinking] = useState(false);
@@ -92,6 +94,16 @@ export default function ParentDashboard() {
       loadGradesData(ids);
       loadAssignmentsData(ids);
       loadExamResultsData(ids);
+      loadGradeCategories();
+    }
+  }
+
+  async function loadGradeCategories() {
+    try {
+      const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []);
+      setCategories(cats || []);
+    } catch {
+      setCategories([]);
     }
   }
 
@@ -293,16 +305,18 @@ export default function ParentDashboard() {
               const childGrades = grades.filter(g => g.studentId === child.id);
               const childExamResults = examResults.filter(e => e.studentId === child.id);
 
-              // Compute per-subject averages from grades
+              // Compute per-subject weighted averages using grade weight calculator
               const gradesBySubject = {};
               childGrades.forEach(g => {
-                if (!gradesBySubject[g.subjectName]) gradesBySubject[g.subjectName] = [];
-                gradesBySubject[g.subjectName].push((g.score / (g.maxScore || 100)) * 100);
+                const key = g.subjectId || g.subjectName;
+                if (!gradesBySubject[key]) gradesBySubject[key] = { name: g.subjectName, grades: [] };
+                gradesBySubject[key].grades.push(g);
               });
-              const subjectAverages = Object.entries(gradesBySubject).map(([subject, scores]) => ({
-                subject,
-                avg: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
-              }));
+              const subjectAverages = Object.values(gradesBySubject).map(({ name, grades: sg }) => {
+                const classCats = categories.filter(c => c.subjectId === (sg[0]?.subjectId) && c.classId === child.classId);
+                const result = getSubjectFinalGrade(sg, classCats);
+                return { subject: name, avg: result.overall !== null ? Math.round(result.overall) : null };
+              }).filter(s => s.avg !== null);
 
               const avgGrade = subjectAverages.length > 0
                 ? Math.round(subjectAverages.reduce((s, v) => s + v.avg, 0) / subjectAverages.length)

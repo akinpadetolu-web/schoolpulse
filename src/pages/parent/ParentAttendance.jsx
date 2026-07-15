@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -193,6 +193,7 @@ export default function ParentAttendance() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeChild, setActiveChild] = useState(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -202,22 +203,31 @@ export default function ParentAttendance() {
       if (linkedIds.includes(event.data?.studentId)) load();
     });
     return () => unsub();
-  }, [user?.id]);
+  }, [user?.id, user?.linkedStudentIds, user?.schoolId]);
 
   async function load() {
-    const linkedIds = user?.linkedStudentIds || [];
-    if (linkedIds.length === 0) { setLoading(false); return; }
-    const [allStudents, subjectList, ...recordArrays] = await Promise.all([
-      base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' }),
-      base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }).catch(() => []),
-      ...linkedIds.map(id => base44.entities.Attendance.filter({ schoolId: user.schoolId, studentId: id }).catch(() => [])),
-    ]);
-    const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
-    setChildren(linked);
-    if (linked.length > 0) setActiveChild(linked[0].id);
-    setSubjects(subjectList || []);
-    setAttendance(recordArrays.flat().filter(Boolean));
-    setLoading(false);
+    try {
+      const linkedIds = user?.linkedStudentIds || [];
+      if (linkedIds.length === 0) { setLoading(false); return; }
+      const [allStudents, subjectList, ...recordArrays] = await Promise.all([
+        base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' }).catch(() => []),
+        base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }).catch(() => []),
+        ...linkedIds.map(id => base44.entities.Attendance.filter({ schoolId: user.schoolId, studentId: id }).catch(() => [])),
+      ]);
+      const linked = (allStudents || []).filter(s => linkedIds.includes(s.id));
+      setChildren(linked);
+      // Only set initial active child once — don't override user's selection on reload
+      if (linked.length > 0 && !initializedRef.current) {
+        setActiveChild(linked[0].id);
+        initializedRef.current = true;
+      }
+      setSubjects(subjectList || []);
+      setAttendance(recordArrays.flat().filter(Boolean));
+    } catch (error) {
+      console.error('Failed to load attendance:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
