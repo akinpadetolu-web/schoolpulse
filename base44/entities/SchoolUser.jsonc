@@ -149,14 +149,78 @@
       "type": "object",
       "description": "Module-level permissions assigned to non-teaching staff. Keys are module names (medical, finance, library, hostel, inventory, hr, transport, reports), values are 'full', 'view', or an array of permission keys.",
       "properties": {
-        "medical": {},
-        "finance": {},
-        "library": {},
-        "hostel": {},
-        "inventory": {},
-        "hr": {},
-        "transport": {},
-        "reports": {}
+        "medical": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "finance": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "library": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "hostel": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "inventory": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "hr": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "transport": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "reports": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "permittedFeatures": {
