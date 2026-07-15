@@ -99,24 +99,22 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
     }
   };
 
-  if (filteredAllocations.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-        <p className="text-muted-foreground mb-4">No allocations</p>
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
-      </div>
+      {filteredAllocations.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-muted-foreground mb-4">No allocations</p>
+          <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
+          </div>
 
-      <div className="grid gap-4">
-        {filteredAllocations.map(alloc => (
+          <div className="grid gap-4">
+            {filteredAllocations.map(alloc => (
           <Card key={alloc.id} className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4 mb-2">
@@ -140,8 +138,10 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Allocate Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

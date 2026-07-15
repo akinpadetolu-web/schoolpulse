@@ -59,6 +59,22 @@ export default function HostelManagementPanel({ hostels, search, onRefresh }) {
         checkInTime: hostel.checkInTime || '14:00',
         checkOutTime: hostel.checkOutTime || '08:00',
       });
+    } else {
+      setSelectedHostel(null);
+      setForm({
+        name: '',
+        gender: 'male',
+        type: 'boarding',
+        capacity: 50,
+        location: '',
+        housemaster: '',
+        housemasterName: '',
+        housemasterPhone: '',
+        facilities: '',
+        monthlyFee: 0,
+        checkInTime: '14:00',
+        checkOutTime: '08:00',
+      });
     }
     setShowDialog(true);
   };
@@ -107,24 +123,22 @@ export default function HostelManagementPanel({ hostels, search, onRefresh }) {
     }
   };
 
-  if (filteredHostels.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Home className="w-12 h-12 mx-auto mb-3 opacity-20" />
-        <p className="text-muted-foreground mb-4">{hostels.length === 0 ? 'No hostels' : 'No matching hostels'}</p>
-        <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Create Hostel</Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> New Hostel</Button>
-      </div>
+      {filteredHostels.length === 0 ? (
+        <div className="text-center py-12">
+          <Home className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-muted-foreground mb-4">{hostels.length === 0 ? 'No hostels' : 'No matching hostels'}</p>
+          <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> Create Hostel</Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => handleOpenDialog()}><Plus className="w-4 h-4 mr-2" /> New Hostel</Button>
+          </div>
 
-      <div className="grid gap-4">
-        {filteredHostels.map(hostel => (
+          <div className="grid gap-4">
+            {filteredHostels.map(hostel => (
           <Card key={hostel.id} className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4 mb-3">
@@ -155,8 +169,10 @@ export default function HostelManagementPanel({ hostels, search, onRefresh }) {
               )}
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
