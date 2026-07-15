@@ -88,7 +88,7 @@ export default function AdminStaff() {
         });
       }
       // Create login account so non-teaching staff can sign in
-      await base44.entities.SchoolUser.create({
+      const schoolUserPayload = {
         fullName: data.fullName,
         email: data.email,
         username: data.email,
@@ -102,15 +102,17 @@ export default function AdminStaff() {
         staffPermissions: data.permissions || {},
         jobTitle: data.jobTitle || '',
         department: data.department || '',
-        genderAccess: data.genderAccess || '',
-      });
+      };
+      if (data.genderAccess) schoolUserPayload.genderAccess = data.genderAccess;
+      await base44.entities.SchoolUser.create(schoolUserPayload);
       await base44.entities.NonTeachingStaff.create({ ...staffData, schoolId, schoolName: user?.schoolName });
       setShowCreateDialog(false);
       const updated = await base44.entities.NonTeachingStaff.filter({ schoolId, isArchived: false });
       setStaff(updated || []);
       toast.success('Staff member created with login access');
     } catch (err) {
-      toast.error('Failed to create staff — this email may already be in use');
+      const msg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Unknown error';
+      toast.error(`Failed to create staff: ${msg}`);
     }
   };
 
