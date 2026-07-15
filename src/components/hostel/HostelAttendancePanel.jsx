@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
@@ -137,7 +137,17 @@ export default function HostelAttendancePanel({ attendance, allocations, hostels
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <p className="font-semibold">{att.studentName}</p>
-                    <p className="text-sm text-muted-foreground">{att.hostelName}</p>
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                      <p className="text-sm text-muted-foreground">{att.hostelName}</p>
+                      {att.purpose && (
+                        <Badge variant="outline" className="text-xs">{att.purpose}</Badge>
+                      )}
+                      {att.recordedTime && (
+                        <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" /> {att.recordedTime}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <Badge className={statusColor[att.status]}>{att.status.replace(/_/g, ' ')}</Badge>
                 </div>

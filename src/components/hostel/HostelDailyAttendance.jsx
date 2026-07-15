@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle2, XCircle, UserCheck, BedDouble, Save, CheckCheck } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, UserCheck, BedDouble, Save, CheckCheck, Clock, Plus, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
@@ -16,22 +16,59 @@ const STATUS_OPTIONS = [
   { value: 'on_leave', label: 'On Leave', icon: UserCheck, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800', activeBg: 'bg-blue-600 text-white' },
 ];
 
+const formatTime = (iso) => {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch { return ''; }
+};
+
 export default function HostelDailyAttendance({ allocations, hostels, attendance, onRefresh }) {
   const { schoolUser: user } = useSchoolAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedHostelId, setSelectedHostelId] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [activeSessionKey, setActiveSessionKey] = useState('');
   const [attendanceMap, setAttendanceMap] = useState({});
   const [saving, setSaving] = useState(false);
-  const [loadingExisting, setLoadingExisting] = useState(false);
 
   const activeHostels = useMemo(() => hostels.filter(h => h.isActive), [hostels]);
 
-  // Auto-select first hostel when list loads
   useEffect(() => {
     if (activeHostels.length > 0 && !selectedHostelId) {
       setSelectedHostelId(activeHostels[0].id);
     }
   }, [activeHostels, selectedHostelId]);
+
+  // All attendance records for this hostel + date
+  const dayAttendance = useMemo(() => {
+    if (!selectedHostelId || !selectedDate) return [];
+    return attendance.filter(a => a.hostelId === selectedHostelId && a.attendanceDate === selectedDate);
+  }, [attendance, selectedHostelId, selectedDate]);
+
+  // Group existing records into sessions by purpose
+  const sessions = useMemo(() => {
+    const grouped = {};
+    dayAttendance.forEach(a => {
+      const key = a.purpose || 'General';
+      if (!grouped[key]) {
+        grouped[key] = { purpose: key, records: [], latestTime: '' };
+      }
+      grouped[key].records.push(a);
+      if (a.recordedAt && a.recordedAt > grouped[key].latestTime) {
+        grouped[key].latestTime = a.recordedAt;
+      }
+    });
+    return Object.values(grouped).sort((a, b) => (b.latestTime || '').localeCompare(a.latestTime || ''));
+  }, [dayAttendance]);
+
+  // Auto-select first session when sessions load and no active session
+  useEffect(() => {
+    if (sessions.length > 0 && !activeSessionKey) {
+      setActiveSessionKey(sessions[0].purpose);
+    }
+  }, [sessions, activeSessionKey]);
 
   // Students allocated to the selected hostel, grouped by room
   const hostelAllocations = useMemo(() => {
@@ -45,7 +82,6 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
       });
   }, [allocations, selectedHostelId]);
 
-  // Group by room number
   const rooms = useMemo(() => {
     const grouped = {};
     hostelAllocations.forEach(a => {
@@ -56,17 +92,15 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
     return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
   }, [hostelAllocations]);
 
-  // Load existing attendance for selected date + hostel
+  // Load attendance for the active session into the map
   useEffect(() => {
-    if (!selectedHostelId || !selectedDate) return;
-    setLoadingExisting(true);
-
-    const existing = attendance.filter(
-      a => a.hostelId === selectedHostelId && a.attendanceDate === selectedDate
-    );
-
+    if (!activeSessionKey) {
+      setAttendanceMap({});
+      return;
+    }
+    const sessionRecords = dayAttendance.filter(a => (a.purpose || 'General') === activeSessionKey);
     const map = {};
-    existing.forEach(a => {
+    sessionRecords.forEach(a => {
       map[a.studentId] = {
         status: a.status,
         checkInTime: a.checkInTime || '',
@@ -75,8 +109,7 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
       };
     });
     setAttendanceMap(map);
-    setLoadingExisting(false);
-  }, [selectedHostelId, selectedDate, attendance]);
+  }, [activeSessionKey, dayAttendance]);
 
   const setStatus = (studentId, status) => {
     setAttendanceMap(prev => ({
@@ -99,6 +132,17 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
     toast.success('All unmarked students set to Present');
   };
 
+  const startNewSession = () => {
+    setActiveSessionKey('');
+    setPurpose('');
+    setAttendanceMap({});
+  };
+
+  const selectSession = (sessionPurpose) => {
+    setActiveSessionKey(sessionPurpose);
+    setPurpose(sessionPurpose);
+  };
+
   const stats = useMemo(() => {
     const present = hostelAllocations.filter(a => attendanceMap[a.studentId]?.status === 'present').length;
     const absent = hostelAllocations.filter(a => attendanceMap[a.studentId]?.status === 'absent').length;
@@ -106,6 +150,8 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
     const unmarked = hostelAllocations.filter(a => !attendanceMap[a.studentId]?.status).length;
     return { present, absent, onLeave, unmarked, total: hostelAllocations.length };
   }, [hostelAllocations, attendanceMap]);
+
+  const currentPurpose = purpose || activeSessionKey;
 
   const handleSave = async () => {
     const toSave = hostelAllocations.filter(a => attendanceMap[a.studentId]?.status);
@@ -116,6 +162,9 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
 
     setSaving(true);
     const hostel = hostels.find(h => h.id === selectedHostelId);
+    const now = new Date();
+    const recordedAt = now.toISOString();
+    const recordedTime = now.toTimeString().slice(0, 5);
     let success = 0;
     let failed = 0;
 
@@ -125,11 +174,13 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
         if (entry.recordId) {
           await base44.entities.HostelAttendance.update(entry.recordId, {
             status: entry.status,
+            purpose: currentPurpose,
             checkInTime: entry.checkInTime || '',
             checkOutTime: entry.checkOutTime || '',
             recordedBy: user?.id,
             recordedByName: user?.fullName,
-            recordedAt: new Date().toISOString(),
+            recordedAt,
+            recordedTime,
           });
         } else {
           await base44.entities.HostelAttendance.create({
@@ -140,11 +191,13 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
             studentName: alloc.studentName,
             attendanceDate: selectedDate,
             status: entry.status,
+            purpose: currentPurpose,
             checkInTime: entry.checkInTime || '',
             checkOutTime: entry.checkOutTime || '',
             recordedBy: user?.id,
             recordedByName: user?.fullName,
-            recordedAt: new Date().toISOString(),
+            recordedAt,
+            recordedTime,
           });
         }
         success++;
@@ -162,6 +215,7 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
     } else {
       toast.error('Failed to save attendance');
     }
+    setActiveSessionKey(currentPurpose);
     onRefresh?.();
   };
 
@@ -180,7 +234,7 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1">
+            <div className="flex-1 min-w-[140px]">
               <Label className="text-xs text-muted-foreground">Hostel</Label>
               <Select value={selectedHostelId} onValueChange={setSelectedHostelId}>
                 <SelectTrigger>
@@ -193,7 +247,7 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-[140px]">
               <Label className="text-xs text-muted-foreground">Date</Label>
               <Input
                 type="date"
@@ -201,16 +255,87 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
                 onChange={e => setSelectedDate(e.target.value)}
               />
             </div>
-            <Button variant="outline" onClick={markAllPresent} disabled={saving || hostelAllocations.length === 0}>
-              <CheckCheck className="w-4 h-4 mr-2" /> Mark All Present
-            </Button>
-            <Button onClick={handleSave} disabled={saving || stats.present + stats.absent + stats.onLeave === 0}>
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Attendance
-            </Button>
+            <div className="flex-[2] min-w-[180px]">
+              <Label className="text-xs text-muted-foreground">Attendance Purpose</Label>
+              <Input
+                placeholder="e.g. Morning Meal, Lights Out, Evening Reading..."
+                value={purpose}
+                onChange={e => setPurpose(e.target.value)}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Session summary — shows all attendance sessions taken today with timestamps */}
+      {sessions.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ClipboardList className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Today's Attendance Sessions</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {sessions.map(s => {
+                const present = s.records.filter(r => r.status === 'present').length;
+                const absent = s.records.filter(r => r.status === 'absent').length;
+                const isActive = activeSessionKey === s.purpose;
+                return (
+                  <button
+                    key={s.purpose}
+                    onClick={() => selectSession(s.purpose)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-colors ${
+                      isActive
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm">{s.purpose}</span>
+                        {s.latestTime && (
+                          <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" /> {formatTime(s.latestTime)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs">
+                        <span className="text-green-600">{present} present</span>
+                        <span className="text-red-600">{absent} absent</span>
+                        <span className="text-muted-foreground">{s.records.length} total</span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+              <button
+                onClick={startNewSession}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-sm text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              >
+                <Plus className="w-4 h-4" /> New Session
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="flex gap-3 flex-wrap">
+          <Button variant="outline" onClick={markAllPresent} disabled={saving || hostelAllocations.length === 0}>
+            <CheckCheck className="w-4 h-4 mr-2" /> Mark All Present
+          </Button>
+          {sessions.length > 0 && (
+            <Button variant="ghost" onClick={startNewSession} disabled={saving}>
+              <Plus className="w-4 h-4 mr-2" /> New Session
+            </Button>
+          )}
+        </div>
+        <Button onClick={handleSave} disabled={saving || stats.present + stats.absent + stats.onLeave === 0 || !currentPurpose}>
+          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          Save Attendance
+        </Button>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -247,33 +372,30 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
       </div>
 
       {/* Room-grouped student list */}
-      {loadingExisting ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : hostelAllocations.length === 0 ? (
+      {hostelAllocations.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <BedDouble className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>No active allocations in this hostel.</p>
+        </div>
+      ) : !currentPurpose ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>Enter an attendance purpose above (e.g. "Morning Meal") to start marking.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {rooms.map(([room, students]) => (
             <Card key={room} className="border-0 shadow-sm overflow-hidden">
               <CardContent className="p-0">
-                {/* Room header */}
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
                   <BedDouble className="w-4 h-4 text-muted-foreground" />
                   <span className="font-semibold text-sm">Room {room}</span>
                   <Badge variant="secondary" className="ml-1">{students.length} student{students.length !== 1 ? 's' : ''}</Badge>
                 </div>
-
-                {/* Students in this room */}
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {students.map(alloc => {
                     const current = attendanceMap[alloc.studentId];
                     const currentStatus = current?.status;
-
                     return (
                       <div key={alloc.studentId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -287,7 +409,6 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
                             )}
                           </div>
                         </div>
-
                         <div className="flex gap-1.5">
                           {STATUS_OPTIONS.map(opt => {
                             const Icon = opt.icon;

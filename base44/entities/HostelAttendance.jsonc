@@ -40,6 +40,10 @@
       ],
       "default": "present"
     },
+    "purpose": {
+      "type": "string",
+      "description": "Free-text purpose of this attendance session, e.g. 'Morning Meal', 'Evening Reading', 'Lights Out'"
+    },
     "leaveReason": {
       "type": "string",
       "description": "Reason for leave if on_leave"
@@ -63,6 +67,10 @@
     "recordedAt": {
       "type": "string",
       "format": "date-time"
+    },
+    "recordedTime": {
+      "type": "string",
+      "description": "HH:MM timestamp of when attendance was recorded"
     }
   },
   "required": [
