@@ -92,6 +92,20 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
         return;
       }
 
+      if (form.bedNumber && form.roomNumber) {
+        const bedConflict = allocations.find(a =>
+          a.status === 'active' &&
+          a.hostelId === form.hostelId &&
+          (a.roomNumber || '').trim().toLowerCase() === form.roomNumber.trim().toLowerCase() &&
+          (a.bedNumber || '').trim().toLowerCase() === form.bedNumber.trim().toLowerCase()
+        );
+        if (bedConflict) {
+          toast.error(`Bed ${form.bedNumber} in Room ${form.roomNumber} is already occupied by ${bedConflict.studentName}`);
+          setSaving(false);
+          return;
+        }
+      }
+
       await base44.entities.HostelAllocation.create({
         schoolId: user?.schoolId,
         studentId: form.studentId,
