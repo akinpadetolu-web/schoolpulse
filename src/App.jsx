@@ -79,6 +79,7 @@ const AdminFinancialReports = lazy(() => import('./pages/school-admin/AdminFinan
 const AdminPaymentSettings = lazy(() => import('./pages/school-admin/AdminPaymentSettings'));
 const ParentFeesPayments = lazy(() => import('./pages/parent/ParentFeesPayments'));
 const ParentHealth = lazy(() => import('./pages/parent/ParentHealth'));
+const ParentHostel = lazy(() => import('./pages/parent/ParentHostel'));
 const AdminStaffAttendance = lazy(() => import('./pages/school-admin/AdminStaffAttendance'));
 const AdminLeaveRequests = lazy(() => import('./pages/school-admin/AdminLeaveRequests'));
 const AdminEmailCampaign = lazy(() => import('./pages/school-admin/AdminEmailCampaign'));
@@ -138,6 +139,7 @@ const StudentSettings = lazy(() => import('./pages/student/StudentSettings'));
 const StudentNotes = lazy(() => import('./pages/student/StudentNotes'));
 const StudentLibrary = lazy(() => import('./pages/student/StudentLibrary'));
 const StudentGames = lazy(() => import('./pages/student/StudentGames'));
+const StudentHostel = lazy(() => import('./pages/student/StudentHostel'));
 
 // Parent
 const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
@@ -296,6 +298,7 @@ const AuthenticatedApp = () => {
           <Route path="notes" element={<StudentNotes />} />
           <Route path="library" element={<StudentLibrary />} />
           <Route path="games" element={<StudentGames />} />
+          <Route path="hostel" element={<StudentHostel />} />
           <Route path="profile" element={<StudentProfile />} />
           <Route path="settings" element={<StudentSettings />} />
         </Route>
@@ -315,6 +318,7 @@ const AuthenticatedApp = () => {
           <Route path="e-class" element={<ParentEClass />} />
           <Route path="fees-payments" element={<ParentFeesPayments />} />
           <Route path="health" element={<ParentHealth />} />
+          <Route path="hostel" element={<ParentHostel />} />
           <Route path="calendar" element={<ParentCalendar />} />
           <Route path="profile" element={<ParentProfile />} />
           <Route path="settings" element={<ParentSettings />} />

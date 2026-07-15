@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 
-export default function HostelAllocationPanel({ allocations, hostels, search, onRefresh }) {
+export default function HostelAllocationPanel({ allocations, hostels, search, onRefresh, students }) {
   const { schoolUser: user } = useSchoolAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -19,15 +19,47 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
     studentId: '',
     studentName: '',
     gender: 'male',
+    className: '',
+    classId: '',
     hostelId: '',
     bedNumber: '',
     roomNumber: '',
   });
 
-  const filteredAllocations = allocations.filter(a =>
-    a.studentName?.toLowerCase().includes(search.toLowerCase()) ||
-    a.hostelName?.toLowerCase().includes(search.toLowerCase())
-  );
+  const genderFilter = user?.genderAccess;
+
+  const eligibleStudents = useMemo(() => {
+    let filtered = students || [];
+    if (genderFilter && genderFilter !== 'all') {
+      filtered = filtered.filter(s => (s.gender || '').toLowerCase() === genderFilter);
+    }
+    return filtered;
+  }, [students, genderFilter]);
+
+  const filteredAllocations = useMemo(() => {
+    let filtered = allocations.filter(a =>
+      a.studentName?.toLowerCase().includes(search.toLowerCase()) ||
+      a.hostelName?.toLowerCase().includes(search.toLowerCase())
+    );
+    if (genderFilter && genderFilter !== 'all') {
+      filtered = filtered.filter(a => (a.gender || '').toLowerCase() === genderFilter);
+    }
+    return filtered;
+  }, [allocations, search, genderFilter]);
+
+  const handleSelectStudent = (studentId) => {
+    const student = eligibleStudents.find(s => s.id === studentId);
+    if (student) {
+      setForm(prev => ({
+        ...prev,
+        studentId: student.id,
+        studentName: student.fullName,
+        gender: (student.gender || 'Male').toLowerCase(),
+        className: student.className || '',
+        classId: student.classId || '',
+      }));
+    }
+  };
 
   const handleCreateAllocation = async (e) => {
     e.preventDefault();
@@ -45,11 +77,26 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
         return;
       }
 
+      if (hostel.gender !== 'mixed' && form.gender !== hostel.gender) {
+        toast.error(`This hostel is for ${hostel.gender} students only`);
+        setSaving(false);
+        return;
+      }
+
+      const existing = allocations.find(a => a.studentId === form.studentId && a.status === 'active');
+      if (existing) {
+        toast.error('Student is already allocated to a hostel');
+        setSaving(false);
+        return;
+      }
+
       await base44.entities.HostelAllocation.create({
         schoolId: user?.schoolId,
         studentId: form.studentId,
         studentName: form.studentName,
         gender: form.gender,
+        classId: form.classId,
+        className: form.className,
         hostelId: form.hostelId,
         hostelName: hostel.name,
         bedNumber: form.bedNumber,
@@ -61,12 +108,18 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
         parentNotified: false,
       });
 
-      // Update hostel occupancy
       const current = hostel.currentOccupancy || 0;
       await base44.entities.Hostel.update(form.hostelId, { currentOccupancy: current + 1 });
 
+      await base44.entities.SchoolUser.update(form.studentId, {
+        hostelId: form.hostelId,
+        hostelName: hostel.name,
+        hostelRoomNumber: form.roomNumber,
+        hostelBedNumber: form.bedNumber,
+      });
+
       toast.success('Student allocated to hostel');
-      setForm({ studentId: '', studentName: '', gender: 'male', hostelId: '', bedNumber: '', roomNumber: '' });
+      setForm({ studentId: '', studentName: '', gender: 'male', className: '', classId: '', hostelId: '', bedNumber: '', roomNumber: '' });
       setShowDialog(false);
       onRefresh?.();
     } catch (error) {
@@ -76,7 +129,7 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
     }
   };
 
-  const handleDeallocate = async (allocationId, hostelId) => {
+  const handleDeallocate = async (allocationId, hostelId, studentId) => {
     if (!window.confirm('Remove student from hostel?')) return;
 
     try {
@@ -92,12 +145,29 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
         await base44.entities.Hostel.update(hostelId, { currentOccupancy: Math.max(0, current - 1) });
       }
 
+      if (studentId) {
+        await base44.entities.SchoolUser.update(studentId, {
+          hostelId: '',
+          hostelName: '',
+          hostelRoomNumber: '',
+          hostelBedNumber: '',
+        });
+      }
+
       toast.success('Student deallocated');
       onRefresh?.();
     } catch (error) {
       toast.error('Failed to deallocate');
     }
   };
+
+  const availableHostels = hostels.filter(h => {
+    if (!h.isActive) return false;
+    if (genderFilter && genderFilter !== 'all') {
+      return h.gender === genderFilter || h.gender === 'mixed';
+    }
+    return true;
+  });
 
   return (
     <>
@@ -115,35 +185,35 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
 
           <div className="grid gap-4">
             {filteredAllocations.map(alloc => (
-          <Card key={alloc.id} className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{alloc.studentName}</h3>
-                  <p className="text-sm text-muted-foreground">{alloc.hostelName} - Bed {alloc.bedNumber || 'TBD'}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => handleDeallocate(alloc.id, alloc.hostelId)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+              <Card key={alloc.id} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{alloc.studentName}</h3>
+                      <p className="text-sm text-muted-foreground">{alloc.hostelName} - Bed {alloc.bedNumber || 'TBD'}</p>
+                      {alloc.className && <Badge variant="outline" className="text-xs mt-1">{alloc.className}</Badge>}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => handleDeallocate(alloc.id, alloc.hostelId, alloc.studentId)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
 
-              <div className="text-sm text-muted-foreground">
-                <p><span className="font-medium">Allocated:</span> {alloc.allocationDate}</p>
-                {alloc.roomNumber && <p><span className="font-medium">Room:</span> {alloc.roomNumber}</p>}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="text-sm text-muted-foreground">
+                    <p><span className="font-medium">Allocated:</span> {alloc.allocationDate}</p>
+                    {alloc.roomNumber && <p><span className="font-medium">Room:</span> {alloc.roomNumber}</p>}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </>
       )}
 
-      {/* Allocate Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -151,43 +221,51 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
           </DialogHeader>
           <form onSubmit={handleCreateAllocation} className="space-y-4">
             <div>
-              <Label>Student ID *</Label>
-              <Input
-                value={form.studentId}
-                onChange={e => setForm({ ...form, studentId: e.target.value })}
-                placeholder="Student ID"
-                disabled={saving}
-              />
-            </div>
-            <div>
-              <Label>Student Name</Label>
-              <Input
-                value={form.studentName}
-                onChange={e => setForm({ ...form, studentName: e.target.value })}
-                placeholder="Full name"
-                disabled={saving}
-              />
-            </div>
-            <div>
-              <Label>Gender</Label>
-              <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+              <Label>Student *</Label>
+              <Select value={form.studentId} onValueChange={handleSelectStudent}>
                 <SelectTrigger disabled={saving}>
-                  <SelectValue />
+                  <SelectValue placeholder="Select student..." />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
+                <SelectContent className="max-h-64">
+                  {eligibleStudents.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.fullName} - {s.className || 'No class'} ({s.gender || 'N/A'})
+                    </SelectItem>
+                  ))}
+                  {eligibleStudents.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">No students found</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+
+            {form.studentName && (
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg">
+                <div>
+                  <p className="text-xs text-muted-foreground">Name</p>
+                  <p className="text-sm font-medium">{form.studentName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Gender</p>
+                  <p className="text-sm font-medium capitalize">{form.gender}</p>
+                </div>
+                {form.className && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Class</p>
+                    <p className="text-sm font-medium">{form.className}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Hostel *</Label>
-              <Select value={form.hostelId} onValueChange={v => setForm({ ...form, hostelId: v })}>
+              <Select value={form.hostelId} onValueChange={v => setForm(prev => ({ ...prev, hostelId: v }))}>
                 <SelectTrigger disabled={saving}>
                   <SelectValue placeholder="Select hostel..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {hostels.filter(h => h.isActive).map(h => (
+                  {availableHostels.map(h => (
                     <SelectItem key={h.id} value={h.id}>
                       {h.name} ({h.capacity - (h.currentOccupancy || 0)} available)
                     </SelectItem>
@@ -195,12 +273,13 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
                 </SelectContent>
               </Select>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Bed Number</Label>
                 <Input
                   value={form.bedNumber}
-                  onChange={e => setForm({ ...form, bedNumber: e.target.value })}
+                  onChange={e => setForm(prev => ({ ...prev, bedNumber: e.target.value }))}
                   placeholder="Bed #"
                   disabled={saving}
                 />
@@ -209,12 +288,13 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
                 <Label>Room Number</Label>
                 <Input
                   value={form.roomNumber}
-                  onChange={e => setForm({ ...form, roomNumber: e.target.value })}
+                  onChange={e => setForm(prev => ({ ...prev, roomNumber: e.target.value }))}
                   placeholder="Room #"
                   disabled={saving}
                 />
               </div>
             </div>
+
             <div className="flex gap-2 pt-2 border-t">
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)} disabled={saving}>Cancel</Button>
               <Button type="submit" disabled={saving} className="flex-1">

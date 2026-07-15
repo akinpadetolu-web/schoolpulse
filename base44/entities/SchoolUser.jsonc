@@ -120,6 +120,31 @@
       "type": "string",
       "description": "Department for non-teaching staff"
     },
+    "genderAccess": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "all"
+      ],
+      "description": "For hostel staff: controls which student genders they can manage. 'all' = head hostel manager (both genders), 'male' = male hostel master, 'female' = female hostel mistress"
+    },
+    "hostelId": {
+      "type": "string",
+      "description": "Hostel ID if student is allocated to a hostel"
+    },
+    "hostelName": {
+      "type": "string",
+      "description": "Hostel name for the allocated student"
+    },
+    "hostelRoomNumber": {
+      "type": "string",
+      "description": "Assigned room number in hostel"
+    },
+    "hostelBedNumber": {
+      "type": "string",
+      "description": "Assigned bed number in hostel"
+    },
     "staffPermissions": {
       "type": "object",
       "description": "Module-level permissions assigned to non-teaching staff. Keys are module names (medical, finance, library, hostel, inventory, hr, transport, reports), values are 'full', 'view', or an array of permission keys.",

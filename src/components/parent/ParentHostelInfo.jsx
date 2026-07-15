@@ -9,10 +9,13 @@ export default function ParentHostelInfo({ studentId }) {
   const { schoolUser: user } = useSchoolAuth();
   const [allocation, setAllocation] = useState(null);
   const [hostel, setHostel] = useState(null);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
+    const unsub = base44.entities.HostelAttendance.subscribe(() => loadData());
+    return () => { if (unsub) unsub(); };
   }, [studentId]);
 
   async function loadData() {
@@ -25,13 +28,12 @@ export default function ParentHostelInfo({ studentId }) {
 
       if (allocs.length > 0) {
         setAllocation(allocs[0]);
-        const hostels = await base44.entities.Hostel.filter({
-          schoolId: user?.schoolId,
-          id: allocs[0].hostelId,
-        });
-        if (hostels.length > 0) {
-          setHostel(hostels[0]);
-        }
+        const [hostels, att] = await Promise.all([
+          base44.entities.Hostel.filter({ schoolId: user?.schoolId, id: allocs[0].hostelId }),
+          base44.entities.HostelAttendance.filter({ schoolId: user?.schoolId, studentId }),
+        ]);
+        if (hostels.length > 0) setHostel(hostels[0]);
+        setAttendance((att || []).sort((a, b) => (b.attendanceDate || '').localeCompare(a.attendanceDate || '')).slice(0, 3));
       }
     } catch (error) {
       console.error('Load error:', error);
@@ -99,6 +101,23 @@ export default function ParentHostelInfo({ studentId }) {
           <p><span className="font-medium">Check-out:</span> {hostel.checkOutTime}</p>
           {hostel.visitingHours && <p><span className="font-medium">Visiting Hours:</span> {hostel.visitingHours}</p>}
         </div>
+
+        {attendance.length > 0 && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-1">Recent Attendance</p>
+            <div className="space-y-1">
+              {attendance.map(a => (
+                <div key={a.id} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{a.attendanceDate}</span>
+                  <Badge className={
+                    a.status === 'present' ? 'bg-green-100 text-green-700' :
+                    a.status === 'absent' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                  }>{a.status.replace(/_/g, ' ')}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

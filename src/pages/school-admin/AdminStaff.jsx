@@ -102,6 +102,7 @@ export default function AdminStaff() {
         staffPermissions: data.permissions || {},
         jobTitle: data.jobTitle || '',
         department: data.department || '',
+        genderAccess: data.genderAccess || '',
       });
       await base44.entities.NonTeachingStaff.create({ ...staffData, schoolId, schoolName: user?.schoolName });
       setShowCreateDialog(false);

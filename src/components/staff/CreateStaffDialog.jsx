@@ -12,12 +12,14 @@ const DEPARTMENTS = [
 ];
 
 const PRESET_ROLES = {
-  'Bursar': { department: 'Accounts', permissions: { finance: 'full', reports: 'view' } },
-  'Hostel Manager': { department: 'Administration', permissions: { hostel: 'full' } },
-  'Accountant': { department: 'Accounts', permissions: { finance: 'view', reports: 'view' } },
-  'Secretary': { department: 'Administration', permissions: { general: 'view' } },
-  'Librarian': { department: 'Library', permissions: { library: 'full' } },
-  'School Nurse': { department: 'Administration', permissions: { medical: 'full' } },
+  'Bursar': { department: 'Accounts', permissions: { finance: 'full', reports: 'view' }, genderAccess: '' },
+  'Head Hostel Manager': { department: 'Administration', permissions: { hostel: 'full' }, genderAccess: 'all' },
+  'Male Hostel Master': { department: 'Administration', permissions: { hostel: 'full' }, genderAccess: 'male' },
+  'Female Hostel Mistress': { department: 'Administration', permissions: { hostel: 'full' }, genderAccess: 'female' },
+  'Accountant': { department: 'Accounts', permissions: { finance: 'view', reports: 'view' }, genderAccess: '' },
+  'Secretary': { department: 'Administration', permissions: { general: 'view' }, genderAccess: '' },
+  'Librarian': { department: 'Library', permissions: { library: 'full' }, genderAccess: '' },
+  'School Nurse': { department: 'Administration', permissions: { medical: 'full' }, genderAccess: '' },
 };
 
 export default function CreateStaffDialog({ open, onOpenChange, onSave, departments }) {
@@ -33,6 +35,7 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
   const [permissions, setPermissions] = useState({});
   const [showPasswordGen, setShowPasswordGen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [genderAccess, setGenderAccess] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,6 +56,7 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
       department: preset.department,
     }));
     setPermissions(preset.permissions);
+    setFormData(prev => ({ ...prev, genderAccess: preset.genderAccess || '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -66,6 +70,7 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
       await onSave({
         ...formData,
         permissions,
+        genderAccess,
         employeeId: `EMP-${Date.now()}`,
       });
     } catch (err) {
@@ -161,6 +166,26 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
                   </Button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Hostel Gender Access */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm">Hostel Access (Optional)</h3>
+            <div>
+              <Label className="text-xs block mb-2">Gender Access for Hostel Management</Label>
+              <select
+                name="genderAccess"
+                value={genderAccess}
+                onChange={(e) => setGenderAccess(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
+              >
+                <option value="">No hostel access</option>
+                <option value="all">All Students (Head Hostel Manager)</option>
+                <option value="male">Male Students Only</option>
+                <option value="female">Female Students Only</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">Controls which student genders this staff member can manage in the hostel module.</p>
             </div>
           </div>
 

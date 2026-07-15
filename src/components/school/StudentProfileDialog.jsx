@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, RefreshCw, Copy } from 'lucide-react';
+import { Loader2, CheckCircle2, RefreshCw, Copy, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import StudentGradeHistory from './StudentGradeHistory';
+import { StudentHostelInfo } from './StudentHostelInfo';
 
 // JS1-JS3 → General only. SS1-SS3 → Science, Art & Humanity, Commercial
 const JS_LEVELS = ["JS1", "JS2", "JS3"];
@@ -122,6 +123,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
           <TabsList className="w-full">
             <TabsTrigger value="profile" className="flex-1">Profile & Subjects</TabsTrigger>
             <TabsTrigger value="grades" className="flex-1">Grade History</TabsTrigger>
+          <TabsTrigger value="hostel" className="flex-1">Hostel</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -254,6 +256,11 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
           {/* Grade History Tab */}
           <TabsContent value="grades" className="pt-2">
             <StudentGradeHistory studentId={student?.id} schoolId={schoolId} />
+          </TabsContent>
+
+          {/* Hostel Tab */}
+          <TabsContent value="hostel" className="pt-2">
+            <StudentHostelInfo student={student} schoolId={schoolId} />
           </TabsContent>
         </Tabs>
       </DialogContent>
