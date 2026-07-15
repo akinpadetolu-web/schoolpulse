@@ -6,7 +6,7 @@ import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle } from 'lucide-react';
+import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle, Home, Bed } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import TermProgressTab from '@/components/student/TermProgressTab';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
@@ -94,6 +94,21 @@ export default function StudentDashboard() {
           <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-xs md:text-sm text-muted-foreground">{user?.className || user?.schoolName}</p>
         </div>
+
+        {user?.hostelName && (
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary shrink-0">
+              <Home className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user.hostelName}</p>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                {user.hostelRoomNumber && <span className="flex items-center gap-0.5"><Bed className="w-3 h-3" /> Room {user.hostelRoomNumber}</span>}
+                {user.hostelBedNumber && <span>Bed {user.hostelBedNumber}</span>}
+              </div>
+            </div>
+          </div>
+        )}
 
         <Tabs defaultValue="overview">
           <TabsList className="mb-2 md:mb-4">

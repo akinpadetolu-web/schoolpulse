@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, Users } from 'lucide-react';
+import { Plus, Trash2, Loader2, Users, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
@@ -15,6 +15,7 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
   const { schoolUser: user } = useSchoolAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [localSearch, setLocalSearch] = useState('');
   const [form, setForm] = useState({
     studentId: '',
     studentName: '',
@@ -36,16 +37,17 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
     return filtered;
   }, [students, genderFilter]);
 
+  const effectiveSearch = localSearch || search;
   const filteredAllocations = useMemo(() => {
     let filtered = allocations.filter(a =>
-      a.studentName?.toLowerCase().includes(search.toLowerCase()) ||
-      a.hostelName?.toLowerCase().includes(search.toLowerCase())
+      a.studentName?.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      a.hostelName?.toLowerCase().includes(effectiveSearch.toLowerCase())
     );
     if (genderFilter && genderFilter !== 'all') {
       filtered = filtered.filter(a => (a.gender || '').toLowerCase() === genderFilter);
     }
     return filtered;
-  }, [allocations, search, genderFilter]);
+  }, [allocations, effectiveSearch, genderFilter]);
 
   const handleSelectStudent = (studentId) => {
     const student = eligibleStudents.find(s => s.id === studentId);
@@ -179,8 +181,17 @@ export default function HostelAllocationPanel({ allocations, hostels, search, on
         </div>
       ) : (
         <>
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by student name..."
+                value={localSearch}
+                onChange={e => setLocalSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button onClick={() => setShowDialog(true)} className="shrink-0"><Plus className="w-4 h-4 mr-2" /> Allocate Student</Button>
           </div>
 
           <div className="grid gap-4">

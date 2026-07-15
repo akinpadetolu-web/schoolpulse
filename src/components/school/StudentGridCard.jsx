@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit2, KeyRound } from 'lucide-react';
+import { Eye, Edit2, KeyRound, Home, Bed } from 'lucide-react';
 import UserAvatar from '@/components/common/UserAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
@@ -32,6 +32,19 @@ export default function StudentGridCard({ student, onView, onEdit, onReset }) {
             </Badge>
           )}
         </div>
+
+        {/* Hostel Info */}
+        {student.hostelName && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1.5">
+            <Home className="w-3 h-3 shrink-0" />
+            <span className="truncate font-medium">{student.hostelName}</span>
+            {student.hostelRoomNumber && (
+              <span className="flex items-center gap-0.5 shrink-0">
+                <Bed className="w-3 h-3" /> {student.hostelRoomNumber}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
