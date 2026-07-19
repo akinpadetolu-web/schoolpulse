@@ -77,6 +77,14 @@ export default function AdminGradeWeighting() {
     return cat.baseLevel?.trim() || cat.classId;
   }
 
+  // Resolve a human-readable class label from a category record
+  function resolveClassLabel(cat) {
+    if (cat.baseLevel?.trim()) return cat.baseLevel.trim();
+    const cls = classes.find(c => c.id === cat.classId);
+    if (cls) return cls.baseLevel?.trim() || cls.className;
+    return cat.className?.trim() || cat.classId;
+  }
+
   function openCreate() {
     setEditingGroup(null);
     setForm({ baseLevel: filterBaseLevel || '', subjectId: filterSubject || '', categoryName: '', assessmentType: 'exam', weight: '', description: '' });
@@ -211,7 +219,7 @@ export default function AdminGradeWeighting() {
     if (!grouped[groupKey]) {
       grouped[groupKey] = {
         key,
-        label: `${key} — ${cat.subjectName}`,
+        label: `${resolveClassLabel(cat)} — ${cat.subjectName}`,
         subjectId: cat.subjectId,
         cats: [],     // deduplicated display records (one per assessmentType)
         allCats: [],  // all records (for edit/delete operations)
