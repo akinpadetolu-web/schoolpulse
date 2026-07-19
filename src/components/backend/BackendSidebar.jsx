@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
 import {
   LayoutDashboard, School, UserCog, Users, GraduationCap,
-  BookOpen, Wrench, FileText, Settings, LogOut, X, Shield, Zap
+  BookOpen, Wrench, FileText, Settings, LogOut, X, Shield, Zap, SlidersHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +18,7 @@ const navGroups = [
     label: 'SCHOOLS',
     items: [
       { label: "Schools", path: "/backend/schools", icon: School },
+      { label: "School Customization", path: "/backend/school-customization", icon: SlidersHorizontal },
       { label: "School Admins", path: "/backend/school-admins", icon: UserCog },
     ]
   },
