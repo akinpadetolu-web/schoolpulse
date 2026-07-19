@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, Search, X, Check } from 'lucide-react';
+import PasswordInput from '@/components/ui/password-input';
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
@@ -361,7 +362,7 @@ export default function SchoolPortal() {
 
                       <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
-                        <Input id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
+                        <PasswordInput id="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="bg-transparent px-3 py-1 text-base rounded-3xl flex h-9 w-full border border-input shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" />
                       </div>
 
                       {error &&
@@ -508,12 +509,12 @@ export default function SchoolPortal() {
 
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
-                      <Input id="signup-password" name="password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="At least 6 characters" />
+                      <PasswordInput id="signup-password" name="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="At least 6 characters" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <Input id="confirm-password" name="confirm" type="password" value={signupConfirm} onChange={(e) => setSignupConfirm(e.target.value)} placeholder="Repeat password" />
+                      <PasswordInput id="confirm-password" name="confirm" value={signupConfirm} onChange={(e) => setSignupConfirm(e.target.value)} placeholder="Repeat password" />
                     </div>
 
                     {signupError &&

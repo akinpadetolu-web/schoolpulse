@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
+import PasswordInput from '@/components/ui/password-input';
 
 export default function BackendLogin() {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ export default function BackendLogin() {
               </div>
               <div className="space-y-2">
                 <Label>Password</Label>
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" />
+                <PasswordInput value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" />
               </div>
               {error && (
                 <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
