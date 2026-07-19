@@ -61,11 +61,18 @@ export default function AdminGradeWeighting() {
     setLoading(false);
   }
 
+  // Derive base level from className if baseLevel field is not set (e.g. "JS1A" → "JS1")
+  function deriveBaseLevel(c) {
+    if (c.baseLevel?.trim()) return c.baseLevel.trim();
+    const derived = c.className.replace(/[\d\s][A-Z]$/, m => m[0]).trim();
+    return derived || c.className;
+  }
+
   // Build main classes: group by baseLevel, one entry per baseLevel
   const mainClasses = useMemo(() => {
     const groups = {};
     classes.forEach(c => {
-      const key = c.baseLevel?.trim() || c.className;
+      const key = deriveBaseLevel(c);
       if (!groups[key]) groups[key] = { baseLevel: key, label: key, classes: [], educationLevel: c.educationLevel };
       groups[key].classes.push(c);
     });
@@ -81,7 +88,7 @@ export default function AdminGradeWeighting() {
   function resolveClassLabel(cat) {
     if (cat.baseLevel?.trim()) return cat.baseLevel.trim();
     const cls = classes.find(c => c.id === cat.classId);
-    if (cls) return cls.baseLevel?.trim() || cls.className;
+    if (cls) return deriveBaseLevel(cls);
     return cat.className?.trim() || cat.classId;
   }
 
@@ -144,7 +151,7 @@ export default function AdminGradeWeighting() {
 
     setSaving(true);
     const subj = subjects.find(s => s.id === form.subjectId);
-    const matchingClasses = classes.filter(c => (c.baseLevel?.trim() || c.className) === form.baseLevel);
+    const matchingClasses = classes.filter(c => deriveBaseLevel(c) === form.baseLevel);
 
     try {
       if (editingGroup) {
