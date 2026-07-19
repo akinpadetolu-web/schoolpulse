@@ -110,10 +110,18 @@ export default function AdminClasses() {
     return mapped.length === 0;
   });
 
+  // Derive base level from className if baseLevel field is not set
+  // e.g. "JS1A" → "JS1", "SS2 B" → "SS2", "Basic Science" → "Basic Science"
+  function deriveBaseLevel(c) {
+    if (c.baseLevel?.trim()) return c.baseLevel.trim();
+    const derived = c.className.replace(/[\d\s][A-Z]$/, m => m[0]).trim();
+    return derived || c.className;
+  }
+
   // Group classes by baseLevel
   function groupClasses(list) {
     return list.reduce((acc, c) => {
-      const key = c.baseLevel?.trim() || c.className;
+      const key = deriveBaseLevel(c);
       if (!acc[key]) acc[key] = [];
       acc[key].push(c);
       return acc;
