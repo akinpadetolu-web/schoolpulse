@@ -138,18 +138,18 @@ export default function StudentGrades() {
 
                     {/* Weighted breakdown banner */}
                     {hasWeights && breakdown.length > 0 && (
-                      <div className="mt-2 p-2.5 bg-muted/60 rounded-lg text-xs font-mono text-muted-foreground leading-relaxed">
-                        <div className="flex items-center gap-1 mb-1.5 font-sans font-medium text-foreground">
-                          <Info className="w-3.5 h-3.5 text-primary" /> Weight Breakdown
+                      <div className="mt-2 p-3 bg-primary/5 border border-primary/15 rounded-lg text-xs font-mono leading-relaxed">
+                        <div className="flex items-center gap-1.5 mb-2 font-sans font-semibold text-primary">
+                          <Info className="w-3.5 h-3.5" /> Weight Breakdown
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-foreground">
                           {breakdown.map(b => (
                             <span key={b.assessmentType}>
-                              <span className="capitalize">{b.categoryName}</span>
-                              {' '}<span className="text-muted-foreground/70">{b.weight}%</span>
-                              {' '}(<span className={b.categoryAvg !== null && b.categoryAvg > 0 ? 'text-foreground' : 'text-red-400'}>{b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}</span>)
-                              {' → '}<strong>{b.contribution.toFixed(1)}</strong>
-                              {b.count === 0 && <span className="text-red-400"> [no scores]</span>}
+                              <span className="capitalize font-medium">{b.categoryName}</span>
+                              {' '}<span className="text-muted-foreground">{b.weight}%</span>
+                              {' '}(<span className={b.categoryAvg !== null && b.categoryAvg > 0 ? 'text-primary font-medium' : 'text-destructive'}>{b.categoryAvg !== null ? b.categoryAvg.toFixed(0) : '—'}</span>)
+                              {' → '}<strong className="text-primary">{b.contribution.toFixed(1)}</strong>
+                              {b.count === 0 && <span className="text-destructive font-medium"> [no scores]</span>}
                             </span>
                           ))}
                           <span className="font-sans font-bold text-foreground">= {overall}%</span>
