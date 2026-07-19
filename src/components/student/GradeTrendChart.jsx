@@ -2,15 +2,11 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp } from 'lucide-react';
-
-function pct(score, max) {
-  if (!max) return 0;
-  return Math.round((score / max) * 100);
-}
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#6366f1'];
 
-export default function GradeTrendChart({ grades }) {
+export default function GradeTrendChart({ grades, gradeCategories }) {
   const { trendData, subjects } = useMemo(() => {
     if (!grades || grades.length === 0) return { trendData: [], subjects: [] };
 
@@ -19,12 +15,11 @@ export default function GradeTrendChart({ grades }) {
       if (g.score == null || g.maxScore <= 0 || !g.subjectName) return;
       if (!bySubject[g.subjectName]) bySubject[g.subjectName] = [];
       bySubject[g.subjectName].push({
-        percentage: pct(g.score, g.maxScore),
+        ...g,
         date: new Date(g.lastUpdatedAt || g.created_date),
       });
     });
 
-    // Collect all unique dates sorted chronologically
     const allDates = grades
       .map(g => new Date(g.lastUpdatedAt || g.created_date))
       .filter(d => !isNaN(d))
@@ -41,20 +36,24 @@ export default function GradeTrendChart({ grades }) {
     const sortedDates = [...dateMap.values()].sort((a, b) => a.ts - b.ts);
     const subjectNames = Object.keys(bySubject).sort();
 
-    // Build trend data: for each date, compute cumulative average per subject up to that date
+    // For each date, compute cumulative weighted average per subject up to that date
     const data = sortedDates.map((dateEntry) => {
       const point = { date: dateEntry.label };
       subjectNames.forEach(subject => {
-        const upTo = bySubject[subject].filter(g => g.date.getTime() <= dateEntry.ts);
+        const subjectGrades = bySubject[subject];
+        const subjectId = subjectGrades[0]?.subjectId;
+        const upTo = subjectGrades.filter(g => g.date.getTime() <= dateEntry.ts);
         if (upTo.length > 0) {
-          point[subject] = Math.round(upTo.reduce((s, g) => s + g.percentage, 0) / upTo.length);
+          const cats = (gradeCategories || []).filter(c => c.subjectId === subjectId);
+          const { overall } = getSubjectFinalGrade(upTo, cats);
+          point[subject] = overall != null ? Math.round(overall) : null;
         }
       });
       return point;
     });
 
     return { trendData: data, subjects: subjectNames };
-  }, [grades]);
+  }, [grades, gradeCategories]);
 
   return (
     <Card className="border-0 shadow-sm">

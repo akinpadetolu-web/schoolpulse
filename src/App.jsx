@@ -133,6 +133,7 @@ const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
 const StudentTimetable = lazy(() => import('./pages/student/StudentTimetable'));
 const StudentAssignments = lazy(() => import('./pages/student/StudentAssignments'));
 const StudentGrades = lazy(() => import('./pages/student/StudentGrades'));
+const StudentSubjects = lazy(() => import('./pages/student/StudentSubjects'));
 const StudentGradeTrends = lazy(() => import('./pages/student/StudentGradeTrends'));
 const StudentMaterials = lazy(() => import('./pages/student/StudentMaterials'));
 const StudentAssignmentSummary = lazy(() => import('./pages/student/StudentAssignmentSummary'));
@@ -296,6 +297,7 @@ const AuthenticatedApp = () => {
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="assignment-summary" element={<StudentAssignmentSummary />} />
           <Route path="grades" element={<StudentGrades />} />
+          <Route path="subjects" element={<StudentSubjects />} />
           <Route path="grade-trends" element={<StudentGradeTrends />} />
           <Route path="materials" element={<StudentMaterials />} />
           <Route path="lesson-plans" element={<StudentLessonPlans />} />

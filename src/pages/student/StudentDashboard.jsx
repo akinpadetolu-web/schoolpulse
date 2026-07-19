@@ -8,6 +8,7 @@ import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, C
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import TermProgressTab from '@/components/student/TermProgressTab';
 import GradeTrendChart from '@/components/student/GradeTrendChart';
+import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -16,6 +17,7 @@ import {
 export default function StudentDashboard() {
   const { schoolUser: user } = useSchoolAuth();
   const [grades, setGrades] = useState([]);
+  const [gradeCategories, setGradeCategories] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [timetableCount, setTimetableCount] = useState(0);
@@ -24,28 +26,40 @@ export default function StudentDashboard() {
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    const [tt, asgn, grd, subs] = await Promise.all([
+    const [tt, asgn, grd, subs, cats] = await Promise.all([
       base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
       base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
+      base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),
     ]);
     setTimetableCount((tt || []).length);
     setAssignments(asgn || []);
     setGrades(grd || []);
     setSubmissions(subs || []);
+    setGradeCategories(cats || []);
     setLoading(false);
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
+  // Compute weighted overall average: per-subject weighted average, then average across subjects
   const overallAvg = useMemo(() => {
     if (!grades.length) return null;
-    const valid = grades.filter(g => g.score != null && g.maxScore > 0);
-    if (!valid.length) return null;
-    const total = valid.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0);
-    return Math.round(total / valid.length);
-  }, [grades]);
+    const bySubject = {};
+    grades.forEach(g => {
+      if (!g.subjectId) return;
+      if (!bySubject[g.subjectId]) bySubject[g.subjectId] = { grades: [], subjectName: g.subjectName };
+      bySubject[g.subjectId].grades.push(g);
+    });
+    const subjectAvgs = Object.entries(bySubject).map(([subjectId, { grades: subjectGrades }]) => {
+      const cats = gradeCategories.filter(c => c.subjectId === subjectId);
+      const { overall } = getSubjectFinalGrade(subjectGrades, cats);
+      return overall;
+    }).filter(v => v != null);
+    if (subjectAvgs.length === 0) return null;
+    return Math.round(subjectAvgs.reduce((s, v) => s + v, 0) / subjectAvgs.length);
+  }, [grades, gradeCategories]);
 
   useEffect(() => {
     if (overallAvg != null && user?.schoolId) {
@@ -54,18 +68,22 @@ export default function StudentDashboard() {
   }, [overallAvg, user?.schoolId]);
 
   const subjectData = useMemo(() => {
-    const map = {};
-    grades.filter(g => g.subjectName && g.score != null && g.maxScore > 0).forEach(g => {
-      if (!map[g.subjectName]) map[g.subjectName] = { sum: 0, count: 0 };
-      map[g.subjectName].sum += (g.score / g.maxScore) * 100;
-      map[g.subjectName].count += 1;
+    const bySubject = {};
+    grades.forEach(g => {
+      if (!g.subjectName) return;
+      if (!bySubject[g.subjectName]) bySubject[g.subjectName] = { grades: [], subjectId: g.subjectId };
+      bySubject[g.subjectName].grades.push(g);
     });
-    return Object.entries(map).map(([name, d]) => ({
-      subject: name.length > 10 ? name.slice(0, 10) + '…' : name,
-      fullName: name,
-      avg: Math.round(d.sum / d.count),
-    })).sort((a, b) => b.avg - a.avg);
-  }, [grades]);
+    return Object.entries(bySubject).map(([name, { grades: subjectGrades, subjectId }]) => {
+      const cats = gradeCategories.filter(c => c.subjectId === subjectId);
+      const { overall } = getSubjectFinalGrade(subjectGrades, cats);
+      return {
+        subject: name.length > 10 ? name.slice(0, 10) + '…' : name,
+        fullName: name,
+        avg: overall != null ? Math.round(overall) : 0,
+      };
+    }).filter(d => d.avg > 0).sort((a, b) => b.avg - a.avg);
+  }, [grades, gradeCategories]);
 
   const submittedIds = useMemo(() => new Set(submissions.map(s => s.assignmentId)), [submissions]);
   const completedCount = assignments.filter(a => submittedIds.has(a.id)).length;
@@ -277,7 +295,7 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
-            <GradeTrendChart grades={grades} />
+            <GradeTrendChart grades={grades} gradeCategories={gradeCategories} />
 
             </TabsContent>
 

@@ -24,6 +24,7 @@ const baseStudentNavGroups = [
       { label: "Assignments", path: "/student/assignments", icon: FileText },
       { label: "Assignment Summary", path: "/student/assignment-summary", icon: TrendingUp },
       { label: "Grades", path: "/student/grades", icon: ClipboardList },
+      { label: "My Subjects", path: "/student/subjects", icon: BookOpen },
       { label: "Grade Trends", path: "/student/grade-trends", icon: TrendingUp },
       { label: "Lesson Plans", path: "/student/lesson-plans", icon: NotebookPen },
       { label: "Report Cards", path: "/student/report-cards", icon: FileText },
