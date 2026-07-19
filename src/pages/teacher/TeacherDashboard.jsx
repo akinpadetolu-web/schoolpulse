@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,12 +24,9 @@ export default function TeacherDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  const ptr = usePullToRefresh(load);
-
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
-    <PullToRefreshWrapper {...ptr}>
     <div className="p-4 md:p-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-1">Welcome, {user?.fullName}</h1>
@@ -54,6 +49,5 @@ export default function TeacherDashboard() {
 
       <TeacherLiveAnalytics />
     </div>
-    </PullToRefreshWrapper>
   );
 }
