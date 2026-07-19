@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import {
   Plus, Search, Loader2, ChevronRight, Building2, Settings2,
-  CheckCircle2, Copy, GraduationCap, Users, UserCog
+  CheckCircle2, Copy, GraduationCap, Users, UserCog, Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getDefaultFeatures, clearFeatureCache } from '@/lib/featureToggleManager';
@@ -121,8 +121,11 @@ export default function SchoolCustomization() {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="teacher">
+            <Tabs defaultValue="admin">
               <TabsList className="mb-4">
+                <TabsTrigger value="admin">
+                  <Shield className="w-3.5 h-3.5 mr-1.5" /> Admin Portal
+                </TabsTrigger>
                 <TabsTrigger value="teacher">
                   <Users className="w-3.5 h-3.5 mr-1.5" /> Teacher Portal
                 </TabsTrigger>
@@ -134,6 +137,9 @@ export default function SchoolCustomization() {
                 </TabsTrigger>
               </TabsList>
 
+              <TabsContent value="admin">
+                <PortalFeaturePanel school={selectedSchool} role="admin" />
+              </TabsContent>
               <TabsContent value="teacher">
                 <PortalFeaturePanel school={selectedSchool} role="teacher" />
               </TabsContent>
@@ -180,11 +186,12 @@ function SchoolBuilderWizard({ onClose, onCreated }) {
   const [createdSchool, setCreatedSchool] = useState(null);
   const [credentials, setCredentials] = useState(null);
   const [portalFeatures, setPortalFeatures] = useState({
+    admin: getDefaultFeatures('admin'),
     teacher: getDefaultFeatures('teacher'),
     student: getDefaultFeatures('student'),
     parent: getDefaultFeatures('parent'),
   });
-  const [activePortal, setActivePortal] = useState('teacher');
+  const [activePortal, setActivePortal] = useState('admin');
   const [copied, setCopied] = useState(false);
 
   function reset() {
@@ -198,7 +205,7 @@ function SchoolBuilderWizard({ onClose, onCreated }) {
       student: getDefaultFeatures('student'),
       parent: getDefaultFeatures('parent'),
     });
-    setActivePortal('teacher');
+    setActivePortal('admin');
     setCopied(false);
   }
 
@@ -252,7 +259,7 @@ function SchoolBuilderWizard({ onClose, onCreated }) {
   async function handleSaveFeatures() {
     setLoading(true);
     try {
-      for (const role of ['teacher', 'student', 'parent']) {
+      for (const role of ['admin', 'teacher', 'student', 'parent']) {
         await base44.entities.FeatureToggle.create({
           schoolId: createdSchool.id,
           schoolName: createdSchool.schoolName,

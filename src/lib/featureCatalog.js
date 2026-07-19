@@ -65,9 +65,11 @@ export const PORTAL_FEATURES = {
     'timetable', 'assignments', 'grades', 'attendance', 'announcements',
     'messages', 'reportCards', 'lessonPlans', 'studentReports', 'eClass',
   ],
+  admin: ALL_FEATURES.map(f => f.id),
 };
 
 export const PORTAL_LABELS = {
+  admin: 'Admin Portal',
   teacher: 'Teacher Portal',
   student: 'Student Portal',
   parent: 'Parent Portal',
