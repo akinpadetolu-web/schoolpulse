@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle, Home, Bed } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
 import TermProgressTab from '@/components/student/TermProgressTab';
+import GradeTrendChart from '@/components/student/GradeTrendChart';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -276,8 +277,9 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
+            <GradeTrendChart grades={grades} />
 
-          </TabsContent>
+            </TabsContent>
 
           <TabsContent value="progress">
             <TermProgressTab user={user} grades={grades} />
