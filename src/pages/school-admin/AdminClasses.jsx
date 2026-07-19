@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Pencil, Archive, RotateCcw, BookOpen, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Pencil, Archive, RotateCcw, BookOpen, AlertTriangle, ChevronDown, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LEVEL_PRESETS = [
@@ -28,6 +28,7 @@ export default function AdminClasses() {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const [form, setForm] = useState({ className: "", baseLevel: "", subsetName: "", educationLevel: "", academicTrack: "" });
 
   useEffect(() => { loadData(); }, []);
@@ -109,6 +110,54 @@ export default function AdminClasses() {
     return mapped.length === 0;
   });
 
+  // Group classes by baseLevel
+  function groupClasses(list) {
+    return list.reduce((acc, c) => {
+      const key = c.baseLevel?.trim() || c.className;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(c);
+      return acc;
+    }, {});
+  }
+
+  function toggleGroup(key) {
+    setExpandedGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function renderClassCard(c, tab) {
+    const subjectCount = subjects.filter(s => (s.applicableClasses || []).includes(c.id)).length;
+    const studentCount = students.filter(st => st.classId === c.id).length;
+    const hasWarning = tab === "active" && subjectCount === 0;
+    return (
+      <Card key={c.id} className={`border-0 shadow-sm ${hasWarning ? 'border-l-4 border-l-amber-400' : ''}`}>
+        <CardContent className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${c.educationLevel === "junior" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+              {c.className.slice(0, 3)}
+            </div>
+            <div>
+              <p className="font-medium">{c.className}</p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {c.subsetName && <Badge variant="outline" className="text-xs">Arm {c.subsetName}</Badge>}
+                {c.educationLevel && <span className="text-xs text-muted-foreground capitalize">{c.educationLevel}</span>}
+                {c.academicTrack && <Badge variant="outline" className="text-xs">{c.academicTrack}</Badge>}
+                <span className="text-xs text-muted-foreground">{studentCount} student{studentCount !== 1 ? "s" : ""}</span>
+                <span className="text-xs text-muted-foreground">{subjectCount} subject{subjectCount !== 1 ? "s" : ""}</span>
+                {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />No subjects</span>}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => toggleArchive(c)}>
+              {c.isArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
@@ -162,13 +211,7 @@ export default function AdminClasses() {
 
         {["active", "archived"].map(tab => {
           const list = tab === "active" ? active : archived;
-          // Group by baseLevel
-          const grouped = list.reduce((acc, c) => {
-            const key = c.baseLevel || "Other";
-            if (!acc[key]) acc[key] = [];
-            acc[key].push(c);
-            return acc;
-          }, {});
+          const grouped = groupClasses(list);
 
           return (
             <TabsContent key={tab} value={tab}>
@@ -178,46 +221,48 @@ export default function AdminClasses() {
                   <p>{tab === "active" ? "No classes yet. Use the quick-add presets above or create manually." : "No archived classes."}</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([baseLevel, items]) => (
-                    <div key={baseLevel}>
-                      <p className="text-sm font-semibold text-muted-foreground mb-2">{baseLevel}</p>
-                      <div className="grid gap-2">
-                        {items.map(c => {
-                           const subjectCount = subjects.filter(s => (s.applicableClasses || []).includes(c.id)).length;
-                           const studentCount = students.filter(st => st.classId === c.id).length;
-                           const hasWarning = tab === "active" && subjectCount === 0;
-                          return (
-                            <Card key={c.id} className={`border-0 shadow-sm ${hasWarning ? 'border-l-4 border-l-amber-400' : ''}`}>
-                              <CardContent className="p-4 flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${c.educationLevel === "junior" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
-                                    {c.className.slice(0, 3)}
-                                  </div>
-                                  <div>
-                                   <p className="font-medium">{c.className}</p>
-                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                     {c.educationLevel && <span className="text-xs text-muted-foreground capitalize">{c.educationLevel}</span>}
-                                     {c.academicTrack && <Badge variant="outline" className="text-xs">{c.academicTrack}</Badge>}
-                                     <span className="text-xs text-muted-foreground">{studentCount} student{studentCount !== 1 ? "s" : ""}</span>
-                                     <span className="text-xs text-muted-foreground">{subjectCount} subject{subjectCount !== 1 ? "s" : ""}</span>
-                                     {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />No subjects</span>}
-                                   </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                                  <Button variant="ghost" size="icon" onClick={() => toggleArchive(c)}>
-                                    {c.isArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([baseLevel, items]) => {
+                    const isGroup = items.length > 1;
+                    const isExpanded = expandedGroups[baseLevel];
+                    const totalStudents = items.reduce((sum, c) => sum + students.filter(st => st.classId === c.id).length, 0);
+                    const educationLevel = items[0]?.educationLevel;
+                    const hasWarning = tab === "active" && items.some(c => subjects.filter(s => (s.applicableClasses || []).includes(c.id)).length === 0);
+
+                    if (!isGroup) {
+                      return renderClassCard(items[0], tab);
+                    }
+
+                    return (
+                      <Card key={baseLevel} className={`border-0 shadow-sm overflow-hidden ${hasWarning ? 'border-l-4 border-l-amber-400' : ''}`}>
+                        <button
+                          onClick={() => toggleGroup(baseLevel)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${educationLevel === "junior" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                              {baseLevel.slice(0, 3)}
+                            </div>
+                            <div>
+                              <p className="font-medium">{baseLevel}</p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <Badge variant="outline" className="text-xs">{items.length} arms</Badge>
+                                {educationLevel && <span className="text-xs text-muted-foreground capitalize">{educationLevel}</span>}
+                                <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="w-3 h-3" />{totalStudents} student{totalStudents !== 1 ? "s" : ""}</span>
+                                {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Some arms need subjects</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isExpanded && (
+                          <div className="border-t bg-muted/20 p-3 space-y-2">
+                            {items.map(c => renderClassCard(c, tab))}
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -235,7 +280,7 @@ export default function AdminClasses() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Base Level</Label>
+                <Label>Base Level <span className="text-xs text-muted-foreground">(Main Class)</span></Label>
                 <Input value={form.baseLevel} onChange={e => setForm({ ...form, baseLevel: e.target.value })} placeholder="e.g. JS1" />
               </div>
               <div className="space-y-2">

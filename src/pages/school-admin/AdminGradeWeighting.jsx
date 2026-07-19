@@ -35,16 +35,16 @@ export default function AdminGradeWeighting() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingCat, setEditingCat] = useState(null);
+  const [editingGroup, setEditingGroup] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Filters
-  const [filterClass, setFilterClass] = useState('');
+  const [filterBaseLevel, setFilterBaseLevel] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
 
   // Form state
   const [form, setForm] = useState({
-    classId: '', subjectId: '', categoryName: '', assessmentType: 'exam', weight: '', description: '',
+    baseLevel: '', subjectId: '', categoryName: '', assessmentType: 'exam', weight: '', description: '',
   });
 
   useEffect(() => { loadData(); }, []);
@@ -61,17 +61,34 @@ export default function AdminGradeWeighting() {
     setLoading(false);
   }
 
+  // Build main classes: group by baseLevel, one entry per baseLevel
+  const mainClasses = useMemo(() => {
+    const groups = {};
+    classes.forEach(c => {
+      const key = c.baseLevel?.trim() || c.className;
+      if (!groups[key]) groups[key] = { baseLevel: key, label: key, classes: [], educationLevel: c.educationLevel };
+      groups[key].classes.push(c);
+    });
+    return Object.values(groups).sort((a, b) => a.label.localeCompare(b.label));
+  }, [classes]);
+
+  // Helper: get the group key for a category
+  function getCatKey(cat) {
+    return cat.baseLevel?.trim() || cat.classId;
+  }
+
   function openCreate() {
-    setEditingCat(null);
-    setForm({ classId: filterClass || '', subjectId: filterSubject || '', categoryName: '', assessmentType: 'exam', weight: '', description: '' });
+    setEditingGroup(null);
+    setForm({ baseLevel: filterBaseLevel || '', subjectId: filterSubject || '', categoryName: '', assessmentType: 'exam', weight: '', description: '' });
     setShowDialog(true);
   }
 
-  function openEdit(cat) {
-    setEditingCat(cat);
+  function openEdit(group, cat) {
+    const recordsToEdit = group.allCats.filter(c => c.assessmentType === cat.assessmentType);
+    setEditingGroup({ baseLevel: group.key, subjectId: group.subjectId, recordIds: recordsToEdit.map(c => c.id) });
     setForm({
-      classId: cat.classId,
-      subjectId: cat.subjectId,
+      baseLevel: group.key,
+      subjectId: group.subjectId,
       categoryName: cat.categoryName,
       assessmentType: cat.assessmentType || 'exam',
       weight: String(cat.weight),
@@ -80,59 +97,85 @@ export default function AdminGradeWeighting() {
     setShowDialog(true);
   }
 
-  // Preview total weight while filling the form
+  // Preview total weight (deduplicated by assessmentType within the same baseLevel+subject)
   const previewTotal = useMemo(() => {
-    if (!form.classId || !form.subjectId) return null;
+    if (!form.baseLevel || !form.subjectId) return null;
     const existing = categories.filter(c =>
-      c.classId === form.classId &&
+      getCatKey(c) === form.baseLevel &&
       c.subjectId === form.subjectId &&
-      c.id !== editingCat?.id
+      !editingGroup?.recordIds?.includes(c.id)
     );
-    const existingTotal = existing.reduce((sum, c) => sum + Number(c.weight || 0), 0);
+    const seenTypes = new Set();
+    const unique = existing.filter(c => {
+      if (seenTypes.has(c.assessmentType)) return false;
+      seenTypes.add(c.assessmentType);
+      return true;
+    });
+    const existingTotal = unique.reduce((sum, c) => sum + Number(c.weight || 0), 0);
     const newWeight = Number(form.weight || 0);
     return Math.round((existingTotal + newWeight) * 100) / 100;
-  }, [form.classId, form.subjectId, form.weight, categories, editingCat]);
+  }, [form.baseLevel, form.subjectId, form.weight, categories, editingGroup]);
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.classId || !form.subjectId || !form.categoryName || !form.assessmentType || form.weight === '') {
+    if (!form.baseLevel || !form.subjectId || !form.categoryName || !form.assessmentType || form.weight === '') {
       return toast.error('All fields are required');
     }
     const weight = parseFloat(form.weight);
     if (weight <= 0 || weight > 100) return toast.error('Weight must be between 1 and 100');
     if (previewTotal > 100) return toast.error(`Total weight would be ${previewTotal}%. Must not exceed 100%.`);
 
-    // Check duplicate assessmentType for same class/subject (excluding self when editing)
+    // Check duplicate assessmentType for same baseLevel/subject (excluding editing group)
     const dupType = categories.find(c =>
-      c.classId === form.classId &&
+      getCatKey(c) === form.baseLevel &&
       c.subjectId === form.subjectId &&
       c.assessmentType === form.assessmentType &&
-      c.id !== editingCat?.id
+      !editingGroup?.recordIds?.includes(c.id)
     );
-    if (dupType) return toast.error(`A category for "${form.assessmentType}" already exists in this class/subject.`);
+    if (dupType) return toast.error(`A category for "${form.assessmentType}" already exists for this class/subject.`);
 
     setSaving(true);
-    const cls = classes.find(c => c.id === form.classId);
     const subj = subjects.find(s => s.id === form.subjectId);
-    const payload = {
-      schoolId: user.schoolId,
-      schoolName: user.schoolName,
-      classId: form.classId,
-      className: cls?.className || '',
-      subjectId: form.subjectId,
-      subjectName: subj?.name || '',
-      categoryName: form.categoryName,
-      assessmentType: form.assessmentType,
-      weight,
-      description: form.description,
-    };
+    const matchingClasses = classes.filter(c => (c.baseLevel?.trim() || c.className) === form.baseLevel);
 
     try {
-      if (editingCat) {
-        await base44.entities.GradeCategory.update(editingCat.id, payload);
+      if (editingGroup) {
+        // Update all records in the editing group
+        await Promise.all(editingGroup.recordIds.map(id => {
+          const cat = categories.find(c => c.id === id);
+          const cls = classes.find(c => c.id === cat.classId);
+          return base44.entities.GradeCategory.update(id, {
+            schoolId: user.schoolId,
+            schoolName: user.schoolName,
+            classId: cat.classId,
+            className: cls?.className || cat.className,
+            baseLevel: form.baseLevel,
+            subjectId: form.subjectId,
+            subjectName: subj?.name || '',
+            categoryName: form.categoryName,
+            assessmentType: form.assessmentType,
+            weight,
+            description: form.description,
+          });
+        }));
         toast.success('Category updated');
       } else {
-        await base44.entities.GradeCategory.create(payload);
+        // Create a record for each matching class (subset)
+        await Promise.all(matchingClasses.map(c =>
+          base44.entities.GradeCategory.create({
+            schoolId: user.schoolId,
+            schoolName: user.schoolName,
+            classId: c.id,
+            className: c.className,
+            baseLevel: form.baseLevel,
+            subjectId: form.subjectId,
+            subjectName: subj?.name || '',
+            categoryName: form.categoryName,
+            assessmentType: form.assessmentType,
+            weight,
+            description: form.description,
+          })
+        ));
         toast.success('Category created');
       }
       clearWeightCache();
@@ -144,25 +187,41 @@ export default function AdminGradeWeighting() {
     setSaving(false);
   }
 
-  async function handleDelete(cat) {
+  async function handleDelete(group, cat) {
     if (!confirm(`Delete "${cat.categoryName}"?`)) return;
-    await base44.entities.GradeCategory.delete(cat.id);
+    const recordsToDelete = group.allCats.filter(c => c.assessmentType === cat.assessmentType);
+    await Promise.all(recordsToDelete.map(c => base44.entities.GradeCategory.delete(c.id)));
     clearWeightCache();
     toast.success('Category deleted');
     loadData();
   }
 
-  const filtered = categories.filter(c =>
-    (!filterClass || c.classId === filterClass) &&
-    (!filterSubject || c.subjectId === filterSubject)
-  );
+  // Filter categories by selected baseLevel and subject
+  const filtered = categories.filter(c => {
+    const key = getCatKey(c);
+    return (!filterBaseLevel || key === filterBaseLevel) &&
+           (!filterSubject || c.subjectId === filterSubject);
+  });
 
-  // Group by class+subject
+  // Group by (baseLevel || classId) + subjectId, deduplicate by assessmentType
   const grouped = {};
   filtered.forEach(cat => {
-    const key = `${cat.classId}||${cat.subjectId}`;
-    if (!grouped[key]) grouped[key] = { label: `${cat.className} — ${cat.subjectName}`, cats: [] };
-    grouped[key].cats.push(cat);
+    const key = getCatKey(cat);
+    const groupKey = `${key}||${cat.subjectId}`;
+    if (!grouped[groupKey]) {
+      grouped[groupKey] = {
+        key,
+        label: `${key} — ${cat.subjectName}`,
+        subjectId: cat.subjectId,
+        cats: [],     // deduplicated display records (one per assessmentType)
+        allCats: [],  // all records (for edit/delete operations)
+      };
+    }
+    grouped[groupKey].allCats.push(cat);
+    const existing = grouped[groupKey].cats.find(c => c.assessmentType === cat.assessmentType);
+    if (!existing) {
+      grouped[groupKey].cats.push(cat);
+    }
   });
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -172,18 +231,18 @@ export default function AdminGradeWeighting() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Grade Weighting</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Configure assessment weights per class & subject. Weights must total 100%.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Configure assessment weights per main class & subject. Weights apply to all arms/subsets and must total 100%.</p>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> New Category</Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <Select value={filterClass} onValueChange={setFilterClass}>
+        <Select value={filterBaseLevel} onValueChange={setFilterBaseLevel}>
           <SelectTrigger className="w-44"><SelectValue placeholder="All classes" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={null}>All classes</SelectItem>
-            {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+            {mainClasses.map(mc => <SelectItem key={mc.baseLevel} value={mc.baseLevel}>{mc.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterSubject} onValueChange={setFilterSubject}>
@@ -205,13 +264,14 @@ export default function AdminGradeWeighting() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {Object.entries(grouped).map(([key, { label, cats }]) => {
+          {Object.entries(grouped).map(([key, group]) => {
+            const cats = group.cats;
             const { valid, total } = validateWeightTotal(cats);
             return (
               <Card key={key} className="border-0 shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <CardTitle className="text-base">{label}</CardTitle>
+                    <CardTitle className="text-base">{group.label}</CardTitle>
                     <div className="flex items-center gap-2">
                       {valid ? (
                         <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
@@ -254,10 +314,10 @@ export default function AdminGradeWeighting() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-bold">{cat.weight}%</Badge>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(cat)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(group, cat)}>
                             <Edit2 className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(cat)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(group, cat)}>
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
@@ -275,17 +335,18 @@ export default function AdminGradeWeighting() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{editingCat ? 'Edit Category' : 'New Grade Category'}</DialogTitle>
+            <DialogTitle>{editingGroup ? 'Edit Category' : 'New Grade Category'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 py-1">
             <div>
-              <Label className="text-sm">Class *</Label>
-              <Select value={form.classId} onValueChange={v => setForm({ ...form, classId: v })}>
-                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+              <Label className="text-sm">Main Class *</Label>
+              <Select value={form.baseLevel} onValueChange={v => setForm({ ...form, baseLevel: v })}>
+                <SelectTrigger><SelectValue placeholder="Select main class" /></SelectTrigger>
                 <SelectContent>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
+                  {mainClasses.map(mc => <SelectItem key={mc.baseLevel} value={mc.baseLevel}>{mc.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Weights apply to all arms/subsets of this class.</p>
             </div>
             <div>
               <Label className="text-sm">Subject *</Label>
@@ -340,7 +401,7 @@ export default function AdminGradeWeighting() {
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={saving || previewTotal > 100}>
                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {editingCat ? 'Update' : 'Create'}
+                {editingGroup ? 'Update' : 'Create'}
               </Button>
             </DialogFooter>
           </form>
