@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
     // ── Initialize a transaction ──────────────────────────────────────────
     if (action === 'initialize') {
-      const { schoolId, invoiceId, bookFineId, amount, studentId, studentName, email, paymentType, callbackUrl } = body;
+      const { schoolId, invoiceId, bookFineId, feeStructureId, amount, studentId, studentName, classId, className, email, paymentType, callbackUrl } = body;
 
       if (!schoolId || !amount || !email) {
         return Response.json({ error: 'Missing required fields (schoolId, amount, email)' }, { status: 400 });
@@ -44,8 +44,11 @@ Deno.serve(async (req) => {
             schoolId,
             invoiceId: invoiceId || null,
             bookFineId: bookFineId || null,
+            feeStructureId: feeStructureId || null,
             studentId,
             studentName,
+            classId: classId || null,
+            className: className || null,
             paymentType: paymentType || 'school_fees',
             parentId: body.parentId || null,
             custom_fields: [
@@ -103,6 +106,7 @@ Deno.serve(async (req) => {
       const pType = metadata.paymentType || 'school_fees';
       const invId = metadata.invoiceId;
       const fineId = metadata.bookFineId;
+      const feeStructId = metadata.feeStructureId;
       const parentId = metadata.parentId;
 
       const today = new Date().toISOString().split('T')[0];
@@ -159,6 +163,50 @@ Deno.serve(async (req) => {
             amountPaid: newAmountPaid,
             outstandingBalance: newBalance,
             status: newStatus,
+          });
+        }
+      } else if (feeStructId) {
+        // Payment from a fee structure — create invoice + payment record
+        const structure = await base44.asServiceRole.entities.FeeStructure.get(feeStructId);
+        if (structure) {
+          const invNumber = `INV-${Date.now()}`;
+          const newInvoice = await base44.asServiceRole.entities.FeeInvoice.create({
+            schoolId,
+            invoiceNumber: invNumber,
+            studentId,
+            studentName,
+            classId: metadata.classId || '',
+            className: metadata.className || '',
+            feeStructureId: feeStructId,
+            feeStructureName: structure.name,
+            academicYear: structure.academicYear || '',
+            term: structure.term || '',
+            invoiceDate: today,
+            feeItems: structure.feeItems || [],
+            totalAmount: paidAmount,
+            amountPaid: paidAmount,
+            outstandingBalance: 0,
+            status: 'paid',
+            sentToParent: true,
+          });
+
+          await base44.asServiceRole.entities.FeePayment.create({
+            schoolId,
+            invoiceId: newInvoice.id,
+            invoiceNumber: invNumber,
+            paymentType: 'school_fees',
+            studentId,
+            studentName,
+            amount: paidAmount,
+            paymentDate: today,
+            paymentMethod: 'paystack',
+            referenceNumber: reference,
+            status: 'confirmed',
+            confirmedBy: parentId || 'paystack',
+            confirmedAt: nowIso,
+            submittedByParent: true,
+            parentId: parentId || null,
+            notes: `Payment for ${structure.name} via Paystack`,
           });
         }
       }

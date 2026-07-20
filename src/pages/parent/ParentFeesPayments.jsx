@@ -50,6 +50,7 @@ export default function ParentFeesPayments() {
   const [payingItem, setPayingItem] = useState(null);
   const [payAmount, setPayAmount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [feeStructures, setFeeStructures] = useState([]);
 
   const currency = paySettings?.currencySymbol || '₦';
 
@@ -71,16 +72,18 @@ export default function ParentFeesPayments() {
       const linked = students.filter(s => studentIds.includes(s.id));
       setLinkedStudents(linked);
 
-      const [inv, pay, fineRes, settings] = await Promise.all([
+      const [inv, pay, fineRes, settings, structRes] = await Promise.all([
         base44.entities.FeeInvoice.filter({ schoolId: user.schoolId }),
         base44.entities.FeePayment.filter({ schoolId: user.schoolId }),
         base44.entities.BookFine.filter({ schoolId: user.schoolId }),
         base44.entities.PaymentSettings.filter({ schoolId: user.schoolId }),
+        base44.entities.FeeStructure.filter({ schoolId: user.schoolId }),
       ]);
 
       setInvoices(inv.filter(i => studentIds.includes(i.studentId)));
       setPayments(pay.filter(p => studentIds.includes(p.studentId)));
       setFines(fineRes.filter(f => studentIds.includes(f.studentId)));
+      setFeeStructures(structRes || []);
       setPaySettings((settings || [])[0] || null);
     } catch (e) {}
     setLoading(false);
@@ -111,13 +114,31 @@ export default function ParentFeesPayments() {
   const filteredFines = selectedStudentId === 'all' ? fines : fines.filter(f => f.studentId === selectedStudentId);
   const filteredPayments = selectedStudentId === 'all' ? payments : payments.filter(p => p.studentId === selectedStudentId);
 
-  const totalFeesOwed = filteredInvoices.reduce((s, i) => s + (i.outstandingBalance || 0), 0);
+  const applicableStructures = useMemo(() => {
+    const students = selectedStudentId === 'all' ? linkedStudents : linkedStudents.filter(s => s.id === selectedStudentId);
+    const result = [];
+    for (const student of students) {
+      for (const structure of feeStructures) {
+        if (structure.status !== 'active') continue;
+        const applies = structure.applyToAllClasses || (structure.applicableClasses || []).includes(student.classId);
+        if (!applies) continue;
+        const alreadyPaid = invoices.some(inv => inv.studentId === student.id && inv.feeStructureId === structure.id && inv.status === 'paid');
+        result.push({ student, structure, alreadyPaid });
+      }
+    }
+    return result;
+  }, [linkedStudents, feeStructures, selectedStudentId, invoices]);
+
+  const totalFeesOwed = filteredInvoices.reduce((s, i) => s + (i.outstandingBalance || 0), 0)
+    + applicableStructures.filter(a => !a.alreadyPaid).reduce((s, a) => s + (a.structure.totalAmount || 0), 0);
   const totalFinesOwed = filteredFines.filter(f => f.status === 'pending').reduce((s, f) => s + (f.amount || 0), 0);
   const totalPaid = filteredPayments.filter(p => p.status === 'confirmed').reduce((s, p) => s + (p.amount || 0), 0);
 
   function openPayDialog(item, type) {
     setPayingItem({ ...item, _type: type });
-    setPayAmount(type === 'fine' ? (item.amount || 0) : (item.outstandingBalance || 0));
+    if (type === 'fine') setPayAmount(item.amount || 0);
+    else if (type === 'structure') setPayAmount(item.totalAmount || 0);
+    else setPayAmount(item.outstandingBalance || 0);
   }
 
   async function initiatePaystack() {
@@ -125,16 +146,20 @@ export default function ParentFeesPayments() {
     setSubmitting(true);
     try {
       const isFine = payingItem._type === 'fine';
+      const isStructure = payingItem._type === 'structure';
       const callbackUrl = `${window.location.origin}${window.location.pathname}`;
       const res = await base44.functions.invoke('paystackPayment', {
         action: 'initialize',
         schoolId: user.schoolId,
-        invoiceId: isFine ? null : payingItem.id,
+        invoiceId: (isFine || isStructure) ? null : payingItem.id,
         bookFineId: isFine ? payingItem.id : null,
+        feeStructureId: isStructure ? payingItem.id : null,
         paymentType: isFine ? 'library_fine' : 'school_fees',
         amount: payAmount,
         studentId: payingItem.studentId,
         studentName: payingItem.studentName,
+        classId: payingItem.classId || null,
+        className: payingItem.className || null,
         email: user.email,
         parentId: user.id,
         callbackUrl,
@@ -252,41 +277,94 @@ export default function ParentFeesPayments() {
 
         {/* School Fees Tab */}
         <TabsContent value="fees">
-          {filteredInvoices.length === 0 ? (
+          {/* Fee Structures */}
+          {applicableStructures.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-muted-foreground mb-2">Applicable Fee Structures</p>
+              <div className="space-y-3">
+                {applicableStructures.map(({ student, structure, alreadyPaid }) => (
+                  <Card key={`${student.id}-${structure.id}`} className="overflow-hidden">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{student.fullName}</p>
+                            <Badge className="bg-blue-100 text-blue-700">Fee Structure</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{structure.name} · {structure.term} · {structure.academicYear}</p>
+                        </div>
+                        {alreadyPaid ? (
+                          <Badge className="bg-green-100 text-green-700"><CheckCircle2 className="w-3 h-3 mr-1" /> Paid</Badge>
+                        ) : (
+                          <Button size="sm" onClick={() => openPayDialog({ ...structure, studentId: student.id, studentName: student.fullName, classId: student.classId, className: student.className }, 'structure')}>
+                            <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                            Pay {currency}{(structure.totalAmount || 0).toLocaleString()}
+                          </Button>
+                        )}
+                      </div>
+                      {(structure.feeItems || []).length > 0 && (
+                        <div className="mt-3 border-t pt-3 space-y-1">
+                          {structure.feeItems.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">{item.feeTypeName}</span>
+                              <span>{currency}{(item.amount || 0).toLocaleString()}</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between text-sm font-bold pt-1 border-t mt-1">
+                            <span>Total</span>
+                            <span>{currency}{(structure.totalAmount || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Invoices */}
+          {filteredInvoices.length > 0 && (
+            <div>
+              {applicableStructures.length > 0 && <p className="text-sm font-medium text-muted-foreground mb-2">Invoices</p>}
+              <div className="space-y-3">
+                {filteredInvoices.map(inv => (
+                  <Card key={inv.id} className="overflow-hidden">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{inv.studentName}</p>
+                            <Badge className={STATUS_STYLES[inv.status] || 'bg-gray-100 text-gray-600'}>{inv.status?.replace(/_/g, ' ')}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{inv.invoiceNumber} · {inv.term} · {inv.academicYear}</p>
+                          {inv.dueDate && <p className="text-xs text-muted-foreground mt-0.5">Due: {moment(inv.dueDate).format('MMM D, YYYY')}</p>}
+                        </div>
+                        {['unpaid', 'partially_paid', 'overdue'].includes(inv.status) && (inv.outstandingBalance || 0) > 0 && (
+                          <Button size="sm" onClick={() => openPayDialog(inv, 'invoice')}>
+                            <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                            Pay {currency}{(inv.outstandingBalance || 0).toLocaleString()}
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex gap-4 mt-3 text-sm border-t pt-3">
+                        <div><span className="text-muted-foreground">Total: </span><span className="font-medium">{currency}{(inv.totalAmount || 0).toLocaleString()}</span></div>
+                        <div><span className="text-muted-foreground">Paid: </span><span className="text-green-700 font-medium">{currency}{(inv.amountPaid || 0).toLocaleString()}</span></div>
+                        <div><span className="text-muted-foreground">Balance: </span><span className="text-red-700 font-bold">{currency}{(inv.outstandingBalance || 0).toLocaleString()}</span></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {applicableStructures.length === 0 && filteredInvoices.length === 0 && (
             <Card><CardContent className="py-10 text-center text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p>No invoices found</p>
+              <p>No fees found</p>
             </CardContent></Card>
-          ) : (
-            <div className="space-y-3">
-              {filteredInvoices.map(inv => (
-                <Card key={inv.id} className="overflow-hidden">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between flex-wrap gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{inv.studentName}</p>
-                          <Badge className={STATUS_STYLES[inv.status] || 'bg-gray-100 text-gray-600'}>{inv.status?.replace(/_/g, ' ')}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{inv.invoiceNumber} · {inv.term} · {inv.academicYear}</p>
-                        {inv.dueDate && <p className="text-xs text-muted-foreground mt-0.5">Due: {moment(inv.dueDate).format('MMM D, YYYY')}</p>}
-                      </div>
-                      {['unpaid', 'partially_paid', 'overdue'].includes(inv.status) && (inv.outstandingBalance || 0) > 0 && (
-                        <Button size="sm" onClick={() => openPayDialog(inv, 'invoice')}>
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                          Pay {currency}{(inv.outstandingBalance || 0).toLocaleString()}
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex gap-4 mt-3 text-sm border-t pt-3">
-                      <div><span className="text-muted-foreground">Total: </span><span className="font-medium">{currency}{(inv.totalAmount || 0).toLocaleString()}</span></div>
-                      <div><span className="text-muted-foreground">Paid: </span><span className="text-green-700 font-medium">{currency}{(inv.amountPaid || 0).toLocaleString()}</span></div>
-                      <div><span className="text-muted-foreground">Balance: </span><span className="text-red-700 font-bold">{currency}{(inv.outstandingBalance || 0).toLocaleString()}</span></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           )}
         </TabsContent>
 
@@ -382,6 +460,8 @@ export default function ParentFeesPayments() {
               <p className="text-sm font-medium">{payingItem?.studentName}</p>
               {payingItem?._type === 'fine' ? (
                 <p className="text-xs text-muted-foreground mt-0.5">{payingItem?.bookTitle} · {FINE_TYPE_LABELS[payingItem?.fineType] || payingItem?.fineType}</p>
+              ) : payingItem?._type === 'structure' ? (
+                <p className="text-xs text-muted-foreground mt-0.5">{payingItem?.name} · {payingItem?.term} · {payingItem?.academicYear}</p>
               ) : (
                 <p className="text-xs text-muted-foreground mt-0.5">{payingItem?.invoiceNumber} · {payingItem?.term}</p>
               )}
@@ -397,6 +477,9 @@ export default function ParentFeesPayments() {
               />
               {payingItem?._type === 'invoice' && (
                 <p className="text-xs text-muted-foreground mt-1">Outstanding: {currency}{(payingItem?.outstandingBalance || 0).toLocaleString()}</p>
+              )}
+              {payingItem?._type === 'structure' && (
+                <p className="text-xs text-muted-foreground mt-1">Total: {currency}{(payingItem?.totalAmount || 0).toLocaleString()}</p>
               )}
             </div>
 
