@@ -145,26 +145,6 @@ export default function AdminPaymentSettings() {
         </CardContent>
       </Card>
 
-      {/* Offline Methods */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Offline Payment Methods</CardTitle>
-          <CardDescription>Methods parents can use to pay in person</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { key: 'acceptCash', label: 'Cash' },
-            { key: 'acceptBankTransfer', label: 'Bank Transfer' },
-            { key: 'acceptCheque', label: 'Cheque' },
-          ].map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
-              <Label htmlFor={key} className="text-sm font-normal cursor-pointer">{label}</Label>
-              <Switch id={key} checked={!!settings[key]} onCheckedChange={v => set(key, v)} />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       {/* Invoice Settings */}
       <Card className="mb-6">
         <CardHeader>
