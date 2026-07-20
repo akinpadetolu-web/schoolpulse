@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Save, Shield, CreditCard, Receipt, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, CreditCard, Receipt, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const DEFAULTS = {
   currency: 'NGN', currencySymbol: '₦', currencySymbolPosition: 'before',
@@ -109,14 +109,6 @@ export default function AdminPaymentSettings() {
             ) : (
               <Badge variant="secondary">Disabled</Badge>
             )}
-          </div>
-
-          <div className="flex items-start gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
-            <Shield className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-            <div className="text-xs text-muted-foreground">
-              <p className="font-medium text-foreground mb-0.5">API Key Secured in Backend</p>
-              <p>Your Paystack secret key is stored securely on the server and is never exposed to the frontend. Parents are redirected to Paystack's secure checkout to complete payments.</p>
-            </div>
           </div>
 
           {paystackOn && (
