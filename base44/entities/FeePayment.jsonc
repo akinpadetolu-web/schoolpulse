@@ -6,10 +6,23 @@
       "type": "string"
     },
     "invoiceId": {
-      "type": "string"
+      "type": "string",
+      "description": "FeeInvoice ID (for school fee payments). May be omitted for library fine payments."
     },
     "invoiceNumber": {
       "type": "string"
+    },
+    "bookFineId": {
+      "type": "string",
+      "description": "BookFine ID (for library fine payments via Paystack)"
+    },
+    "paymentType": {
+      "type": "string",
+      "enum": [
+        "school_fees",
+        "library_fine"
+      ],
+      "default": "school_fees"
     },
     "studentId": {
       "type": "string"
@@ -97,7 +110,6 @@
   },
   "required": [
     "schoolId",
-    "invoiceId",
     "studentId",
     "amount"
   ]
