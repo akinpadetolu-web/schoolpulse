@@ -27,6 +27,17 @@
     "academicTrack": {
       "type": "string"
     },
+    "classStream": {
+      "type": "string",
+      "enum": [
+        "none",
+        "science",
+        "arts",
+        "commercial"
+      ],
+      "default": "none",
+      "description": "Stream for SSS classes. 'none' = mixed (students have individual streams). Used to auto-assign subjects."
+    },
     "description": {
       "type": "string",
       "maxLength": 1000,

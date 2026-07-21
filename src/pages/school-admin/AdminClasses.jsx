@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Pencil, Archive, RotateCcw, BookOpen, AlertTriangle, ChevronDown, Users } from 'lucide-react';
+import { Plus, Loader2, Pencil, Archive, RotateCcw, BookOpen, AlertTriangle, ChevronDown, Users, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import { STREAM_OPTIONS, STREAM_LABELS, STREAM_COLORS, isStreamableClass } from '@/lib/streamUtils';
 
 const LEVEL_PRESETS = [
   { base: "JS1", level: "junior" }, { base: "JS2", level: "junior" }, { base: "JS3", level: "junior" },
@@ -29,7 +30,8 @@ export default function AdminClasses() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
-  const [form, setForm] = useState({ className: "", baseLevel: "", subsetName: "", educationLevel: "", academicTrack: "" });
+  const [form, setForm] = useState({ className: "", baseLevel: "", subsetName: "", educationLevel: "", academicTrack: "", classStream: "none" });
+  const [applyingStream, setApplyingStream] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -49,19 +51,19 @@ export default function AdminClasses() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ className: "", baseLevel: "", subsetName: "", educationLevel: "", academicTrack: "" });
+    setForm({ className: "", baseLevel: "", subsetName: "", educationLevel: "", academicTrack: "", classStream: "none" });
     setShowDialog(true);
   }
 
   function openEdit(c) {
     setEditing(c);
-    setForm({ className: c.className || "", baseLevel: c.baseLevel || "", subsetName: c.subsetName || "", educationLevel: c.educationLevel || "", academicTrack: c.academicTrack || "" });
+    setForm({ className: c.className || "", baseLevel: c.baseLevel || "", subsetName: c.subsetName || "", educationLevel: c.educationLevel || "", academicTrack: c.academicTrack || "", classStream: c.classStream || "none" });
     setShowDialog(true);
   }
 
   function applyPreset(preset, subset) {
     const className = subset ? `${preset.base}${subset}` : preset.base;
-    setForm({ className, baseLevel: preset.base, subsetName: subset || "", educationLevel: preset.level, academicTrack: "" });
+    setForm({ className, baseLevel: preset.base, subsetName: subset || "", educationLevel: preset.level, academicTrack: "", classStream: "none" });
     setShowDialog(true);
     setEditing(null);
   }
@@ -80,6 +82,7 @@ export default function AdminClasses() {
         subsetName: form.subsetName.trim(),
         educationLevel: form.educationLevel,
         academicTrack: form.academicTrack.trim(),
+        classStream: isStreamableClass({ educationLevel: form.educationLevel }) ? (form.classStream || "none") : "none",
         isArchived: editing?.isArchived || false,
       };
       if (editing) {
@@ -93,6 +96,29 @@ export default function AdminClasses() {
       loadData();
     } catch { toast.error("Failed to save class"); }
     setSaving(false);
+  }
+
+  async function applyStreamToAllStudents(classObj) {
+    if (!classObj?.classStream || classObj.classStream === 'none') {
+      toast.error("Set a stream for this class first");
+      return;
+    }
+    const classStudents = students.filter(st => st.classId === classObj.id);
+    if (classStudents.length === 0) {
+      toast.error("No students in this class to update");
+      return;
+    }
+    setApplyingStream(true);
+    try {
+      await base44.entities.SchoolUser.bulkUpdate(
+        classStudents.map(s => ({ id: s.id, studentStream: classObj.classStream }))
+      );
+      toast.success(`Applied ${STREAM_LABELS[classObj.classStream]} stream to ${classStudents.length} student(s)`);
+      loadData();
+    } catch {
+      toast.error("Failed to apply stream to students");
+    }
+    setApplyingStream(false);
   }
 
   async function toggleArchive(c) {
@@ -149,6 +175,7 @@ export default function AdminClasses() {
                 {c.subsetName && <Badge variant="outline" className="text-xs">Arm {c.subsetName}</Badge>}
                 {c.educationLevel && <span className="text-xs text-muted-foreground capitalize">{c.educationLevel}</span>}
                 {c.academicTrack && <Badge variant="outline" className="text-xs">{c.academicTrack}</Badge>}
+                {c.classStream && c.classStream !== 'none' && <Badge className={`text-xs ${STREAM_COLORS[c.classStream]}`}>{STREAM_LABELS[c.classStream]}</Badge>}
                 <span className="text-xs text-muted-foreground">{studentCount} student{studentCount !== 1 ? "s" : ""}</span>
                 <span className="text-xs text-muted-foreground">{subjectCount} subject{subjectCount !== 1 ? "s" : ""}</span>
                 {hasWarning && <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />No subjects</span>}
@@ -310,6 +337,24 @@ export default function AdminClasses() {
               <Label>Academic Track <span className="text-xs text-muted-foreground">(optional, e.g. Science, Arts)</span></Label>
               <Input value={form.academicTrack} onChange={e => setForm({ ...form, academicTrack: e.target.value })} placeholder="e.g. Science, Arts, Commercial" />
             </div>
+            {form.educationLevel === 'senior' && (
+              <div className="space-y-2">
+                <Label>Class Stream <span className="text-xs text-muted-foreground">(SSS only — assign same stream to all students)</span></Label>
+                <Select value={form.classStream} onValueChange={v => setForm({ ...form, classStream: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
+                  <SelectContent>
+                    {STREAM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {editing && form.classStream && form.classStream !== 'none' && (
+                  <Button type="button" variant="outline" size="sm" className="w-full mt-1" disabled={applyingStream}
+                    onClick={() => applyStreamToAllStudents({ ...editing, classStream: form.classStream })}>
+                    {applyingStream ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Layers className="w-3.5 h-3.5 mr-2" />}
+                    Apply "{STREAM_LABELS[form.classStream]}" to all students
+                  </Button>
+                )}
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {editing ? "Save Changes" : "Create Class"}

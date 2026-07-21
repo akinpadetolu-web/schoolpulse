@@ -20,6 +20,17 @@
     "categoryName": {
       "type": "string"
     },
+    "streamType": {
+      "type": "string",
+      "enum": [
+        "core",
+        "science",
+        "arts",
+        "commercial"
+      ],
+      "default": "core",
+      "description": "Stream type: core (taken by everyone), science, arts, or commercial"
+    },
     "applicableClasses": {
       "type": "array",
       "items": {

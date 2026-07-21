@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen, ChevronDown, ChevronRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
+import { getStudentSubjects } from '@/lib/streamUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 function pct(score, max) {
@@ -34,15 +35,15 @@ export default function StudentSubjects() {
     async function load() {
       if (!user?.id) return;
       try {
-        const [allSubjects, grd, cats] = await Promise.all([
+        const [allSubjects, grd, cats, classList] = await Promise.all([
           base44.entities.Subject.filter({ schoolId: user.schoolId }),
           base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
           base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),
+          base44.entities.SchoolClass.filter({ schoolId: user.schoolId }),
         ]);
-        // Only subjects assigned to the student's class
-        const classSubjects = (allSubjects || []).filter(s =>
-          !s.isArchived && Array.isArray(s.applicableClasses) && s.applicableClasses.includes(user.classId)
-        );
+        const classObj = (classList || []).find(c => c.id === user.classId);
+        // Filter subjects by stream (core + student's stream for SSS; all for JSS)
+        const classSubjects = getStudentSubjects(user, classObj, (allSubjects || []).filter(s => !s.isArchived));
         setSubjects(classSubjects);
         setGrades(grd || []);
         setGradeCategories(cats || []);

@@ -57,6 +57,17 @@
     "academicTrack": {
       "type": "string"
     },
+    "studentStream": {
+      "type": "string",
+      "enum": [
+        "none",
+        "science",
+        "arts",
+        "commercial"
+      ],
+      "default": "none",
+      "description": "Individual student stream for mixed SSS classes. Used when class.classStream is 'none'."
+    },
     "studentId": {
       "type": "string"
     },

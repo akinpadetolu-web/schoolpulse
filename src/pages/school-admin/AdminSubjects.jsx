@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Loader2, Pencil, Archive, RotateCcw, Search, BookOpen, Tag } from 'lucide-react';
 import { toast } from 'sonner';
+import { SUBJECT_STREAM_OPTIONS, STREAM_LABELS, STREAM_COLORS } from '@/lib/streamUtils';
 
 export default function AdminSubjects() {
   const { schoolUser: user } = useSchoolAuth();
@@ -23,7 +24,7 @@ export default function AdminSubjects() {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", code: "", categoryId: "", educationLevel: "", isCompulsory: false, applicableClasses: [] });
+  const [form, setForm] = useState({ name: "", code: "", categoryId: "", educationLevel: "", streamType: "core", isCompulsory: false, applicableClasses: [] });
 
   useEffect(() => { loadData(); }, []);
 
@@ -43,13 +44,13 @@ export default function AdminSubjects() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ name: "", code: "", categoryId: "", educationLevel: "", isCompulsory: false, applicableClasses: [] });
+    setForm({ name: "", code: "", categoryId: "", educationLevel: "", streamType: "core", isCompulsory: false, applicableClasses: [] });
     setShowDialog(true);
   }
 
   function openEdit(s) {
     setEditing(s);
-    setForm({ name: s.name || "", code: s.code || "", categoryId: s.categoryId || "", educationLevel: s.educationLevel || "", isCompulsory: !!s.isCompulsory, applicableClasses: s.applicableClasses || [] });
+    setForm({ name: s.name || "", code: s.code || "", categoryId: s.categoryId || "", educationLevel: s.educationLevel || "", streamType: s.streamType || "core", isCompulsory: !!s.isCompulsory, applicableClasses: s.applicableClasses || [] });
     setShowDialog(true);
   }
 
@@ -67,6 +68,7 @@ export default function AdminSubjects() {
         code: form.code.trim(),
         categoryId: form.categoryId || "",
         categoryName: cat?.name || "",
+        streamType: form.streamType || "core",
         educationLevel: form.educationLevel || "",
         isCompulsory: form.isCompulsory,
         applicableClasses: form.applicableClasses,
@@ -146,6 +148,8 @@ export default function AdminSubjects() {
                             <p className="font-medium">{s.name}</p>
                             {s.code && <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">{s.code}</span>}
                             {s.isCompulsory && <Badge variant="outline" className="text-xs border-amber-400 text-amber-600">Compulsory</Badge>}
+                            {s.streamType && s.streamType !== 'core' && <Badge className={`text-xs ${STREAM_COLORS[s.streamType]}`}>{STREAM_LABELS[s.streamType]}</Badge>}
+                            {(!s.streamType || s.streamType === 'core') && <Badge className={`text-xs ${STREAM_COLORS.core}`}>Core</Badge>}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             {cat && <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{cat.name}</span>}
@@ -201,6 +205,15 @@ export default function AdminSubjects() {
                   <SelectContent>
                     <SelectItem value="none">No category</SelectItem>
                     {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Stream Type <span className="text-xs text-muted-foreground">(controls which students see this subject)</span></Label>
+                <Select value={form.streamType} onValueChange={v => setForm({ ...form, streamType: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select stream type" /></SelectTrigger>
+                  <SelectContent>
+                    {SUBJECT_STREAM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

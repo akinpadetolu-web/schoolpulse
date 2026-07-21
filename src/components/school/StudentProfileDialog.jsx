@@ -11,6 +11,7 @@ import { Loader2, CheckCircle2, RefreshCw, Copy, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import StudentGradeHistory from './StudentGradeHistory';
 import { StudentHostelInfo } from './StudentHostelInfo';
+import { STREAM_OPTIONS, STREAM_LABELS, STREAM_COLORS, isStreamableClass, getStudentStream, getStudentSubjects } from '@/lib/streamUtils';
 
 // JS1-JS3 → General only. SS1-SS3 → Science, Art & Humanity, Commercial
 const JS_LEVELS = ["JS1", "JS2", "JS3"];
@@ -31,6 +32,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
   const [gender, setGender] = useState(student?.gender || "");
   const [classId, setClassId] = useState(student?.classId || "");
   const [subsetName, setSubsetName] = useState(student?.subsetName || "");
+  const [studentStream, setStudentStream] = useState(student?.studentStream || "none");
   const [subjects, setSubjects] = useState([]);
   const [assignedSubjects, setAssignedSubjects] = useState(student?.assignedSubjects || []);
   const [saving, setSaving] = useState(false);
@@ -48,6 +50,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     setGender(student?.gender || "");
     setClassId(student?.classId || "");
     setSubsetName(student?.subsetName || "");
+    setStudentStream(student?.studentStream || "none");
     setAssignedSubjects(student?.assignedSubjects || []);
     setLinkCode(student?.parentLinkCode || "");
   }, [student?.id]);
@@ -58,13 +61,19 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
     else setSubsetName("");
   }, [classId]);
 
-  // Load subjects applicable to selected class
+  // Load subjects applicable to selected class, filtered by stream
   useEffect(() => {
     if (!classId) { setSubjects([]); return; }
     base44.entities.Subject.filter({ schoolId, isArchived: false }).then(all => {
-      setSubjects((all || []).filter(s => (s.applicableClasses || []).includes(classId)));
+      const classObj = classes.find(c => c.id === classId);
+      const filtered = getStudentSubjects(
+        { studentStream, assignedSubjects },
+        classObj,
+        all || []
+      );
+      setSubjects(filtered);
     });
-  }, [classId, schoolId]);
+  }, [classId, schoolId, studentStream, classes]);
 
   function toggleSubject(subjectId) {
     setAssignedSubjects(prev =>
@@ -103,6 +112,7 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
       educationLevel: cls?.educationLevel || "",
       academicTrack: cls?.academicTrack || "",
       subsetName: subsetName || "",
+      studentStream: isStreamableClass(cls) ? (studentStream || "none") : "none",
       assignedSubjects,
     });
     toast.success("Student profile updated");
@@ -182,6 +192,29 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
                       {subsets.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                )}
+              </div>
+            )}
+
+            {/* Stream (SSS only) */}
+            {classId && isStreamableClass(selectedClass) && (
+              <div className="space-y-2">
+                <Label>Stream</Label>
+                {selectedClass?.classStream && selectedClass.classStream !== 'none' ? (
+                  <div className="flex items-center gap-2">
+                    <Badge className={STREAM_COLORS[selectedClass.classStream]}>{STREAM_LABELS[selectedClass.classStream]}</Badge>
+                    <span className="text-xs text-muted-foreground">Inherited from class — all students share this stream</span>
+                  </div>
+                ) : (
+                  <>
+                    <Select value={studentStream} onValueChange={v => { setStudentStream(v); setAssignedSubjects([]); }}>
+                      <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
+                      <SelectContent>
+                        {STREAM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Subjects below are filtered to this stream + Core subjects</p>
+                  </>
                 )}
               </div>
             )}
