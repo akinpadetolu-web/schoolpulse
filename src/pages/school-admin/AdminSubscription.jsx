@@ -4,9 +4,10 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, CheckCircle2, AlertCircle, Calendar, Wallet, Users } from 'lucide-react';
+import { Loader2, CreditCard, CheckCircle2, AlertCircle, Calendar, Wallet, Users, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
+import { generateSubscriptionInvoice } from '@/lib/subscriptionInvoice';
 
 const STATUS_STYLES = {
   active: 'bg-green-100 text-green-700',
@@ -326,11 +327,22 @@ export default function AdminSubscription() {
                       </p>
                       {p.referenceNumber && <p className="text-xs text-muted-foreground">Ref: {p.referenceNumber}</p>}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-700">{currencySymbol}{(p.amount || 0).toLocaleString()}</p>
-                      <Badge className={p.status === 'confirmed' ? 'bg-green-100 text-green-700' : p.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
-                        {p.status}
-                      </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="font-bold text-green-700">{currencySymbol}{(p.amount || 0).toLocaleString()}</p>
+                        <Badge className={p.status === 'confirmed' ? 'bg-green-100 text-green-700' : p.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
+                          {p.status}
+                        </Badge>
+                      </div>
+                      {p.status === 'confirmed' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => generateSubscriptionInvoice(p, subscription, user?.schoolName)}
+                        >
+                          <Download className="w-3.5 h-3.5 mr-1" /> Invoice
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
