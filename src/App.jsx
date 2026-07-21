@@ -78,6 +78,7 @@ const AdminInvoices = lazy(() => import('./pages/school-admin/AdminInvoices'));
 const AdminPayments = lazy(() => import('./pages/school-admin/AdminPayments'));
 const AdminFinancialReports = lazy(() => import('./pages/school-admin/AdminFinancialReports'));
 const AdminPaymentSettings = lazy(() => import('./pages/school-admin/AdminPaymentSettings'));
+const AdminSubscription = lazy(() => import('./pages/school-admin/AdminSubscription'));
 const ParentFeesPayments = lazy(() => import('./pages/parent/ParentFeesPayments'));
 const ParentHealth = lazy(() => import('./pages/parent/ParentHealth'));
 const ParentHostel = lazy(() => import('./pages/parent/ParentHostel'));
@@ -240,6 +241,7 @@ const AuthenticatedApp = () => {
           <Route path="payments" element={<AdminPayments />} />
           <Route path="financial-reports" element={<AdminFinancialReports />} />
           <Route path="payment-settings" element={<AdminPaymentSettings />} />
+          <Route path="subscription" element={<AdminSubscription />} />
           <Route path="staff-attendance" element={<AdminStaffAttendance />} />
           <Route path="leave-requests" element={<AdminLeaveRequests />} />
           <Route path="email-campaign" element={<FeatureGuard path="/school-admin/email-campaign"><AdminEmailCampaign /></FeatureGuard>} />

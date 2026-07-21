@@ -1,0 +1,52 @@
+{
+  "name": "SubscriptionPricing",
+  "type": "object",
+  "properties": {
+    "tierName": {
+      "type": "string",
+      "description": "e.g. Basic, Premium, Enterprise"
+    },
+    "description": {
+      "type": "string"
+    },
+    "pricePerStudent": {
+      "type": "number",
+      "description": "Per-student subscription rate in Naira"
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "billingCycle": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "semi_annual"
+      ],
+      "default": "annual"
+    },
+    "installmentOptions": {
+      "type": "number",
+      "default": 1,
+      "description": "Number of installments allowed per billing cycle (1 or 2)"
+    },
+    "includedFeatures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "displayOrder": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "tierName",
+    "pricePerStudent"
+  ]
+}

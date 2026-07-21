@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import {
   Plus, Search, Loader2, ChevronRight, Building2, Settings2,
-  CheckCircle2, Copy, GraduationCap, Users, UserCog, Shield
+  CheckCircle2, Copy, GraduationCap, Users, UserCog, Shield, CreditCard
 } from 'lucide-react';
+import SubscriptionPricingPanel from '@/components/backend/SubscriptionPricingPanel';
 import { toast } from 'sonner';
 import { getDefaultFeatures, clearFeatureCache } from '@/lib/featureToggleManager';
 import { PORTAL_FEATURES, PORTAL_LABELS, ALL_FEATURES } from '@/lib/featureCatalog';
@@ -135,6 +136,9 @@ export default function SchoolCustomization() {
                 <TabsTrigger value="parent">
                   <UserCog className="w-3.5 h-3.5 mr-1.5" /> Parent Portal
                 </TabsTrigger>
+                <TabsTrigger value="subscription">
+                  <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Subscription
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="admin">
@@ -148,6 +152,9 @@ export default function SchoolCustomization() {
               </TabsContent>
               <TabsContent value="parent">
                 <PortalFeaturePanel school={selectedSchool} role="parent" />
+              </TabsContent>
+              <TabsContent value="subscription">
+                <SubscriptionPricingPanel school={selectedSchool} />
               </TabsContent>
             </Tabs>
           </div>

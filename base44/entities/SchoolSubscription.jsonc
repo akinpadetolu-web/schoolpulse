@@ -1,0 +1,80 @@
+{
+  "name": "SchoolSubscription",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "pricingTierId": {
+      "type": "string"
+    },
+    "tierName": {
+      "type": "string"
+    },
+    "pricePerStudent": {
+      "type": "number"
+    },
+    "registeredStudents": {
+      "type": "number",
+      "description": "Number of students the school signed up for"
+    },
+    "totalAmount": {
+      "type": "number",
+      "description": "pricePerStudent * registeredStudents"
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "billingCycle": {
+      "type": "string",
+      "enum": [
+        "annual",
+        "semi_annual"
+      ],
+      "default": "annual"
+    },
+    "installmentCount": {
+      "type": "number",
+      "default": 1,
+      "description": "1 (full payment) or 2 (semi-annual installments)"
+    },
+    "installmentAmount": {
+      "type": "number",
+      "description": "Amount per installment"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "expired",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "lastPaymentDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "pricingTierId",
+    "totalAmount"
+  ]
+}

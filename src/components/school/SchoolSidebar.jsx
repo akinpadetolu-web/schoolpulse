@@ -89,6 +89,7 @@ const baseAdminNavGroups = [
     label: 'SETTINGS',
     items: [
       { label: "School Settings", path: "/school-admin/settings", icon: Settings },
+      { label: "Subscription", path: "/school-admin/subscription", icon: CreditCard },
       { label: "Feature Controls", path: "/school-admin/grading-system", icon: Gauge },
     ]
   },

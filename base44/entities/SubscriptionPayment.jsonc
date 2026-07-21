@@ -1,0 +1,76 @@
+{
+  "name": "SubscriptionPayment",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "subscriptionId": {
+      "type": "string"
+    },
+    "tierName": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "NGN"
+    },
+    "paymentMethod": {
+      "type": "string",
+      "default": "alatpay"
+    },
+    "referenceNumber": {
+      "type": "string"
+    },
+    "transactionId": {
+      "type": "string"
+    },
+    "installmentNumber": {
+      "type": "number",
+      "default": 1
+    },
+    "totalInstallments": {
+      "type": "number",
+      "default": 1
+    },
+    "paymentDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "paidBy": {
+      "type": "string"
+    },
+    "paidByName": {
+      "type": "string"
+    },
+    "paidByEmail": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "amount"
+  ]
+}
