@@ -3,9 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
     const body = await req.json();
     const { fileUrl, fileType = 'text', topic = '', subjectName = '', questionCounts = {} } = body;
 
@@ -21,35 +18,11 @@ Deno.serve(async (req) => {
       long_answer: questionCounts.long_answer || 1
     };
 
-    // Fetch file content
-    let fileContent = '';
-    try {
-      const fileRes = await fetch(fileUrl);
-      if (!fileRes.ok) throw new Error('Failed to fetch file');
-
-      if (fileType === 'pdf') {
-        // For PDF, we'd need a PDF parser - using text extraction
-        const buffer = await fileRes.arrayBuffer();
-        fileContent = new TextDecoder().decode(buffer);
-      } else if (fileType === 'docx') {
-        // For DOCX, extract text (simplified - in production use proper library)
-        const buffer = await fileRes.arrayBuffer();
-        fileContent = new TextDecoder().decode(buffer);
-      } else {
-        fileContent = await fileRes.text();
-      }
-    } catch (err) {
-      return Response.json({ error: 'Failed to read file: ' + err.message }, { status: 400 });
-    }
-
-    // Use Gemini Pro to intelligently generate questions
-    const prompt = `You are an expert teacher and quiz creator. Analyze the following content and create a precise set of quiz questions.
+    // Use Gemini Pro to intelligently generate questions from the uploaded file
+    const prompt = `You are an expert teacher and quiz creator. Analyze the provided document and create a precise set of quiz questions.
 
 Content/Topic: ${topic || 'General Knowledge'}
 Subject: ${subjectName || 'General'}
-
-Content to analyze (truncated to 2000 chars to minimize payload):
-${fileContent.substring(0, 2000)}
 
 Generate exactly:
 - ${counts.multiple_choice} multiple choice questions (with 4 options each)
@@ -84,6 +57,7 @@ Rules:
       response = await base44.integrations.Core.InvokeLLM({
         prompt,
         model: 'gemini_3_1_pro',
+        file_urls: [fileUrl],
         response_json_schema: {
           type: 'object',
           properties: {
