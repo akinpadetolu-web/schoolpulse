@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import posthog from '@/lib/posthog';
 
 // ── Toolbar button ──────────────────────────────────────────────────────────
 function ToolbarBtn({ icon: Icon, title, onClick, active }) {
@@ -204,6 +205,12 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
         toast.success('Assignment submitted!');
       }
 
+      posthog.capture('assignment_submitted', {
+        assignment_id: assignment.id,
+        submission_method: tab,
+        is_resubmission: Boolean(existingSubmission),
+        is_late: Boolean(isPastDue),
+      });
       onOpenChange(false);
     } catch (err) {
       toast.error('Submission failed. Please try again.');

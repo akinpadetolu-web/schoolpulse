@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { hashPassword, generateTemporaryPassword, generateUsername } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
+import posthog from '@/lib/posthog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,6 +101,11 @@ export default function CreateUserDialog({ open, onOpenChange, role, school, cla
       }
 
       await base44.entities.SchoolUser.create(userData);
+      posthog.capture('school_user_created', {
+        user_role: role,
+        school_id: school.id,
+        has_class_assignment: Boolean(selectedClass),
+      });
 
       if (form.email) {
         const inviteRole = "user";

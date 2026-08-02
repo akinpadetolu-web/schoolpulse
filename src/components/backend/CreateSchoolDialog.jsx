@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { hashPassword, generateTemporaryPassword, generateUsername } from '@/lib/auth';
 import { logAudit } from '@/lib/auditLogger';
+import posthog from '@/lib/posthog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,9 @@ export default function CreateSchoolDialog({ open, onOpenChange, onCreated }) {
         isArchived: false,
       });
       setCreatedSchool(created);
+      posthog.capture('school_created', {
+        school_id: created.id,
+      });
       await logAudit({ schoolId: created.id, schoolName: created.schoolName, action: "school_created", entityType: "School", entityId: created.id, performedBy: "superAdmin", performedByName: "Super Admin", details: `School "${created.schoolName}" created` });
       setStep(2);
     } catch (err) {

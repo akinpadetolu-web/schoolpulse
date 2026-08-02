@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import UserAvatar from '@/components/common/UserAvatar';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
+import posthog from '@/lib/posthog';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -180,6 +181,11 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
           console.warn('Notification trigger failed (non-critical):', notifError);
         }
       }
+      posthog.capture('grades_submitted', {
+        assessment_type: form.assessmentType,
+        term: form.term,
+        is_update: Boolean(editingGrade),
+      });
       setShowForm(false);
       setForm(EMPTY_FORM);
       setEditingGrade(null);

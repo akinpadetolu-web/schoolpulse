@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clearCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
+import posthog from '@/lib/posthog';
 import {
   LayoutDashboard, School, UserCog, Users, GraduationCap,
   BookOpen, Wrench, FileText, Settings, LogOut, X, Shield, Zap, SlidersHorizontal
@@ -47,6 +48,7 @@ export default function BackendSidebar({ isOpen, onClose }) {
   const admin = getCurrentSuperAdmin();
 
   function handleLogout() {
+    posthog.reset();
     clearCurrentSuperAdmin();
     navigate("/sp-backend");
   }

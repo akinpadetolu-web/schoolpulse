@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Users, CheckCircle2, Loader2, Monitor, Smartphone, FileText, Calendar, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, CheckCircle2, Loader2, Monitor, FileText, Calendar, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmailEditorModal from './EmailEditorModal';
+import posthog from '@/lib/posthog';
 
 const STEPS = ['Setup', 'Recipients', 'Design', 'Schedule'];
 
@@ -159,6 +159,13 @@ export default function CampaignBuilder({ schoolUser, onCancel, onCreated, exist
         } catch {}
       }
     }
+    posthog.capture('email_campaign_created', {
+      campaign_type: form.campaignType,
+      recipient_type: form.recipientType,
+      recipient_count: recipientCount,
+      delivery_mode: status,
+      is_update: Boolean(existingCampaign?.id),
+    });
     toast.success(status === 'sent' ? `Campaign sent!` : 'Campaign scheduled!');
     setSaving(false);
     onCreated();
