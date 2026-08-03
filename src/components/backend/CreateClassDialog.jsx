@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { logAudit } from '@/lib/auditLogger';
+import posthog from '@/lib/posthog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,11 @@ export default function CreateClassDialog({ open, onOpenChange, school, onCreate
         educationLevel: form.educationLevel,
         academicTrack: form.academicTrack,
         isArchived: false,
+      });
+      posthog.capture('class_created', {
+        school_id: school.id,
+        education_level: form.educationLevel || 'unspecified',
+        has_academic_track: Boolean(form.academicTrack),
       });
       await logAudit({ schoolId: school.id, schoolName: school.schoolName, action: "class_created", entityType: "SchoolClass", performedBy: "superAdmin", performedByName: "Super Admin", details: `Class "${form.className}" created` });
       reset();

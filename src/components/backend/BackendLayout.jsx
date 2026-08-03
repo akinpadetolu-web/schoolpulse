@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentSuperAdmin } from '@/lib/auth';
+import posthog from '@/lib/posthog';
 import BackendSidebar from './BackendSidebar';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -24,9 +25,17 @@ export default function BackendLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!getCurrentSuperAdmin()) {
+    const admin = getCurrentSuperAdmin();
+    if (!admin) {
       navigate("/sp-backend");
+      return;
     }
+
+    posthog.identify(admin.id, {
+      email: admin.email,
+      name: admin.fullName,
+      role: admin.role,
+    });
   }, [navigate]);
 
   if (!getCurrentSuperAdmin()) return null;

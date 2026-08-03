@@ -9,6 +9,7 @@ import { Loader2, CheckCircle2, XCircle, UserCheck, BedDouble, Save, CheckCheck,
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import posthog from '@/lib/posthog';
 
 const STATUS_OPTIONS = [
   { value: 'present', label: 'Present', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800', activeBg: 'bg-green-600 text-white' },
@@ -214,6 +215,14 @@ export default function HostelDailyAttendance({ allocations, hostels, attendance
       toast.warning(`Saved ${success}, failed ${failed}`);
     } else {
       toast.error('Failed to save attendance');
+    }
+    if (success > 0) {
+      posthog.capture('attendance_recorded', {
+        school_id: user?.schoolId,
+        recorded_count: success,
+        failed_count: failed,
+        has_custom_purpose: Boolean(currentPurpose),
+      });
     }
     setActiveSessionKey(currentPurpose);
     onRefresh?.();

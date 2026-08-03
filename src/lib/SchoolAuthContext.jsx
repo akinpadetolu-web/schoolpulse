@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { loadAndApplySchoolBrandColors, clearBrandColors } from '@/lib/brandColors';
+import posthog from '@/lib/posthog';
 
 const SchoolAuthContext = createContext(null);
 
@@ -32,6 +33,17 @@ function clearStoredSession() {
   try { sessionStorage.removeItem('schoolpulse_session'); } catch {}
 }
 
+function identifySchoolUser(user) {
+  if (!user?.id) return;
+
+  posthog.identify(user.id, {
+    email: user.email,
+    name: user.fullName,
+    role: user.role,
+    school_id: user.schoolId,
+  });
+}
+
 export function SchoolAuthProvider({ children }) {
   const [schoolUser, setSchoolUser] = useState(null);
   const [isLoadingSchoolAuth, setIsLoadingSchoolAuth] = useState(true);
@@ -50,6 +62,7 @@ export function SchoolAuthProvider({ children }) {
         if (user && !user.isArchived) {
           const { passwordHash, ...safe } = user;
           setSchoolUser(safe);
+          identifySchoolUser(safe);
           loadAndApplySchoolBrandColors(user.schoolId);
         } else {
           clearStoredSession();
@@ -66,12 +79,17 @@ export function SchoolAuthProvider({ children }) {
 
   const login = (user) => {
     const { passwordHash, ...safe } = user;
+    if (schoolUser?.id && schoolUser.id !== safe.id) {
+      posthog.reset();
+    }
     setSchoolUser(safe);
+    identifySchoolUser(safe);
     writeStoredSession(user);
     loadAndApplySchoolBrandColors(user.schoolId);
   };
 
   const logout = () => {
+    posthog.reset();
     setSchoolUser(null);
     clearStoredSession();
     clearBrandColors();

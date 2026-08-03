@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Upload, Check, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import posthog from '@/lib/posthog';
 
 const TEMPLATE_CSV = `fullName,email,classId,phone
 John Doe,john.doe@example.com,CLASS_ID_1,+1-555-0001
@@ -146,6 +146,11 @@ export default function AdminBulkStudentImport() {
 
       setResults(importResults);
       if (importResults.success > 0) {
+        posthog.capture('students_imported', {
+          school_id: user.schoolId,
+          successful_count: importResults.success,
+          failed_count: importResults.failed,
+        });
         toast.success(`${importResults.success} students imported successfully`);
       }
       if (importResults.failed > 0) {

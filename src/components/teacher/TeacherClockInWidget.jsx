@@ -4,8 +4,9 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, LogOut, AlertCircle } from 'lucide-react';
+import { Clock, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
+import posthog from '@/lib/posthog';
 
 export default function TeacherClockInWidget() {
   const { schoolUser: user } = useSchoolAuth();
@@ -50,6 +51,9 @@ export default function TeacherClockInWidget() {
         status: 'clocked_in',
       });
       setClockedIn(true);
+      posthog.capture('teacher_clocked_in', {
+        school_id: user.schoolId,
+      });
       await loadTodayClocking();
     } catch (err) {
       console.error('Clock in failed:', err);

@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Wand2, CheckCircle2, AlertTriangle, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { getGenerationState, subscribeToGeneration, startGeneration, clearGeneration } from '@/lib/timetableGenerationStore';
+import posthog from '@/lib/posthog';
 
 export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
   const [prompt, setPrompt] = useState('');
@@ -39,6 +40,10 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
     if (!prompt.trim()) return toast.error('Please enter your timetable instructions');
     if (selectedClassIds.length === 0) return toast.error('Please select at least one class');
     // startGeneration lives at module level — the promise survives component unmount
+    posthog.capture('timetable_generation_requested', {
+      school_id: schoolId,
+      selected_class_count: selectedClassIds.length,
+    });
     await startGeneration(schoolId, selectedClassIds, prompt);
   }
 
