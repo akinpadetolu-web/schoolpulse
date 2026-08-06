@@ -259,8 +259,8 @@ export default function SchoolPortal() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="w-full max-w-md flex-shrink-0">
+    <div className="h-screen overflow-y-auto flex flex-col items-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md flex-shrink-0 my-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 shadow-sm overflow-hidden">
             <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SchoolEduPulse" className="w-20 h-20 object-cover" />
