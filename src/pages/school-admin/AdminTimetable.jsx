@@ -468,7 +468,7 @@ export default function AdminTimetable() {
                             <div key={item.id} className={`flex items-center gap-3 rounded-lg p-2.5 group relative border ${isClash ? 'border-red-300 bg-red-50' : 'border-transparent'}`}>
                               {isClash && <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" title="Clash detected" />}
                               <span className="text-xs font-mono w-28 text-muted-foreground flex-shrink-0">{item.startTime}–{item.endTime}</span>
-                              <div className={`px-2.5 py-1 rounded-md text-xs font-medium flex-1 ${isClash ? 'bg-red-100 text-red-700' : getEntryColor(item)}`}>
+                              <div className={`px-2.5 py-1 rounded-md text-xs font-medium flex-1 ${isClash ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
                                 {item.subjectName}
                                 {item.className && selectedClass === "all" && <span className="ml-1 opacity-70">• {item.className}</span>}
                               </div>
