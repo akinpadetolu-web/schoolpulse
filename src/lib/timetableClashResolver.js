@@ -5,6 +5,13 @@
 
 export const TIMETABLE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
+// Breaks (short break / long break) are NOT subjects: they keep their original
+// time slots, are never relocated/swapped, and are never flagged as clashes.
+export function isBreak(entry) {
+  const name = (entry?.subjectName || entry?.name || '').toLowerCase();
+  return /\b(short\s*break|long\s*break|break)\b/.test(name) && !name.includes('break fast');
+}
+
 export function timeToMin(t) {
   if (!t) return null;
   const [h, m] = String(t).split(':').map(Number);
@@ -24,6 +31,7 @@ export function timesOverlap(s1, e1, s2, e2) {
  * Returns array of clash descriptions (empty = no clash).
  */
 export function detectClashes(candidate, existingEntries) {
+  if (isBreak(candidate)) return []; // breaks are not subjects — never clash
   const clashes = [];
   const { classId, teacherId, dayOfWeek, startTime, endTime } = candidate;
   if (!dayOfWeek || !startTime || !endTime) return clashes;
@@ -152,6 +160,7 @@ export function resolveClashes(entries, options = {}) {
     for (const g of working) {
       if (g.id === e.id) continue;
       if (!g.dayOfWeek || !g.startTime || !g.endTime) continue;
+      if (isBreak(g)) continue; // never substitute a break out of its slot
       if (g.dayOfWeek === e.dayOfWeek && g.startTime === e.startTime) continue; // same slot
       if (e.teacherId && g.teacherId === e.teacherId) continue; // same teacher — swapping won't help
       const eTarget = { day: g.dayOfWeek, startTime: g.startTime, endTime: g.endTime };
@@ -176,6 +185,7 @@ export function resolveClashes(entries, options = {}) {
 
   for (const e of working) {
     if (!e.dayOfWeek || !e.startTime || !e.endTime) continue;
+    if (isBreak(e)) continue; // breaks keep their original slots — never relocate
     const clash = findClash(e);
     if (!clash) continue;
     totalClashes++;
