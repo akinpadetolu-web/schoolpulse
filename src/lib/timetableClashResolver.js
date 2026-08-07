@@ -80,10 +80,10 @@ export function resolveClashes(entries, options = {}) {
     return null;
   }
 
-  function slotIsFree(e, day, slot) {
+  function slotIsFree(e, day, slot, excludeIds = []) {
     if (day === e.dayOfWeek && slot.startTime === e.startTime) return false; // same slot
     for (const o of working) {
-      if (o.id === e.id) continue;
+      if (o.id === e.id || excludeIds.includes(o.id)) continue;
       if (o.dayOfWeek !== day) continue;
       if (!timesOverlap(slot.startTime, slot.endTime, o.startTime, o.endTime)) continue;
       if (e.classId && o.classId === e.classId) return false; // class clash at target
@@ -92,7 +92,7 @@ export function resolveClashes(entries, options = {}) {
     // avoid scheduling the same subject twice on the target day
     if (e.subjectId) {
       for (const o of working) {
-        if (o.id === e.id) continue;
+        if (o.id === e.id || excludeIds.includes(o.id)) continue;
         if (o.classId === e.classId && o.dayOfWeek === day && o.subjectId === e.subjectId) return false;
       }
     }
@@ -141,6 +141,36 @@ export function resolveClashes(entries, options = {}) {
     return best;
   }
 
+  // When no free slot exists, try a SWAP: substitute another class's subject
+  // slot. Move that subject into the clashing entry's old slot, and move the
+  // clashing entry into the substituted slot — freeing the teacher without
+  // creating a new clash. Different teachers only (swapping same-teacher
+  // entries can't free the teacher).
+  function findBestSwap(e) {
+    let best = null;
+    let bestScore = Infinity;
+    for (const g of working) {
+      if (g.id === e.id) continue;
+      if (!g.dayOfWeek || !g.startTime || !g.endTime) continue;
+      if (g.dayOfWeek === e.dayOfWeek && g.startTime === e.startTime) continue; // same slot
+      if (e.teacherId && g.teacherId === e.teacherId) continue; // same teacher — swapping won't help
+      const eTarget = { day: g.dayOfWeek, startTime: g.startTime, endTime: g.endTime };
+      const gTarget = { day: e.dayOfWeek, startTime: e.startTime, endTime: e.endTime };
+      // E can take G's slot (G vacates it), G can take E's slot (E vacates it)
+      if (!slotIsFree(e, eTarget.day, eTarget, [g.id])) continue;
+      if (!slotIsFree(g, gTarget.day, gTarget, [e.id])) continue;
+      // Score: prefer minimal displacement for E; small penalty for disturbing G
+      const sc = scoreSlot(e, eTarget.day, eTarget)
+        + 15
+        + Math.abs(days.indexOf(g.dayOfWeek) - days.indexOf(e.dayOfWeek)) * 6;
+      if (sc < bestScore) {
+        bestScore = sc;
+        best = { swapWith: g, eTarget, gTarget };
+      }
+    }
+    return best;
+  }
+
   let totalClashes = 0;
   let resolvedCount = 0;
 
@@ -151,28 +181,50 @@ export function resolveClashes(entries, options = {}) {
     totalClashes++;
     const from = { day: e.dayOfWeek, startTime: e.startTime, endTime: e.endTime };
     const free = findBestSlot(e);
-    if (!free) {
+    if (free) {
+      e.dayOfWeek = free.day;
+      e.startTime = free.startTime;
+      e.endTime = free.endTime;
       const reason = clash.type === 'teacher'
-        ? `Teacher clash: ${e.teacherName || 'teacher'} was double-booked at ${from.day} ${from.startTime}–${from.endTime} with "${clash.with.subjectName}" (${clash.with.className || 'class'})`
-        : `Class clash: ${e.className} already had "${clash.with.subjectName}" at ${from.day} ${from.startTime}–${from.endTime}`;
-      unresolved.push(`Could not relocate "${e.subjectName}" (${e.className}) — ${reason}. No free slot available.`);
+        ? `Teacher clash: ${e.teacherName || 'teacher'} would have been double-booked at ${from.day} ${from.startTime}–${from.endTime} with "${clash.with.subjectName}" (${clash.with.className || 'class'}). Moved to ${free.day} ${free.startTime}–${free.endTime}.`
+        : `Class clash: ${e.className} already had "${clash.with.subjectName}" at ${from.day} ${from.startTime}–${from.endTime}. Moved to ${free.day} ${free.startTime}–${free.endTime}.`;
+      resolutions.push({ subjectName: e.subjectName, className: e.className, teacherName: e.teacherName, from, to: free, reason });
+      resolvedCount++;
       continue;
     }
-    e.dayOfWeek = free.day;
-    e.startTime = free.startTime;
-    e.endTime = free.endTime;
+
+    // No free slot — try substituting another class's subject slot (swap)
+    const swap = findBestSwap(e);
+    if (swap) {
+      const g = swap.swapWith;
+      const gFrom = { day: g.dayOfWeek, startTime: g.startTime, endTime: g.endTime };
+      // Move E into G's old slot
+      e.dayOfWeek = swap.eTarget.day;
+      e.startTime = swap.eTarget.startTime;
+      e.endTime = swap.eTarget.endTime;
+      // Move G into E's old slot
+      g.dayOfWeek = swap.gTarget.day;
+      g.startTime = swap.gTarget.startTime;
+      g.endTime = swap.gTarget.endTime;
+      resolutions.push({
+        subjectName: e.subjectName, className: e.className, teacherName: e.teacherName,
+        from, to: swap.eTarget,
+        reason: `Teacher clash: ${e.teacherName || 'teacher'} was double-booked at ${from.day} ${from.startTime}–${from.endTime}. Substituted ${g.subjectName} (${g.className || 'class'}) out of ${gFrom.day} ${gFrom.startTime}–${gFrom.endTime} into ${swap.gTarget.day} ${swap.gTarget.startTime}–${swap.gTarget.endTime}, freeing the slot. ${e.subjectName} moved to ${swap.eTarget.day} ${swap.eTarget.startTime}–${swap.eTarget.endTime}.`,
+      });
+      resolutions.push({
+        subjectName: g.subjectName, className: g.className, teacherName: g.teacherName,
+        from: gFrom, to: swap.gTarget,
+        reason: `Substituted to free teacher ${e.teacherName || ''}: ${g.subjectName} (${g.className || 'class'}) swapped from ${gFrom.day} ${gFrom.startTime}–${gFrom.endTime} to ${swap.gTarget.day} ${swap.gTarget.startTime}–${swap.gTarget.endTime}.`,
+      });
+      resolvedCount++;
+      continue;
+    }
+
     const reason = clash.type === 'teacher'
-      ? `Teacher clash: ${e.teacherName || 'teacher'} would have been double-booked at ${from.day} ${from.startTime}–${from.endTime} with "${clash.with.subjectName}" (${clash.with.className || 'class'}). Moved to ${free.day} ${free.startTime}–${free.endTime}.`
-      : `Class clash: ${e.className} already had "${clash.with.subjectName}" at ${from.day} ${from.startTime}–${from.endTime}. Moved to ${free.day} ${free.startTime}–${free.endTime}.`;
-    resolutions.push({
-      subjectName: e.subjectName,
-      className: e.className,
-      teacherName: e.teacherName,
-      from,
-      to: free,
-      reason,
-    });
-    resolvedCount++;
+      ? `Teacher clash: ${e.teacherName || 'teacher'} was double-booked at ${from.day} ${from.startTime}–${from.endTime} with "${clash.with.subjectName}" (${clash.with.className || 'class'})`
+      : `Class clash: ${e.className} already had "${clash.with.subjectName}" at ${from.day} ${from.startTime}–${from.endTime}`;
+    unresolved.push(`Could not relocate "${e.subjectName}" (${e.className}) — ${reason}. No free slot or swap available.`);
+    continue;
   }
 
   return {
