@@ -5,11 +5,13 @@
 
 export const TIMETABLE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-// Breaks (short break / long break) are NOT subjects: they keep their original
-// time slots, are never relocated/swapped, and are never flagged as clashes.
+// Breaks (Short Break / Long Break) are NOT subjects: they keep whatever time
+// slot they occupy, are never relocated/swapped, and are never flagged as
+// clashes. Detection is by NAME only — never by hard-coded time ranges — so
+// any break time (e.g. 10:00–10:15, 12:00–13:00) is driven by the data, not code.
 export function isBreak(entry) {
-  const name = (entry?.subjectName || entry?.name || '').toLowerCase();
-  return /\b(short\s*break|long\s*break|break)\b/.test(name) && !name.includes('break fast');
+  const name = (entry?.subjectName || entry?.name || '').toLowerCase().trim();
+  return name === 'short break' || name === 'long break';
 }
 
 export function timeToMin(t) {
