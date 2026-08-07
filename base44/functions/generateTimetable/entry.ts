@@ -224,7 +224,28 @@ Return ONLY valid JSON — no markdown, no explanation:
           continue;
         }
 
+        // Score a candidate slot — lower is better. Prefers the original day,
+        // minimal day-distance, minimal time-of-day displacement, and adjacency
+        // to the class's existing lessons on the target day.
+        const toMin = (t: string) => { const [h, m] = String(t).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+        const origDayIdx = DAYS_LIST.indexOf(entry.dayOfWeek);
+        const scoreCandidate = (day: string, slot: any): number => {
+          const dayIdx = DAYS_LIST.indexOf(day);
+          let s = dayIdx !== origDayIdx ? 100 : 0;
+          s += Math.abs(dayIdx - origDayIdx) * 12;
+          s += Math.abs(toMin(entry.startTime) - toMin(slot.start)) / 10;
+          let gap = Infinity;
+          for (const o of allEntries) {
+            if (o.classId !== cls.id || o.dayOfWeek !== day) continue;
+            const os = toMin(o.startTime), oe = toMin(o.endTime);
+            gap = Math.min(gap, Math.abs(toMin(slot.start) - os), Math.abs(toMin(slot.start) - oe));
+          }
+          if (gap !== Infinity) s -= 25 * (gap === 0 ? 1 : 1 / (1 + gap));
+          return s;
+        };
+
         let relocated = null;
+        let bestScore = Infinity;
         for (const day of DAYS_LIST) {
           if (entry.subjectId && getSubjectDaySet(cls.id).has(`${day}|${entry.subjectId}`)) continue; // subject already that day
           for (const slot of schoolTimeSlots) {
@@ -232,10 +253,12 @@ Return ONLY valid JSON — no markdown, no explanation:
             const tk = `${teacherId}|${day}|${slot.start}`;
             if (scheduledTeacherSlots[tk]) continue; // teacher busy
             if (seenDaySlots[`${day}|${slot.start}`]) continue; // class slot already occupied
-            relocated = { day, startTime: slot.start, endTime: slot.end };
-            break;
+            const sc = scoreCandidate(day, slot);
+            if (sc < bestScore) {
+              bestScore = sc;
+              relocated = { day, startTime: slot.start, endTime: slot.end };
+            }
           }
-          if (relocated) break;
         }
 
         if (relocated) {

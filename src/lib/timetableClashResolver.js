@@ -80,32 +80,65 @@ export function resolveClashes(entries, options = {}) {
     return null;
   }
 
-  function findFreeSlot(e) {
-    for (const day of days) {
-      for (const slot of slots) {
-        if (day === e.dayOfWeek && slot.startTime === e.startTime) continue; // same slot
-        let bad = false;
-        for (const o of working) {
-          if (o.id === e.id) continue;
-          if (o.dayOfWeek !== day) continue;
-          if (!timesOverlap(slot.startTime, slot.endTime, o.startTime, o.endTime)) continue;
-          if (e.classId && o.classId === e.classId) { bad = true; break; }            // class clash at target
-          if (e.teacherId && o.teacherId === e.teacherId) { bad = true; break; }      // teacher clash at target
-        }
-        if (bad) continue;
-        // avoid scheduling the same subject twice on the target day
-        if (e.subjectId) {
-          let dup = false;
-          for (const o of working) {
-            if (o.id === e.id) continue;
-            if (o.classId === e.classId && o.dayOfWeek === day && o.subjectId === e.subjectId) { dup = true; break; }
-          }
-          if (dup) continue;
-        }
-        return { day, startTime: slot.startTime, endTime: slot.endTime };
+  function slotIsFree(e, day, slot) {
+    if (day === e.dayOfWeek && slot.startTime === e.startTime) return false; // same slot
+    for (const o of working) {
+      if (o.id === e.id) continue;
+      if (o.dayOfWeek !== day) continue;
+      if (!timesOverlap(slot.startTime, slot.endTime, o.startTime, o.endTime)) continue;
+      if (e.classId && o.classId === e.classId) return false; // class clash at target
+      if (e.teacherId && o.teacherId === e.teacherId) return false; // teacher clash at target
+    }
+    // avoid scheduling the same subject twice on the target day
+    if (e.subjectId) {
+      for (const o of working) {
+        if (o.id === e.id) continue;
+        if (o.classId === e.classId && o.dayOfWeek === day && o.subjectId === e.subjectId) return false;
       }
     }
-    return null;
+    return true;
+  }
+
+  // Score a candidate (day, slot) — lower is better. Prefers: same day as the
+  // original, minimal time-of-day displacement, and adjacency to the class's
+  // existing lessons on the target day (keeps the day contiguous / balanced).
+  function scoreSlot(e, day, slot) {
+    const origDayIdx = days.indexOf(e.dayOfWeek);
+    const dayIdx = days.indexOf(day);
+    let score = 0;
+    // Strongly prefer keeping the subject on its original day
+    score += (dayIdx !== origDayIdx ? 100 : 0);
+    // Penalise day distance from the original
+    score += Math.abs(dayIdx - origDayIdx) * 12;
+    // Penalise time-of-day displacement (minutes)
+    const origMin = timeToMin(e.startTime);
+    const slotMin = timeToMin(slot.startTime);
+    if (origMin !== null && slotMin !== null) score += Math.abs(origMin - slotMin) / 10;
+    // Reward adjacency to an existing same-class lesson on the target day
+    let gap = Infinity;
+    for (const o of working) {
+      if (o.id === e.id) continue;
+      if (o.classId !== e.classId || o.dayOfWeek !== day) continue;
+      const os = timeToMin(o.startTime), oe = timeToMin(o.endTime);
+      if (os === null || oe === null) continue;
+      gap = Math.min(gap, Math.abs(slotMin - os), Math.abs(slotMin - oe));
+    }
+    if (gap !== Infinity) score -= 25 * (gap === 0 ? 1 : 1 / (1 + gap)); // adjacent => bigger reward
+    return score;
+  }
+
+  // Collect every valid candidate and pick the best-scoring one.
+  function findBestSlot(e) {
+    let best = null;
+    let bestScore = Infinity;
+    for (const day of days) {
+      for (const slot of slots) {
+        if (!slotIsFree(e, day, slot)) continue;
+        const s = scoreSlot(e, day, slot);
+        if (s < bestScore) { bestScore = s; best = { day, startTime: slot.startTime, endTime: slot.endTime }; }
+      }
+    }
+    return best;
   }
 
   let totalClashes = 0;
@@ -117,7 +150,7 @@ export function resolveClashes(entries, options = {}) {
     if (!clash) continue;
     totalClashes++;
     const from = { day: e.dayOfWeek, startTime: e.startTime, endTime: e.endTime };
-    const free = findFreeSlot(e);
+    const free = findBestSlot(e);
     if (!free) {
       const reason = clash.type === 'teacher'
         ? `Teacher clash: ${e.teacherName || 'teacher'} was double-booked at ${from.day} ${from.startTime}–${from.endTime} with "${clash.with.subjectName}" (${clash.with.className || 'class'})`
