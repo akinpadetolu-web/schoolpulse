@@ -53,11 +53,27 @@ function gradeRangeFilter(score) {
 function applyFiltersToData(raw, filters) {
   const dr = getDateRange(filters);
 
+  // Academic year → additional date range (Sept of start year → Aug of end year)
+  let yearDr = null;
+  if (filters.academicYear !== 'all') {
+    const m = filters.academicYear.match(/^(\d{4})-(\d{4})$/);
+    if (m) yearDr = { from: new Date(Number(m[1]), 8, 1), to: new Date(Number(m[2]), 7, 31, 23, 59, 59) };
+  }
+  const inDate = (d) => {
+    if (!dr && !yearDr) return true;
+    if (!d) return false;
+    const t = new Date(d).getTime();
+    if (dr && (t < dr.from.getTime() || t > dr.to.getTime())) return false;
+    if (yearDr && (t < yearDr.from.getTime() || t > yearDr.to.getTime())) return false;
+    return true;
+  };
+
   let grades = raw.grades;
   if (filters.classId !== 'all') grades = grades.filter(g => g.classId === filters.classId);
   if (filters.subjectId !== 'all') grades = grades.filter(g => g.subjectId === filters.subjectId);
   if (filters.teacherId !== 'all') grades = grades.filter(g => g.teacherId === filters.teacherId);
-  if (dr) grades = grades.filter(g => { const d = g.lastUpdatedAt ? new Date(g.lastUpdatedAt) : null; return d && d >= dr.from && d <= dr.to; });
+  if (filters.term !== 'all') grades = grades.filter(g => (g.term || '').toLowerCase().includes(filters.term));
+  if (dr || yearDr) grades = grades.filter(g => inDate(g.lastUpdatedAt));
   if (filters.gradeRange !== 'all') grades = grades.filter(g => gradeRangeFilter(gradeScore(g))(filters.gradeRange));
   if (filters.passFailStatus === 'passed') grades = grades.filter(g => gradeScore(g) >= PASS_MARK);
   if (filters.passFailStatus === 'failed') grades = grades.filter(g => gradeScore(g) < PASS_MARK);
@@ -78,7 +94,55 @@ function applyFiltersToData(raw, filters) {
 
   let attendance = raw.attendance;
   if (filters.classId !== 'all') attendance = attendance.filter(a => a.classId === filters.classId);
-  if (dr) attendance = attendance.filter(a => { const d = a.date ? new Date(a.date) : null; return d && d >= dr.from && d <= dr.to; });
+  if (dr || yearDr) attendance = attendance.filter(a => inDate(a.date));
+
+  // Attendance range filter (per-student attendance rate)
+  if (filters.attendanceRange !== 'all') {
+    const attMap = {};
+    raw.attendance.forEach(a => {
+      if (filters.classId !== 'all' && a.classId !== filters.classId) return;
+      if (!attMap[a.studentId]) attMap[a.studentId] = { total: 0, present: 0 };
+      attMap[a.studentId].total++;
+      if (a.status === 'present') attMap[a.studentId].present++;
+    });
+    const attPct = (sid) => { const a = attMap[sid]; return a && a.total > 0 ? (a.present / a.total) * 100 : -1; };
+    const matchAtt = (p) => {
+      if (p < 0) return false;
+      if (filters.attendanceRange === 'above90') return p >= 90;
+      if (filters.attendanceRange === 'above75') return p >= 75;
+      if (filters.attendanceRange === 'below75') return p < 75;
+      if (filters.attendanceRange === 'below50') return p < 50;
+      return true;
+    };
+    students = students.filter(s => matchAtt(attPct(s.id)));
+  }
+
+  // Assignment submission status filter (per-student)
+  if (filters.assignmentStatus !== 'all') {
+    const classAssignCount = {};
+    raw.assignments.forEach(a => {
+      if (filters.classId !== 'all' && a.classId !== filters.classId) return;
+      if (filters.teacherId !== 'all' && a.teacherId !== filters.teacherId) return;
+      classAssignCount[a.classId] = (classAssignCount[a.classId] || 0) + 1;
+    });
+    const subMap = {};
+    raw.submissions.forEach(sub => {
+      const assign = raw.assignments.find(a => a.id === sub.assignmentId);
+      if (!assign) return;
+      if (filters.classId !== 'all' && assign.classId !== filters.classId) return;
+      if (!subMap[sub.studentId]) subMap[sub.studentId] = { submitted: 0, late: 0 };
+      subMap[sub.studentId].submitted++;
+      if (sub.isLate) subMap[sub.studentId].late++;
+    });
+    students = students.filter(s => {
+      const stSub = subMap[s.id] || { submitted: 0, late: 0 };
+      const total = classAssignCount[s.classId] || 0;
+      if (filters.assignmentStatus === 'submitted') return stSub.submitted > 0;
+      if (filters.assignmentStatus === 'not_submitted') return stSub.submitted < total;
+      if (filters.assignmentStatus === 'late') return stSub.late > 0;
+      return true;
+    });
+  }
 
   let assignments = raw.assignments;
   if (filters.classId !== 'all') assignments = assignments.filter(a => a.classId === filters.classId);

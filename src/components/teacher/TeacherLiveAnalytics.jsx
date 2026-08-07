@@ -146,73 +146,73 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
   if (loading) return null;
 
   const KPI_CARDS = [
-    { label: 'Total Students', value: computed.studentList.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },
-    { label: 'Average Score', value: `${computed.overallAvg}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-    { label: 'Pass Rate', value: `${computed.overallPassRate}%`, icon: Activity, color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
-    { label: 'At-Risk Students', value: computed.atRisk.length, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/20' },
+    { label: 'Total Students', value: computed.studentList.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { label: 'Average Score', value: `${computed.overallAvg}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { label: 'Pass Rate', value: `${computed.overallPassRate}%`, icon: Activity, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+    { label: 'At-Risk Students', value: computed.atRisk.length, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
   ];
 
   const showPerSubject = filterSubject === 'all';
 
   const RecentUpdates = ({ grid }) => (
-    <div className="bg-[#1e2340] rounded-2xl p-5">
+    <div className="bg-card border border-border rounded-2xl p-5">
       <p className="font-semibold mb-3">Recent Grade Updates</p>
       <div className={grid ? "grid grid-cols-1 md:grid-cols-2 gap-2" : "space-y-2"}>
         {computed.recentUpdates.length > 0 ? computed.recentUpdates.map((g, i) => (
           <div key={g.id || i} className="flex items-center gap-3 text-sm">
             <span className="flex-1 truncate">
-              <span className="text-white">{g.studentName}</span>
-              <span className="text-slate-400"> · {g.subjectName}</span>
+              <span className="text-foreground">{g.studentName}</span>
+              <span className="text-muted-foreground"> · {g.subjectName}</span>
             </span>
-            <span className="text-slate-400 text-xs capitalize hidden sm:inline">{g.assessmentType}</span>
-            <span className={`font-semibold shrink-0 ${((g.score / (g.maxScore || 100)) * 100) >= PASS_MARK ? 'text-emerald-400' : 'text-red-400'}`}>
+            <span className="text-muted-foreground text-xs capitalize hidden sm:inline">{g.assessmentType}</span>
+            <span className={`font-semibold shrink-0 ${((g.score / (g.maxScore || 100)) * 100) >= PASS_MARK ? 'text-emerald-600' : 'text-red-600'}`}>
               {g.score}/{g.maxScore || 100}
             </span>
-            <span className="text-slate-500 text-xs shrink-0">{timeAgo(g.lastUpdatedAt || g.created_date)}</span>
+            <span className="text-muted-foreground text-xs shrink-0">{timeAgo(g.lastUpdatedAt || g.created_date)}</span>
           </div>
-        )) : <p className={`text-slate-500 text-sm text-center py-4 ${grid ? 'md:col-span-2' : ''}`}>No recent updates</p>}
+        )) : <p className={`text-muted-foreground text-sm text-center py-4 ${grid ? 'md:col-span-2' : ''}`}>No recent updates</p>}
       </div>
     </div>
   );
 
   return (
-    <div className="bg-[#12152a] text-white p-4 md:p-6 rounded-xl space-y-4">
+    <div className="bg-card text-card-foreground border border-border p-4 md:p-6 rounded-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold">Live Grade Dashboard</h2>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {lastUpdated ? `Updated ${format(lastUpdated, 'h:mm:ss a')}` : 'Loading…'}
           </p>
         </div>
-        <div className="flex items-center gap-1.5 bg-[#1e2340] rounded-full px-3 py-1.5 text-xs text-emerald-400 font-medium w-fit">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live
+        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5 text-xs text-emerald-600 font-medium w-fit">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {KPI_CARDS.map(card => (
-          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
+          <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
             </div>
             <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
+            <p className="text-muted-foreground text-xs mt-0.5">{card.label}</p>
           </div>
         ))}
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Classes" /></SelectTrigger>
+          <SelectTrigger className="w-40 bg-card border-border text-foreground"><SelectValue placeholder="All Classes" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All My Classes</SelectItem>
             {data.classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterSubject} onValueChange={setFilterSubject}>
-          <SelectTrigger className="w-40 bg-[#1e2340] border-slate-700 text-white"><SelectValue placeholder="All Subjects" /></SelectTrigger>
+          <SelectTrigger className="w-40 bg-card border-border text-foreground"><SelectValue placeholder="All Subjects" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
             {data.subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
@@ -221,21 +221,21 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
       </div>
 
       <div className={`grid grid-cols-1 gap-4 ${showPerSubject ? '' : 'lg:grid-cols-2'}`}>
-        <div className="bg-[#1e2340] rounded-2xl p-5">
+        <div className="bg-card border border-border rounded-2xl p-5">
           <p className="font-semibold mb-3">Top 10 Performing Students</p>
           {showPerSubject && computed.perSubjectTop10 && computed.perSubjectTop10.length > 0 ? (
             <div className="flex gap-4 overflow-x-auto pb-2">
               {computed.perSubjectTop10.map(subj => (
                 <div key={subj.subjectId} className="min-w-[180px] flex-1">
-                  <p className="text-xs text-slate-300 font-medium mb-2 truncate border-b border-slate-700 pb-1">{subj.subjectName}</p>
+                  <p className="text-xs text-foreground font-medium mb-2 truncate border-b border-border pb-1">{subj.subjectName}</p>
                   <div className="space-y-1.5">
                     {subj.students.length > 0 ? subj.students.map((s, i) => (
                       <div key={s.id} className="flex items-center gap-2">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
                         <span className="flex-1 text-xs truncate">{s.name}</span>
-                        <span className="text-emerald-400 text-xs font-semibold shrink-0">{s.score}%</span>
+                        <span className="text-emerald-600 text-xs font-semibold shrink-0">{s.score}%</span>
                       </div>
-                    )) : <p className="text-slate-500 text-xs text-center py-2">No data</p>}
+                    )) : <p className="text-muted-foreground text-xs text-center py-2">No data</p>}
                   </div>
                 </div>
               ))}
@@ -244,12 +244,12 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
             <div className="space-y-2">
               {computed.top10.length > 0 ? computed.top10.map((s, i) => (
                 <div key={s.id} className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
                   <span className="flex-1 text-sm truncate">{s.name}</span>
-                  <span className="text-xs text-slate-400">{s.className}</span>
-                  <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
+                  <span className="text-xs text-muted-foreground">{s.className}</span>
+                  <span className="text-emerald-600 text-sm font-semibold shrink-0">{s.avg}%</span>
                 </div>
-              )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
+              )) : <p className="text-muted-foreground text-sm text-center py-4">No grade data</p>}
             </div>
           )}
         </div>
@@ -257,12 +257,12 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
         {!showPerSubject && <RecentUpdates />}
       </div>
 
-      <div className="bg-[#1e2340] rounded-2xl p-5">
+      <div className="bg-card border border-border rounded-2xl p-5">
         <p className="font-semibold mb-3">Student Performance</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-slate-400 text-xs border-b border-slate-700">
+              <tr className="text-muted-foreground text-xs border-b border-border">
                 <th className="text-left pb-2 pr-3">Student</th>
                 <th className="text-left pb-2 pr-3">Class</th>
                 {showPerSubject && computed.allSubjectIds && computed.allSubjectIds.length > 0 ? (
@@ -277,18 +277,18 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
             </thead>
             <tbody>
               {computed.studentList.slice(0, 30).map(s => (
-                <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                <tr key={s.id} className="border-b border-border/50 hover:bg-accent/50">
                   <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{s.name}</td>
-                  <td className="py-2 pr-3 text-slate-400 text-xs">{s.className || '—'}</td>
+                  <td className="py-2 pr-3 text-muted-foreground text-xs">{s.className || '—'}</td>
                   {showPerSubject && computed.allSubjectIds && computed.allSubjectIds.length > 0 ? (
                     computed.allSubjectIds.map(subjectId => (
-                      <td key={subjectId} className="py-2 pr-3 text-right text-slate-300">{s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
+                      <td key={subjectId} className="py-2 pr-3 text-right text-muted-foreground">{s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
                     ))
                   ) : (
                     <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
                   )}
                   <td className="py-2 pr-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                       {s.pass ? 'Pass' : 'Fail'}
                     </span>
                   </td>
@@ -296,7 +296,7 @@ export default function TeacherLiveAnalytics({ onLoaded }) {
               ))}
             </tbody>
           </table>
-          {computed.studentList.length > 30 && <p className="text-slate-500 text-xs text-center mt-3">Showing 30 of {computed.studentList.length} students</p>}
+          {computed.studentList.length > 30 && <p className="text-muted-foreground text-xs text-center mt-3">Showing 30 of {computed.studentList.length} students</p>}
         </div>
       </div>
 

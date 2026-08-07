@@ -100,10 +100,17 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
     setDraft(d => ({ ...d, [key]: val }));
   }
 
+  // Apply the panel draft (used by the in-panel Apply button)
   function handleApply() {
     setFilters(draft);
     onApply && onApply(draft);
     setPanelOpen(false);
+  }
+
+  // Quick apply of the current filter state (used by the bar Apply button).
+  // Avoids reverting chip removals with a stale draft.
+  function handleQuickApply() {
+    onApply && onApply(filters);
   }
 
   function handleReset() {
@@ -113,20 +120,20 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
     setPanelOpen(false);
   }
 
-  const selCls = "bg-[#12152a] border-slate-700 text-white text-sm h-8";
-  const cntCls = "bg-[#1e2340] border-slate-700 text-white z-[200] max-h-52";
+  const selCls = "bg-card border-border text-foreground text-sm h-8";
+  const cntCls = "bg-card border-border text-foreground z-[200] max-h-52";
 
   return (
     <div className="relative" ref={panelRef}>
       {/* ── Compact filter bar ── */}
-      <div className="bg-[#1e2340] rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 min-h-[48px]">
+      <div className="bg-card border border-border rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 min-h-[48px]">
 
         {/* Left: icon + label */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filters</span>
+          <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filters</span>
           {activeCount > 0 && (
-            <span className="bg-indigo-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+            <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
               {activeCount}
             </span>
           )}
@@ -138,13 +145,13 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
             {activeChips.map(chip => (
               <span
                 key={chip.key}
-                className="inline-flex items-center gap-1 bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 text-xs rounded-full px-2.5 py-0.5"
+                className="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary text-xs rounded-full px-2.5 py-0.5"
               >
                 {chip.label}
                 <button
                   type="button"
                   onClick={() => removeChip(chip.key)}
-                  className="text-indigo-400 hover:text-white transition-colors ml-0.5"
+                  className="text-primary hover:text-foreground transition-colors ml-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -153,7 +160,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
           </div>
         )}
         {activeChips.length === 0 && (
-          <span className="text-xs text-slate-600 italic flex-1">No filters active</span>
+          <span className="text-xs text-muted-foreground italic flex-1">No filters active</span>
         )}
 
         {/* Right: buttons */}
@@ -162,7 +169,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
             <button
               type="button"
               onClick={handleReset}
-              className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
             >
               <X className="w-3 h-3" /> Reset
             </button>
@@ -171,7 +178,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
             size="sm"
             variant="ghost"
             onClick={() => setPanelOpen(v => !v)}
-            className={`h-7 px-3 text-xs gap-1.5 border ${panelOpen ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-700 text-slate-300 hover:text-white bg-transparent hover:bg-[#252b48]'}`}
+            className={`h-7 px-3 text-xs gap-1.5 border ${panelOpen ? 'bg-primary border-primary text-primary-foreground' : 'border-border text-muted-foreground hover:text-foreground bg-transparent hover:bg-accent'}`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             All Filters
@@ -179,8 +186,8 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
           </Button>
           <Button
             size="sm"
-            onClick={handleApply}
-            className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+            onClick={handleQuickApply}
+            className="h-7 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Apply
           </Button>
@@ -189,15 +196,15 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
 
       {/* ── Dropdown panel ── */}
       {panelOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[150] bg-[#1a1f3a] border border-slate-700 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[150] bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
 
             {/* ROW 1 — TIME & DATE */}
             <section>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Time & Date</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Time & Date</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Time Period</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Time Period</p>
                   <Select value={draft.timePeriod} onValueChange={v => updateDraft('timePeriod', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Time Period" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -217,7 +224,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Term</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Term</p>
                   <Select value={draft.term} onValueChange={v => updateDraft('term', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Term" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -230,7 +237,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Academic Year</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Academic Year</p>
                   <Select value={draft.academicYear} onValueChange={v => updateDraft('academicYear', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Academic Year" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -244,28 +251,28 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                 {draft.timePeriod === 'custom' && (
                   <div className="col-span-2 sm:col-span-1 grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] text-slate-500 mb-1">From</p>
+                      <p className="text-[10px] text-muted-foreground mb-1">From</p>
                       <input type="date" value={draft.customFrom} onChange={e => updateDraft('customFrom', e.target.value)}
-                        className="w-full bg-[#12152a] border border-slate-700 text-white text-xs rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 h-8" />
+                        className="w-full bg-muted border border-border text-foreground text-xs rounded-lg px-2 py-1.5 outline-none focus:border-primary h-8" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 mb-1">To</p>
+                      <p className="text-[10px] text-muted-foreground mb-1">To</p>
                       <input type="date" value={draft.customTo} onChange={e => updateDraft('customTo', e.target.value)}
-                        className="w-full bg-[#12152a] border border-slate-700 text-white text-xs rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 h-8" />
+                        className="w-full bg-muted border border-border text-foreground text-xs rounded-lg px-2 py-1.5 outline-none focus:border-primary h-8" />
                     </div>
                   </div>
                 )}
               </div>
             </section>
 
-            <div className="border-t border-slate-800" />
+            <div className="border-t border-border" />
 
             {/* ROW 2 — ACADEMIC */}
             <section>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Academic</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Academic</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Class / Grade</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Class / Grade</p>
                   <Select value={draft.classId} onValueChange={v => updateDraft('classId', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="All Classes" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -275,7 +282,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Subject</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Subject</p>
                   <Select value={draft.subjectId} onValueChange={v => updateDraft('subjectId', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="All Subjects" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -285,7 +292,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Teacher</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Teacher</p>
                   <Select value={draft.teacherId} onValueChange={v => updateDraft('teacherId', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="All Teachers" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -295,7 +302,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Student Group</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Student Group</p>
                   <Select value={draft.studentGroup} onValueChange={v => updateDraft('studentGroup', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="All Students" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -307,7 +314,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Gender</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Gender</p>
                   <Select value={draft.gender} onValueChange={v => updateDraft('gender', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Gender" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -320,14 +327,14 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
               </div>
             </section>
 
-            <div className="border-t border-slate-800" />
+            <div className="border-t border-border" />
 
             {/* ROW 3 — PERFORMANCE */}
             <section>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Performance</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Performance</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Grade Range</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Grade Range</p>
                   <Select value={draft.gradeRange} onValueChange={v => updateDraft('gradeRange', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Grade Range" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -341,7 +348,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Pass / Fail</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Pass / Fail</p>
                   <Select value={draft.passFailStatus} onValueChange={v => updateDraft('passFailStatus', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Pass/Fail" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -352,7 +359,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Attendance Range</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Attendance Range</p>
                   <Select value={draft.attendanceRange} onValueChange={v => updateDraft('attendanceRange', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Attendance" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -365,7 +372,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 mb-1">Submission Status</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">Submission Status</p>
                   <Select value={draft.assignmentStatus} onValueChange={v => updateDraft('assignmentStatus', v)}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Submissions" /></SelectTrigger>
                     <SelectContent className={cntCls}>
@@ -381,17 +388,17 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
           </div>
 
           {/* Panel footer */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-[#12152a] border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-muted border-t border-border">
             <Button size="sm" variant="ghost" onClick={() => setPanelOpen(false)}
-              className="h-7 px-3 text-xs text-slate-400 hover:text-white border border-slate-700 bg-transparent hover:bg-[#1e2340]">
+              className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground border border-border bg-transparent hover:bg-accent">
               Close
             </Button>
             <Button size="sm" variant="outline" onClick={handleReset}
-              className="h-7 px-3 text-xs border-slate-600 text-slate-300 hover:text-white bg-transparent hover:bg-[#1e2340]">
+              className="h-7 px-3 text-xs border-border text-muted-foreground hover:text-foreground bg-transparent hover:bg-accent">
               Reset All
             </Button>
             <Button size="sm" onClick={handleApply}
-              className="h-7 px-4 text-xs bg-indigo-600 hover:bg-indigo-700 text-white">
+              className="h-7 px-4 text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
               Apply Filters
             </Button>
           </div>
