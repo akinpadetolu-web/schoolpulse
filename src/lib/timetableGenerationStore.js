@@ -26,7 +26,7 @@ function notify() {
   listeners.forEach(cb => cb(generationState));
 }
 
-export async function startGeneration(schoolId, targetClassIds, prompt) {
+export async function startGeneration(schoolId, targetClassIds, prompt, breaks) {
   generationState = {
     status: 'generating',
     result: null,
@@ -34,6 +34,7 @@ export async function startGeneration(schoolId, targetClassIds, prompt) {
     schoolId,
     classIds: targetClassIds,
     prompt,
+    breaks,
     startedAt: Date.now(),
   };
   notify();
@@ -43,6 +44,7 @@ export async function startGeneration(schoolId, targetClassIds, prompt) {
       schoolId,
       targetClassIds,
       prompt,
+      breaks: breaks || [],
     });
 
     const hasSlots = res.data?.slots?.length > 0;

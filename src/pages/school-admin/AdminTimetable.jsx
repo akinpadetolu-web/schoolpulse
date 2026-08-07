@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download, ArrowRightLeft } from 'lucide-react';
+import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download, ArrowRightLeft, Coffee } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import TimetableGenerator from '@/components/timetable/TimetableGenerator';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
-import { resolveClashes } from '@/lib/timetableClashResolver';
+import { resolveClashes, isBreak } from '@/lib/timetableClashResolver';
+import BreakSchedule from '@/components/timetable/BreakSchedule';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
@@ -42,7 +43,7 @@ function timesOverlap(s1, e1, s2, e2) {
  * Detect clashes for a candidate entry against a list of existing entries.
  * Returns array of clash description strings (empty = no clash).
  */
-function detectClashes(candidate, existingEntries) {
+function detectClashes(candidate, existingEntries, breakSlots = []) {
   const clashes = [];
   const { classId, teacherId, dayOfWeek, startTime, endTime } = candidate;
   if (!dayOfWeek || !startTime || !endTime) return clashes;
@@ -59,6 +60,12 @@ function detectClashes(candidate, existingEntries) {
     // Teacher clash: same teacher is scheduled elsewhere
     if (teacherId && teacherId !== "" && e.teacherId === teacherId) {
       clashes.push(`Teacher clash: ${e.teacherName || 'Teacher'} is already teaching "${e.subjectName}" (${e.className}) at ${e.startTime}–${e.endTime} on ${dayOfWeek}`);
+    }
+  }
+  // Breaks apply every day — no subject may overlap a break
+  for (const b of breakSlots) {
+    if (timesOverlap(startTime, endTime, b.start, b.end)) {
+      clashes.push(`Break clash: ${b.name} is scheduled ${b.start}–${b.end} (applies every day)`);
     }
   }
   return clashes;
@@ -84,6 +91,22 @@ export default function AdminTimetable() {
   // AI state
   const [activeTab, setActiveTab] = useState("view");
 
+  // Break schedule (Short Break / Long Break) — persisted per school in localStorage.
+  const [breaks, setBreaks] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`timetableBreaks_${user?.schoolId}`);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [
+      { name: 'Short Break', start: '10:00', end: '10:15' },
+      { name: 'Long Break', start: '12:00', end: '13:00' },
+    ];
+  });
+  useEffect(() => {
+    try { localStorage.setItem(`timetableBreaks_${user?.schoolId}`, JSON.stringify(breaks)); } catch {}
+  }, [breaks, user?.schoolId]);
+  const breakSlots = breaks.filter(b => b.start && b.end);
+
   const [manualForm, setManualForm] = useState({
     classId: "", subjectId: "", teacherId: "", dayOfWeek: "", startTime: "", endTime: ""
   });
@@ -102,11 +125,11 @@ export default function AdminTimetable() {
         teacherId: manualForm.teacherId || "", teacherName: teacher?.fullName || "",
         dayOfWeek: manualForm.dayOfWeek, startTime: manualForm.startTime, endTime: manualForm.endTime,
       };
-      setManualClashes(detectClashes(candidate, entries));
+      setManualClashes(detectClashes(candidate, entries, breakSlots));
     } else {
       setManualClashes([]);
     }
-  }, [manualForm, entries]);
+  }, [manualForm, entries, breakSlots]);
 
   async function loadData() {
     const [e, c, s, t, cat] = await Promise.all([
@@ -346,22 +369,40 @@ export default function AdminTimetable() {
     ? entries.filter(e => e.classId === selectedClass)
     : entries;
 
+  // Show break rows in the grid. If the AI already created real break rows, use
+  // those; otherwise inject virtual break rows (per day) from the Break Schedule.
+  const hasRealBreaks = filteredEntries.some(e => isBreak(e));
+  const virtualBreakRowsFor = (day) => hasRealBreaks ? [] : breaks
+    .filter(b => b.start && b.end)
+    .map(b => ({
+      id: `vbreak-${day}-${b.name}`,
+      isBreakRow: true,
+      subjectName: b.name,
+      dayOfWeek: day,
+      startTime: b.start,
+      endTime: b.end,
+      className: selectedClass !== 'all' ? (classes.find(c => c.id === selectedClass)?.className || '') : '',
+      classId: selectedClass !== 'all' ? selectedClass : '',
+    }));
+
   const groupedByDay = DAYS.map(day => ({
     day,
-    items: filteredEntries.filter(e => e.dayOfWeek === day).sort((a, b) => (a.startTime || "").localeCompare(b.startTime || "")),
+    items: [...virtualBreakRowsFor(day), ...filteredEntries.filter(e => e.dayOfWeek === day)]
+      .sort((a, b) => (a.startTime || "").localeCompare(b.startTime || "")),
   }));
 
   // Detect clashes in the current view
   const viewClashIds = new Set();
   filteredEntries.forEach((entry) => {
-    const clashes = detectClashes(entry, filteredEntries);
+    if (isBreak(entry)) return;
+    const clashes = detectClashes(entry, filteredEntries, breakSlots);
     if (clashes.length > 0) viewClashIds.add(entry.id);
   });
 
   const warnings = [];
   const classesWithEntries = [...new Set(entries.map(e => e.classId))];
   classes.forEach(c => { if (!classesWithEntries.includes(c.id)) warnings.push(`${c.className} has no timetable`); });
-  const noTeacherEntries = entries.filter(e => !e.teacherId).length;
+  const noTeacherEntries = entries.filter(e => !e.teacherId && !isBreak(e)).length;
   if (noTeacherEntries > 0) warnings.push(`${noTeacherEntries} entries have no teacher assigned`);
   if (viewClashIds.size > 0) warnings.push(`${viewClashIds.size} clash(es) detected in current view`);
 
@@ -414,6 +455,10 @@ export default function AdminTimetable() {
         </div>
       )}
 
+      <div className="mb-4">
+        <BreakSchedule breaks={breaks} onChange={setBreaks} />
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 flex-wrap h-auto gap-1">
           <TabsTrigger value="view">Weekly Grid</TabsTrigger>
@@ -464,6 +509,24 @@ export default function AdminTimetable() {
                       <div className="space-y-2">
                         {items.map(item => {
                           const isClash = viewClashIds.has(item.id);
+                          const isBreakItem = item.isBreakRow || isBreak(item);
+                          if (isBreakItem) {
+                            return (
+                              <div key={item.id} className="flex items-center gap-3 rounded-lg p-2.5 border border-amber-200 bg-amber-50 group">
+                                <Coffee className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                                <span className="text-xs font-mono w-28 text-amber-700 flex-shrink-0">{item.startTime}–{item.endTime}</span>
+                                <div className="px-2.5 py-1 rounded-md text-xs font-semibold flex-1 bg-amber-100 text-amber-800">
+                                  {item.subjectName}
+                                  <span className="ml-1 opacity-70 font-normal">• Break</span>
+                                </div>
+                                {!item.isBreakRow && (
+                                  <button onClick={() => handleDelete(item)} className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          }
                           return (
                             <div key={item.id} className={`flex items-center gap-3 rounded-lg p-2.5 group relative border ${isClash ? 'border-red-300 bg-red-50' : 'border-transparent'}`}>
                               {isClash && <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" title="Clash detected" />}
@@ -495,6 +558,7 @@ export default function AdminTimetable() {
           <TimetableGenerator
             schoolId={schoolId}
             classes={classes}
+            breaks={breaks}
             onGenerated={() => { loadData(); setActiveTab("view"); }}
           />
         </TabsContent>

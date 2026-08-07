@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { getGenerationState, subscribeToGeneration, startGeneration, clearGeneration } from '@/lib/timetableGenerationStore';
 import posthog from '@/lib/posthog';
 
-export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
+export default function TimetableGenerator({ schoolId, classes, breaks, onGenerated }) {
   const [prompt, setPrompt] = useState('');
   const [selectedClassIds, setSelectedClassIds] = useState([]);
 
@@ -44,7 +44,7 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
       school_id: schoolId,
       selected_class_count: selectedClassIds.length,
     });
-    await startGeneration(schoolId, selectedClassIds, prompt);
+    await startGeneration(schoolId, selectedClassIds, prompt, breaks);
   }
 
   function handleClearResult() {
