@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Wand2, CheckCircle2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Loader2, Wand2, CheckCircle2, AlertTriangle, ChevronRight, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { getGenerationState, subscribeToGeneration, startGeneration, clearGeneration } from '@/lib/timetableGenerationStore';
 import posthog from '@/lib/posthog';
@@ -139,9 +139,23 @@ export default function TimetableGenerator({ schoolId, classes, onGenerated }) {
               ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               : <AlertTriangle className="w-4 h-4 text-amber-500" />}
             {result.slots?.length || 0} entries generated
-            {result.stats?.clashes > 0 && ` · ${result.stats.clashes} clash(es) removed`}
+            {result.stats?.clashes > 0 && ` · ${result.stats?.clashesResolved || result.stats.clashes} clash(es) resolved`}
             <button onClick={handleClearResult} className="ml-auto text-xs text-muted-foreground hover:underline">Dismiss</button>
           </div>
+
+          {result.resolutions?.length > 0 && (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto bg-blue-50 border border-blue-200 rounded-md p-2.5">
+              <div className="text-xs font-semibold text-blue-800 flex items-center gap-1.5 mb-1">
+                <ArrowRightLeft className="w-3.5 h-3.5" /> AI auto-resolved {result.resolutions.length} clash(es) by relocating subjects:
+              </div>
+              {result.resolutions.map((r, i) => (
+                <div key={i} className="text-xs text-blue-700 flex items-start gap-1.5">
+                  <ArrowRightLeft className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  <span><strong>{r.subjectName}</strong> ({r.className}) moved from <span className="font-mono">{r.fromDay} {r.fromStart}–{r.fromEnd}</span> to <span className="font-mono">{r.toDay} {r.toStart}–{r.toEnd}</span>. {r.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {result.warnings?.length > 0 && (
             <div className="space-y-1 max-h-40 overflow-y-auto">

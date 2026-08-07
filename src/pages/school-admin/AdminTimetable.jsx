@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download } from 'lucide-react';
+import { Plus, Loader2, Trash2, Wand2, AlertTriangle, CheckCircle2, Link2, Clock, BookOpen, Download, ArrowRightLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import TimetableGenerator from '@/components/timetable/TimetableGenerator';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
+import { resolveClashes } from '@/lib/timetableClashResolver';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
@@ -78,6 +79,8 @@ export default function AdminTimetable() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [manualClashes, setManualClashes] = useState([]);
+  const [resolving, setResolving] = useState(false);
+  const [resolutionResult, setResolutionResult] = useState(null);
   // AI state
   const [activeTab, setActiveTab] = useState("view");
 
@@ -184,6 +187,46 @@ export default function AdminTimetable() {
     } catch (error) {
       console.error('Failed to reset timetable:', error);
       toast.error('Failed to reset timetable');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── AI Clash Resolution (already-generated timetable) ────────────────────
+  function handleResolveClashes() {
+    if (viewClashIds.size === 0) return toast.info("No clashes to resolve");
+    setResolving(true);
+    try {
+      const { resolvedEntries, resolutions, unresolved, stats } = resolveClashes(entries);
+      const movedEntries = resolvedEntries.filter(e => {
+        const orig = entries.find(o => o.id === e.id);
+        return orig && (orig.dayOfWeek !== e.dayOfWeek || orig.startTime !== e.startTime);
+      });
+      if (movedEntries.length === 0) {
+        toast.info("No clashes could be auto-resolved — try freeing up slots or removing duplicates.");
+        return;
+      }
+      setResolutionResult({ resolutions, unresolved, stats, movedEntries });
+    } catch (err) {
+      toast.error("Failed to compute resolutions: " + (err.message || err));
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  async function applyResolutions() {
+    setSaving(true);
+    try {
+      await base44.entities.TimetableEntry.bulkUpdate(
+        resolutionResult.movedEntries.map(e => ({
+          id: e.id, dayOfWeek: e.dayOfWeek, startTime: e.startTime, endTime: e.endTime,
+        }))
+      );
+      toast.success(`Resolved ${resolutionResult.stats.resolved} clash(es)`);
+      setResolutionResult(null);
+      loadData();
+    } catch (err) {
+      toast.error("Failed to apply resolutions: " + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -345,6 +388,12 @@ export default function AdminTimetable() {
             {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Link2 className="w-4 h-4 mr-2" />}
             Sync Teachers
           </Button>
+          {viewClashIds.size > 0 && (
+            <Button variant="outline" onClick={handleResolveClashes} disabled={resolving}>
+              {resolving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
+              Resolve Clashes
+            </Button>
+          )}
           <Button onClick={() => setShowManualDialog(true)}><Plus className="w-4 h-4 mr-2" /> Add Entry</Button>
           {entries.length > 0 && (
             <Button variant="outline" onClick={handleBulkReset} disabled={saving} className="text-destructive border-destructive/30 hover:bg-destructive/10">
@@ -454,6 +503,47 @@ export default function AdminTimetable() {
 
       {/* AI Chatbot */}
       <AITimetableChatbot entries={entries} userRole="admin" userName={user?.fullName} subjects={subjects} grades={[]} />
+
+      {/* Resolve Clashes Dialog */}
+      <Dialog open={!!resolutionResult} onOpenChange={o => !o && setResolutionResult(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Wand2 className="w-4 h-4 text-primary" /> Resolve Clashes — Proposed Moves</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <p className="text-sm text-muted-foreground">
+              The AI detected {resolutionResult?.stats?.totalClashes} clash(es) and will relocate {resolutionResult?.stats?.resolved} subject(s) to free slots to resolve them.
+            </p>
+            {resolutionResult?.resolutions?.map((r, i) => (
+              <div key={i} className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <ArrowRightLeft className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-medium text-blue-900">{r.subjectName} ({r.className})</p>
+                    <p className="text-xs text-blue-700">
+                      Moved from <span className="font-mono">{r.from.day} {r.from.startTime}–{r.from.endTime}</span> to <span className="font-mono">{r.to.day} {r.to.startTime}–{r.to.endTime}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">{r.reason}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {resolutionResult?.unresolved?.length > 0 && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-1">
+                <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Could not resolve {resolutionResult.unresolved.length} clash(es):</p>
+                {resolutionResult.unresolved.map((u, i) => <p key={i} className="text-xs text-red-600">{u}</p>)}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setResolutionResult(null)}>Cancel</Button>
+            <Button onClick={applyResolutions} disabled={saving || !resolutionResult?.movedEntries?.length}>
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Apply {resolutionResult?.stats?.resolved || 0} Move(s)
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Manual Create Dialog */}
       <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>

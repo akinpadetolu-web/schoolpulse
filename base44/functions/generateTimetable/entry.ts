@@ -42,7 +42,11 @@ Deno.serve(async (req) => {
 
     const allEntries = [];
     const allWarnings = [];
+    const allResolutions = [];
+    const DAYS_LIST = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     const scheduledTeacherSlots = {}; // track across classes to avoid teacher clashes
+    const classSubjectDay = {}; // classId -> Set("day|subjectId") to avoid duplicate subjects per day
+    const getSubjectDaySet = (cid) => { if (!classSubjectDay[cid]) classSubjectDay[cid] = new Set(); return classSubjectDay[cid]; };
 
     // Generate timetable one class at a time
     for (const cls of targetClasses) {
@@ -195,19 +199,69 @@ Return ONLY valid JSON — no markdown, no explanation:
 
       if (warnings.length) allWarnings.push(...warnings.map(w => `[${cls.className}] ${w}`));
 
-      // Clash check and register teacher slots — skip placeholder teacher IDs
+      // Clash RESOLUTION: detect teacher clashes and RELOCATE the subject to a free
+      // slot in the same class (instead of dropping it). Every relocation is explained
+      // in allResolutions so the UI can show the user what was moved and why.
+      const canRelocate = schoolTimeSlots.length > 0;
+
       for (const entry of entries) {
         const validTeacher = entry.teacherId && entry.teacherId !== '<UNKNOWN>' && entry.teacherId !== 'null';
-        const teacherKey = validTeacher ? `${entry.teacherId}|${entry.dayOfWeek}|${entry.startTime}` : null;
-        if (teacherKey && scheduledTeacherSlots[teacherKey]) {
-          allWarnings.push(`TEACHER CLASH removed: ${entry.teacherName} on ${entry.dayOfWeek} at ${entry.startTime} (${cls.className})`);
+        const teacherId = validTeacher ? entry.teacherId : '';
+        const teacherName = validTeacher ? entry.teacherName : '';
+        const teacherKey = teacherId ? `${teacherId}|${entry.dayOfWeek}|${entry.startTime}` : null;
+
+        // No teacher clash → register the slot and keep the entry
+        if (!teacherKey || !scheduledTeacherSlots[teacherKey]) {
+          if (teacherKey) scheduledTeacherSlots[teacherKey] = true;
+          if (entry.subjectId) getSubjectDaySet(cls.id).add(`${entry.dayOfWeek}|${entry.subjectId}`);
+          allEntries.push({ ...entry, schoolId, teacherId, teacherName });
           continue;
         }
-        if (teacherKey) scheduledTeacherSlots[teacherKey] = true;
-        allEntries.push({ ...entry, schoolId, teacherId: validTeacher ? entry.teacherId : '', teacherName: validTeacher ? entry.teacherName : '' });
+
+        // Teacher clash detected — try to relocate within this class's free slots
+        if (!canRelocate) {
+          allWarnings.push(`TEACHER CLASH unresolved: ${teacherName} on ${entry.dayOfWeek} at ${entry.startTime} (${cls.className}) — no school time slots to relocate to. Entry skipped.`);
+          continue;
+        }
+
+        let relocated = null;
+        for (const day of DAYS_LIST) {
+          if (entry.subjectId && getSubjectDaySet(cls.id).has(`${day}|${entry.subjectId}`)) continue; // subject already that day
+          for (const slot of schoolTimeSlots) {
+            if (day === entry.dayOfWeek && slot.start === entry.startTime) continue; // same slot
+            const tk = `${teacherId}|${day}|${slot.start}`;
+            if (scheduledTeacherSlots[tk]) continue; // teacher busy
+            if (seenDaySlots[`${day}|${slot.start}`]) continue; // class slot already occupied
+            relocated = { day, startTime: slot.start, endTime: slot.end };
+            break;
+          }
+          if (relocated) break;
+        }
+
+        if (relocated) {
+          const fromDay = entry.dayOfWeek, fromStart = entry.startTime, fromEnd = entry.endTime;
+          entry.dayOfWeek = relocated.day;
+          entry.startTime = relocated.startTime;
+          entry.endTime = relocated.endTime;
+          const newTeacherKey = `${teacherId}|${entry.dayOfWeek}|${entry.startTime}`;
+          scheduledTeacherSlots[newTeacherKey] = true;
+          seenDaySlots[`${entry.dayOfWeek}|${entry.startTime}`] = true;
+          if (entry.subjectId) getSubjectDaySet(cls.id).add(`${entry.dayOfWeek}|${entry.subjectId}`);
+          allEntries.push({ ...entry, schoolId, teacherId, teacherName });
+          allResolutions.push({
+            className: cls.className,
+            subjectName: entry.subjectName,
+            teacherName,
+            fromDay, fromStart, fromEnd,
+            toDay: relocated.day, toStart: relocated.startTime, toEnd: relocated.endTime,
+            reason: `Teacher clash: ${teacherName} would have been double-booked at ${fromDay} ${fromStart}–${fromEnd}. Moved ${entry.subjectName} to ${relocated.day} ${relocated.startTime}–${relocated.endTime}.`,
+          });
+        } else {
+          allWarnings.push(`TEACHER CLASH unresolved: ${teacherName} on ${entry.dayOfWeek} at ${entry.startTime} (${cls.className}) — no free slot found. Entry skipped.`);
+        }
       }
 
-      console.log(`[generateTimetable] Class ${cls.className}: ${entries.length} entries`);
+      console.log(`[generateTimetable] Class ${cls.className}: ${allEntries.filter(e => e.classId === cls.id).length} entries`);
     }
 
     if (allEntries.length === 0) {
@@ -224,10 +278,12 @@ Return ONLY valid JSON — no markdown, no explanation:
     return Response.json({
       slots: allEntries,
       warnings: allWarnings,
+      resolutions: allResolutions,
       stats: {
         classes: targetClasses.length,
         slots: allEntries.length,
         clashes: allWarnings.filter(w => w.includes('CLASH')).length,
+        clashesResolved: allResolutions.length,
       }
     });
 
