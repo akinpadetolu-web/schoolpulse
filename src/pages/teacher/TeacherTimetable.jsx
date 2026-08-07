@@ -3,18 +3,24 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Loader2 } from 'lucide-react';
 import GridTimetable from '@/components/timetable/GridTimetable';
+import { loadTimetableBreaks } from '@/lib/schoolData';
 
 export default function TeacherTimetable() {
   const { schoolUser: user } = useSchoolAuth();
   const [entries, setEntries] = useState([]);
+  const [breaks, setBreaks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, teacherId: user?.id });
+        const [data, breakData] = await Promise.all([
+          base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, teacherId: user?.id }),
+          loadTimetableBreaks(user?.schoolId),
+        ]);
         setEntries(data || []);
-      } catch { setEntries([]); }
+        setBreaks(breakData || []);
+      } catch { setEntries([]); setBreaks([]); }
       setLoading(false);
     }
     load();
@@ -25,7 +31,7 @@ export default function TeacherTimetable() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">My Timetable</h1>
-      <GridTimetable entries={entries} title="Weekly Timetable" />
+      <GridTimetable entries={entries} breaks={breaks} title="Weekly Timetable" />
     </div>
   );
 }

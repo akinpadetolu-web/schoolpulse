@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Loader2, Calendar, Lightbulb } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GridTimetable from '@/components/timetable/GridTimetable';
+import { loadTimetableBreaks } from '@/lib/schoolData';
 import { AIStudyPlanGenerator, AIExamPreparationTips } from '@/components/timetable/AIStudentTimetableTools';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
 
@@ -12,19 +13,22 @@ export default function StudentTimetable() {
   const [entries, setEntries] = useState([]);
   const [grades, setGrades] = useState([]);
   const [lessonPlans, setLessonPlans] = useState([]);
+  const [breaks, setBreaks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [data, gradeData, planData] = await Promise.all([
+        const [data, gradeData, planData, breakData] = await Promise.all([
           base44.entities.TimetableEntry.filter({ schoolId: user?.schoolId, classId: user?.classId }),
           base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: user?.id }).catch(() => []),
           base44.entities.LessonPlan.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }).catch(() => []),
+          loadTimetableBreaks(user?.schoolId),
         ]);
         setEntries(data || []);
         setGrades(gradeData || []);
         setLessonPlans(planData || []);
+        setBreaks(breakData || []);
       } catch { setEntries([]); setGrades([]); setLessonPlans([]); }
       setLoading(false);
     }
@@ -44,7 +48,7 @@ export default function StudentTimetable() {
         </TabsList>
 
         <TabsContent value="timetable">
-          <GridTimetable entries={entries} title="Weekly Timetable" />
+          <GridTimetable entries={entries} breaks={breaks} title="Weekly Timetable" />
         </TabsContent>
 
         <TabsContent value="study-plan">

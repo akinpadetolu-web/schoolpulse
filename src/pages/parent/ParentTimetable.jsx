@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Heart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnifiedTimetable from '@/components/parent/UnifiedTimetable';
+import { loadTimetableBreaks } from '@/lib/schoolData';
 import AIParentInsights from '@/components/timetable/AIParentInsights';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
 
@@ -14,12 +15,15 @@ export default function ParentTimetable() {
   const [timetable, setTimetable] = useState([]);
   const [grades, setGrades] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
+  const [breaks, setBreaks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     async function load() {
       try {
+        const breakData = await loadTimetableBreaks(user?.schoolId);
+        setBreaks(breakData || []);
         const linkedIds = user?.linkedStudentIds || [];
         if (linkedIds.length > 0) {
           const allStudents = await base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: 'student' });
@@ -85,7 +89,7 @@ export default function ParentTimetable() {
         </TabsList>
 
         <TabsContent value="timetable">
-          <UnifiedTimetable children={filteredChildren} timetable={filteredTimetable} loading={false} />
+          <UnifiedTimetable children={filteredChildren} timetable={filteredTimetable} breaks={breaks} loading={false} />
         </TabsContent>
 
         <TabsContent value="ai-insights">

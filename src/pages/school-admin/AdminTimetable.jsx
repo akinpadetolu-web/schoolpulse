@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { autoLinkTeachersToTimetable } from '@/lib/schoolData';
+import { autoLinkTeachersToTimetable, loadTimetableBreaks, saveTimetableBreaks } from '@/lib/schoolData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -92,8 +92,9 @@ export default function AdminTimetable() {
   // AI state
   const [activeTab, setActiveTab] = useState("view");
 
-  // Break schedule (Short Break / Long Break) — persisted per school in localStorage.
-  // Each break has default times + optional per-day overrides (e.g. a shorter Friday).
+  // Break schedule (Short Break / Long Break) — shared school-wide via the School
+  // record, with a localStorage cache. Each break has default times + optional
+  // per-day overrides (e.g. a shorter Friday).
   const [breaks, setBreaks] = useState(() => {
     const defaults = [
       { name: 'Short Break', start: '10:00', end: '10:15', overrides: {} },
@@ -103,7 +104,6 @@ export default function AdminTimetable() {
       const stored = localStorage.getItem(`timetableBreaks_${user?.schoolId}`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Migrate older shapes without `overrides`
         return (Array.isArray(parsed) ? parsed : defaults).map(b => ({
           name: b.name, start: b.start, end: b.end, overrides: b.overrides || {},
         }));
@@ -111,8 +111,25 @@ export default function AdminTimetable() {
     } catch {}
     return defaults;
   });
+  const breaksLoadedRef = useRef(false);
+  // Load the shared break schedule from the School record (so all portals see it)
+  useEffect(() => {
+    if (!user?.schoolId) return;
+    let cancelled = false;
+    (async () => {
+      const stored = await loadTimetableBreaks(user.schoolId);
+      if (!cancelled && Array.isArray(stored) && stored.length) {
+        setBreaks(stored.map(b => ({ name: b.name, start: b.start, end: b.end, overrides: b.overrides || {} })));
+      }
+      breaksLoadedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [user?.schoolId]);
+  // Persist break schedule to localStorage cache + School record
   useEffect(() => {
     try { localStorage.setItem(`timetableBreaks_${user?.schoolId}`, JSON.stringify(breaks)); } catch {}
+    if (!breaksLoadedRef.current || !user?.schoolId) return;
+    saveTimetableBreaks(user.schoolId, breaks);
   }, [breaks, user?.schoolId]);
   const getBreakSlotsForDay = (day) => breaks
     .filter(b => b.start && b.end)

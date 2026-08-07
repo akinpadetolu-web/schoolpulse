@@ -12,7 +12,7 @@ const CHILD_COLORS = [
 
 const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export default function UnifiedTimetable({ children, timetable, loading }) {
+export default function UnifiedTimetable({ children, timetable, breaks, loading }) {
   const coloredTimetable = useMemo(() => {
     return timetable.map(entry => {
       const childIndex = children.findIndex(c => c.classId === entry.classId);
@@ -76,12 +76,12 @@ export default function UnifiedTimetable({ children, timetable, loading }) {
           return (
             <div key={child.id}>
               <h3 className="text-lg font-semibold mb-4">{child.fullName}'s Schedule</h3>
-              <GridTimetable entries={childEntries} title="" />
+              <GridTimetable entries={childEntries} breaks={breaks} title="" />
             </div>
           );
         })
       ) : (
-        <GridTimetable entries={coloredTimetable} title="Weekly Timetable" />
+        <GridTimetable entries={coloredTimetable} breaks={breaks} title="Weekly Timetable" />
       )}
     </div>
   );

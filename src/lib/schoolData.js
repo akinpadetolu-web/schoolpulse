@@ -143,3 +143,25 @@ export function parseTimetablePrompt(prompt) {
   const match = prompt.match(/\b(JS[1-3][A-Za-z]?|SS[1-3]\s*[A-Za-z\s]*?[A-Za-z])\b/i);
   return match ? match[0].trim() : null;
 }
+
+/** Load the school-wide timetable break schedule (shared across all portals). */
+export async function loadTimetableBreaks(schoolId) {
+  if (!schoolId) return null;
+  try {
+    const results = await base44.entities.School.filter({ id: schoolId });
+    const school = (results || [])[0];
+    return Array.isArray(school?.timetableBreaks) ? school.timetableBreaks : null;
+  } catch { return null; }
+}
+
+/** Persist the school-wide timetable break schedule. */
+export async function saveTimetableBreaks(schoolId, breaks) {
+  if (!schoolId) return;
+  try {
+    const results = await base44.entities.School.filter({ id: schoolId });
+    const school = (results || [])[0];
+    if (school) await base44.entities.School.update(school.id, { timetableBreaks: breaks });
+  } catch (e) {
+    console.warn('saveTimetableBreaks failed:', e?.message);
+  }
+}

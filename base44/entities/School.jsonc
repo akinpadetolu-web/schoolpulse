@@ -154,6 +154,38 @@
       "default": true,
       "description": "Send notifications for attendance events"
     },
+    "timetableBreaks": {
+      "type": "array",
+      "description": "School-wide break schedule for timetables (Short Break / Long Break) with optional per-day overrides. Each item: { name, start, end, overrides: { [day]: { start, end } } }.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "overrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string"
+                },
+                "end": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "departments": {
       "type": "array",
       "items": {
