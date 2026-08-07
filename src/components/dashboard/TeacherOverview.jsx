@@ -112,14 +112,14 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
   }, [teachers, students, grades, classes, assignments, submissions, attendance, staffAttendance, gradeCategories]);
 
   const KPI_CARDS = [
-    { label: 'Total Teachers', value: teachers.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },
-    { label: 'Avg Teacher Score', value: `${data.overallTeacherAvg}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-    { label: 'Classes Taught', value: classes.length, icon: BookOpen, color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
-    { label: 'Assignments Set', value: assignments.length, icon: CheckSquare, color: 'text-amber-400', bg: 'bg-amber-500/20' },
-    { label: 'Avg Pass Rate', value: `${avg(data.teacherList.map(t => t.passRate))}%`, icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/20' },
-    { label: 'Assignments Graded', value: data.teacherList.reduce((a, t) => a + t.assignmentsGraded, 0), icon: CheckSquare, color: 'text-blue-400', bg: 'bg-blue-500/20' },
-    { label: 'Total Students', value: students.length, icon: Users, color: 'text-pink-400', bg: 'bg-pink-500/20' },
-    { label: 'Most Active', value: data.mostActive?.name?.split(' ')[0] || 'N/A', icon: Star, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+    { label: 'Total Teachers', value: teachers.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { label: 'Avg Teacher Score', value: `${data.overallTeacherAvg}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { label: 'Classes Taught', value: classes.length, icon: BookOpen, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+    { label: 'Assignments Set', value: assignments.length, icon: CheckSquare, color: 'text-amber-600', bg: 'bg-amber-100' },
+    { label: 'Avg Pass Rate', value: `${avg(data.teacherList.map(t => t.passRate))}%`, icon: Activity, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { label: 'Assignments Graded', value: data.teacherList.reduce((a, t) => a + t.assignmentsGraded, 0), icon: CheckSquare, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { label: 'Total Students', value: students.length, icon: Users, color: 'text-pink-600', bg: 'bg-pink-100' },
+    { label: 'Most Active', value: data.mostActive?.name?.split(' ')[0] || 'N/A', icon: Star, color: 'text-amber-600', bg: 'bg-amber-100' },
   ];
 
   return (
@@ -127,14 +127,14 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {KPI_CARDS.map(card => (
-          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
+          <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
             </div>
             <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
+            <p className="text-muted-foreground text-xs mt-0.5">{card.label}</p>
           </div>
         ))}
       </div>
@@ -169,12 +169,12 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
 
       {/* Teacher Performance Table */}
       {visibleWidgets.teacherTable && (
-        <div className="bg-[#1e2340] rounded-2xl p-5">
+        <div className="bg-card border border-border rounded-2xl p-5">
           <p className="font-semibold mb-3">Teacher Performance Table</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-400 text-xs border-b border-slate-700">
+                <tr className="text-muted-foreground text-xs border-b border-border">
                   <th className="text-left pb-2 pr-3">Teacher</th>
                   <th className="text-right pb-2 pr-3">Students</th>
                   <th className="text-right pb-2 pr-3">Avg Score</th>
@@ -187,22 +187,22 @@ export default function TeacherOverview({ teachers, students, grades, classes, a
               </thead>
               <tbody>
                 {data.sortedByPassRate.map(t => (
-                  <tr key={t.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                  <tr key={t.id} className="border-b border-border/50 hover:bg-accent/50">
                     <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{t.name}</td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{t.totalStudents}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{t.totalStudents}</td>
                     <td className="py-2 pr-3 text-right font-semibold">{t.avgScore}%</td>
                     <td className="py-2 pr-3 text-right">
-                      <span className={`font-semibold ${t.passRate >= 60 ? 'text-emerald-400' : t.passRate >= 40 ? 'text-amber-400' : 'text-red-400'}`}>{t.passRate}%</span>
+                      <span className={`font-semibold ${t.passRate >= 60 ? 'text-emerald-600' : t.passRate >= 40 ? 'text-amber-600' : 'text-red-600'}`}>{t.passRate}%</span>
                     </td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{t.assignmentsSet}</td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{t.assignmentsGraded}</td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{t.attRate > 0 ? `${t.attRate}%` : '—'}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{t.assignmentsSet}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{t.assignmentsGraded}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{t.attRate > 0 ? `${t.attRate}%` : '—'}</td>
                     <td className="py-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        t.rating === 'Excellent' ? 'bg-emerald-500/20 text-emerald-400' :
-                        t.rating === 'Good' ? 'bg-indigo-500/20 text-indigo-400' :
-                        t.rating === 'Average' ? 'bg-amber-500/20 text-amber-400' :
-                        'bg-red-500/20 text-red-400'
+                        t.rating === 'Excellent' ? 'bg-emerald-100 text-emerald-700' :
+                        t.rating === 'Good' ? 'bg-indigo-100 text-indigo-700' :
+                        t.rating === 'Average' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
                       }`}>{t.rating}</span>
                     </td>
                   </tr>

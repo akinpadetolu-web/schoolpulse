@@ -195,14 +195,14 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
   }, [students, grades, gradesForCalc, classes, subjects, attendance, assignments, submissions, gradeCategories]);
 
   const KPI_CARDS = [
-    { label: 'Total Students', value: students.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/20' },
-    { label: 'Average Score', value: `${data.overallAvg}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-    { label: 'Pass Rate', value: `${data.overallPassRate}%`, icon: Activity, color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
-    { label: 'Attendance Rate', value: `${data.attRate}%`, icon: CheckSquare, color: 'text-amber-400', bg: 'bg-amber-500/20' },
-    { label: 'Assignment Completion', value: `${data.assignCompletion}%`, icon: BookOpen, color: 'text-purple-400', bg: 'bg-purple-500/20' },
-    { label: 'Active Classes', value: classes.length, icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-500/20' },
-    { label: 'At-Risk Students', value: data.atRisk.length, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/20' },
-    { label: 'Top Performer', value: data.top10[0]?.name?.split(' ')[0] || 'N/A', icon: Star, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+    { label: 'Total Students', value: students.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { label: 'Average Score', value: `${data.overallAvg}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { label: 'Pass Rate', value: `${data.overallPassRate}%`, icon: Activity, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+    { label: 'Attendance Rate', value: `${data.attRate}%`, icon: CheckSquare, color: 'text-amber-600', bg: 'bg-amber-100' },
+    { label: 'Assignment Completion', value: `${data.assignCompletion}%`, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { label: 'Active Classes', value: classes.length, icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { label: 'At-Risk Students', value: data.atRisk.length, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
+    { label: 'Top Performer', value: data.top10[0]?.name?.split(' ')[0] || 'N/A', icon: Star, color: 'text-amber-600', bg: 'bg-amber-100' },
   ];
 
   return (
@@ -210,14 +210,14 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {KPI_CARDS.map(card => (
-          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
+          <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
             </div>
             <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
+            <p className="text-muted-foreground text-xs mt-0.5">{card.label}</p>
           </div>
         ))}
       </div>
@@ -276,21 +276,21 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       {/* Top 10 & Bottom 10 */}
       <div className={`grid grid-cols-1 gap-4 ${selectedSubjectId === 'all' ? '' : 'lg:grid-cols-2'}`}>
         {visibleWidgets.topStudents && (
-          <div className="bg-[#1e2340] rounded-2xl p-5">
+          <div className="bg-card border border-border rounded-2xl p-5">
             <p className="font-semibold mb-3">Top 10 Performing Students</p>
             {selectedSubjectId === 'all' && data.perSubjectTop10 && data.perSubjectTop10.length > 0 ? (
               <div className="flex gap-4 overflow-x-auto pb-2">
                 {data.perSubjectTop10.map(subj => (
                   <div key={subj.subjectId} className="min-w-[180px] flex-1">
-                    <p className="text-xs text-slate-300 font-medium mb-2 truncate border-b border-slate-700 pb-1">{subj.subjectName}</p>
+                    <p className="text-xs text-foreground font-medium mb-2 truncate border-b border-border pb-1">{subj.subjectName}</p>
                     <div className="space-y-1.5">
                       {subj.students.length > 0 ? subj.students.map((s, i) => (
                         <div key={s.id} className="flex items-center gap-2">
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
                           <span className="flex-1 text-xs truncate">{s.name}</span>
-                          <span className="text-emerald-400 text-xs font-semibold shrink-0">{s.score}%</span>
+                          <span className="text-emerald-600 text-xs font-semibold shrink-0">{s.score}%</span>
                         </div>
-                      )) : <p className="text-slate-500 text-xs text-center py-2">No data</p>}
+                      )) : <p className="text-muted-foreground text-xs text-center py-2">No data</p>}
                     </div>
                   </div>
                 ))}
@@ -299,28 +299,28 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
               <div className="space-y-2">
                 {data.top10.length > 0 ? data.top10.map((s, i) => (
                   <div key={s.id} className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-slate-700 text-slate-400'}`}>{i + 1}</span>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>{i + 1}</span>
                     <span className="flex-1 text-sm truncate">{s.name}</span>
-                    <span className="text-xs text-slate-400">{s.className}</span>
-                    <span className="text-emerald-400 text-sm font-semibold shrink-0">{s.avg}%</span>
+                    <span className="text-xs text-muted-foreground">{s.className}</span>
+                    <span className="text-emerald-600 text-sm font-semibold shrink-0">{s.avg}%</span>
                   </div>
-                )) : <p className="text-slate-500 text-sm text-center py-4">No grade data</p>}
+                )) : <p className="text-muted-foreground text-sm text-center py-4">No grade data</p>}
               </div>
             )}
           </div>
         )}
         {visibleWidgets.underperforming && (
-          <div className="bg-[#1e2340] rounded-2xl p-5">
-            <p className="font-semibold mb-3">Bottom 10 Underperforming Students <span className="text-xs text-slate-400">(&lt;{PASS_MARK}%)</span></p>
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <p className="font-semibold mb-3">Bottom 10 Underperforming Students <span className="text-xs text-muted-foreground">(&lt;{PASS_MARK}%)</span></p>
             <div className="space-y-2">
               {data.bottom10.filter(s => s.avg < PASS_MARK).length > 0 ? data.bottom10.filter(s => s.avg < PASS_MARK).map((s, i) => (
                 <div key={s.id} className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-xs font-bold shrink-0">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-xs font-bold shrink-0">{i + 1}</span>
                   <span className="flex-1 text-sm truncate">{s.name}</span>
-                  <span className="text-xs text-slate-400">{s.className}</span>
-                  <span className="text-red-400 text-sm font-semibold shrink-0">{s.avg}%</span>
+                  <span className="text-xs text-muted-foreground">{s.className}</span>
+                  <span className="text-red-600 text-sm font-semibold shrink-0">{s.avg}%</span>
                 </div>
-              )) : <p className="text-emerald-400 text-sm text-center py-4">No underperforming students 🎉</p>}
+              )) : <p className="text-emerald-600 text-sm text-center py-4">No underperforming students 🎉</p>}
             </div>
           </div>
         )}
@@ -328,12 +328,12 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
 
       {/* Student Performance Table */}
       {visibleWidgets.studentTable && (
-        <div className="bg-[#1e2340] rounded-2xl p-5">
+        <div className="bg-card border border-border rounded-2xl p-5">
           <p className="font-semibold mb-3">Student Performance Table</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-400 text-xs border-b border-slate-700">
+                <tr className="text-muted-foreground text-xs border-b border-border">
                   <th className="text-left pb-2 pr-3">Student</th>
                   <th className="text-left pb-2 pr-3">Class</th>
                   <th className="text-left pb-2 pr-3">Gender</th>
@@ -352,26 +352,26 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
               </thead>
               <tbody>
                 {data.studentList.slice(0, 20).map(s => (
-                  <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                  <tr key={s.id} className="border-b border-border/50 hover:bg-accent/50">
                     <td className="py-2 pr-3 font-medium truncate max-w-[120px]">{s.name}</td>
-                    <td className="py-2 pr-3 text-slate-400 text-xs">{s.className || '—'}</td>
-                    <td className="py-2 pr-3 text-slate-400 text-xs">{s.gender || '—'}</td>
+                    <td className="py-2 pr-3 text-muted-foreground text-xs">{s.className || '—'}</td>
+                    <td className="py-2 pr-3 text-muted-foreground text-xs">{s.gender || '—'}</td>
                     {selectedSubjectId === 'all' && data.allSubjectIds && data.allSubjectIds.length > 0 ? (
                       data.allSubjectIds.map(subjectId => (
-                        <td key={subjectId} className="py-2 pr-3 text-right text-slate-300">{s.subjectScores && s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
+                        <td key={subjectId} className="py-2 pr-3 text-right text-muted-foreground">{s.subjectScores && s.subjectScores[subjectId] ? `${s.subjectScores[subjectId].score}%` : '—'}</td>
                       ))
                     ) : (
                       <td className="py-2 pr-3 text-right font-semibold">{s.avg}%</td>
                     )}
                     <td className="py-2 pr-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${s.pass ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                         {s.pass ? 'Pass' : 'Fail'}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{s.attendancePct}%</td>
-                    <td className="py-2 pr-3 text-right text-slate-300">{s.assignmentPct}%</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{s.attendancePct}%</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{s.assignmentPct}%</td>
                     <td className="py-2">
-                      <span className={`text-xs ${s.trend === 'improving' ? 'text-emerald-400' : s.trend === 'declining' ? 'text-red-400' : 'text-slate-400'}`}>
+                      <span className={`text-xs ${s.trend === 'improving' ? 'text-emerald-600' : s.trend === 'declining' ? 'text-red-600' : 'text-muted-foreground'}`}>
                         {s.trend === 'improving' ? '↑ Improving' : s.trend === 'declining' ? '↓ Declining' : '→ Stable'}
                       </span>
                     </td>
@@ -379,7 +379,7 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
                 ))}
               </tbody>
             </table>
-            {data.studentList.length > 20 && <p className="text-slate-500 text-xs text-center mt-3">Showing 20 of {data.studentList.length} students</p>}
+            {data.studentList.length > 20 && <p className="text-muted-foreground text-xs text-center mt-3">Showing 20 of {data.studentList.length} students</p>}
           </div>
         </div>
       )}

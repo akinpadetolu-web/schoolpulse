@@ -12,7 +12,7 @@ const CHART_TYPES = {
   bar:          { label: 'Bar Chart',           icon: '▐▐▐' },
   bar_h:        { label: 'Horizontal Bar',       icon: '═══' },
   line:         { label: 'Line Chart',           icon: '〜〜' },
-  area:         { label: 'Area Chart',           icon: '▲▲▲' },
+  area:         { label: 'Area Chart',            icon: '▲▲▲' },
   pie:          { label: 'Pie Chart',            icon: '◉' },
   donut:        { label: 'Donut Chart',          icon: '⊙' },
   radar:        { label: 'Radar Chart',          icon: '✦' },
@@ -20,11 +20,11 @@ const CHART_TYPES = {
 };
 
 const COMMON_STYLE = {
-  tooltip: { background: '#12152a', border: '1px solid #2a2f4a', borderRadius: 8 },
-  labelStyle: { color: '#fff' },
-  itemStyle: { color: '#94a3b8' },
-  tick: { fill: '#94a3b8', fontSize: 11 },
-  grid: '#2a2f4a',
+  tooltip: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a' },
+  labelStyle: { color: '#0f172a' },
+  itemStyle: { color: '#475569' },
+  tick: { fill: '#64748b', fontSize: 11 },
+  grid: '#e2e8f0',
 };
 
 function renderChart(type, data, dataKeys, height = 200) {
@@ -73,7 +73,7 @@ function renderChart(type, data, dataKeys, height = 200) {
         <CartesianGrid strokeDasharray="3 3" stroke={COMMON_STYLE.grid} vertical={false} />
         <XAxis dataKey={xKey} tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} />
         <YAxis tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} />
+        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} cursor={{ fill: '#f1f5f9' }} />
         {dataKeys.map((k, i) => <Bar key={k} dataKey={k} fill={CHART_COLORS[i]} radius={[4, 4, 0, 0]} />)}
       </BarChart>
     </ResponsiveContainer>
@@ -85,7 +85,7 @@ function renderChart(type, data, dataKeys, height = 200) {
         <CartesianGrid strokeDasharray="3 3" stroke={COMMON_STYLE.grid} horizontal={false} />
         <XAxis type="number" tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey={xKey} tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} width={80} />
-        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} />
+        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} cursor={{ fill: '#f1f5f9' }} />
         {dataKeys.map((k, i) => <Bar key={k} dataKey={k} fill={CHART_COLORS[i]} radius={[0, 4, 4, 0]} />)}
       </BarChart>
     </ResponsiveContainer>
@@ -97,8 +97,8 @@ function renderChart(type, data, dataKeys, height = 200) {
         <CartesianGrid strokeDasharray="3 3" stroke={COMMON_STYLE.grid} vertical={false} />
         <XAxis dataKey={xKey} tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} />
         <YAxis tick={COMMON_STYLE.tick} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} />
-        <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+        <Tooltip contentStyle={COMMON_STYLE.tooltip} labelStyle={COMMON_STYLE.labelStyle} cursor={{ fill: '#f1f5f9' }} />
+        <Legend wrapperStyle={{ fontSize: 11, color: '#64748b' }} />
         {dataKeys.map((k, i) => <Bar key={k} dataKey={k} fill={CHART_COLORS[i]} stackId="stack" />)}
       </BarChart>
     </ResponsiveContainer>
@@ -157,24 +157,24 @@ export default function ChartWidget({ id, title, subtitle, data, dataKeys = ['va
   const hasData = data && data.length > 0;
 
   return (
-    <div className="bg-[#1e2340] rounded-2xl p-5">
+    <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-start justify-between mb-1">
         <div>
-          <p className="font-semibold text-white">{title}</p>
-          {subtitle && <p className="text-slate-400 text-xs mt-0.5">{subtitle}</p>}
+          <p className="font-semibold text-foreground">{title}</p>
+          {subtitle && <p className="text-muted-foreground text-xs mt-0.5">{subtitle}</p>}
         </div>
         <div ref={dropRef} className="relative shrink-0 ml-2">
           <button onClick={() => setOpen(o => !o)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white bg-[#12152a] border border-slate-700 rounded-lg px-2 py-1 transition-colors">
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-muted border border-border rounded-lg px-2 py-1 transition-colors">
             <BarChart2 className="w-3 h-3" />
             <span className="hidden sm:inline">{CHART_TYPES[chartType]?.label || 'Chart'}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {open && (
-            <div className="absolute right-0 top-8 bg-[#1a1f3a] border border-slate-700 rounded-xl shadow-xl z-50 py-1 w-44">
+            <div className="absolute right-0 top-8 bg-card border border-border rounded-xl shadow-xl z-50 py-1 w-44">
               {available.filter(t => CHART_TYPES[t]).map(t => (
                 <button key={t} onClick={() => { setChartType(t); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-[#252b48] transition-colors flex items-center gap-2 ${chartType === t ? 'text-indigo-400 font-semibold' : 'text-slate-300'}`}>
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors flex items-center gap-2 ${chartType === t ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
                   <span className="w-5 text-center">{CHART_TYPES[t].icon}</span>
                   {CHART_TYPES[t].label}
                 </button>
@@ -185,7 +185,7 @@ export default function ChartWidget({ id, title, subtitle, data, dataKeys = ['va
       </div>
       <div className="mt-3">
         {hasData ? renderChart(chartType, data, dataKeys, height) : (
-          children || <div className="flex items-center justify-center text-slate-500 text-sm" style={{ height }}> No data available </div>
+          children || <div className="flex items-center justify-center text-muted-foreground text-sm" style={{ height }}> No data available </div>
         )}
       </div>
     </div>

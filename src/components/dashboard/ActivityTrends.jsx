@@ -9,11 +9,11 @@ import {
 import { Activity, Stethoscope, AlertTriangle, BookOpen, TrendingUp } from 'lucide-react';
 
 const CHART_COLOR = {
-  visits: '#22d3ee',
-  incidents: '#f87171',
-  borrows: '#a78bfa',
-  returns: '#34d399',
-  grid: '#2a3050',
+  visits: '#0891b2',
+  incidents: '#dc2626',
+  borrows: '#7c3aed',
+  returns: '#059669',
+  grid: '#e2e8f0',
   axis: '#64748b',
 };
 
@@ -42,10 +42,10 @@ function buildCategoryBreakdown(records, field, labels = {}) {
 }
 
 const tooltipStyle = {
-  backgroundColor: '#1e2340',
-  border: '1px solid #2a3050',
+  backgroundColor: '#ffffff',
+  border: '1px solid #e2e8f0',
   borderRadius: '0.5rem',
-  color: '#fff',
+  color: '#0f172a',
   fontSize: '12px',
 };
 
@@ -115,10 +115,10 @@ export default function ActivityTrends({ filters }) {
   }, [data, days, range]);
 
   const kpis = useMemo(() => [
-    { label: 'Nurse Visits', value: data.visits.length, icon: Stethoscope, color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
-    { label: 'Medical Incidents', value: data.incidents.length, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/20' },
-    { label: 'Books Borrowed', value: data.borrows.length, icon: BookOpen, color: 'text-violet-400', bg: 'bg-violet-500/20' },
-    { label: 'Books Returned', value: data.returns.length, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
+    { label: 'Nurse Visits', value: data.visits.length, icon: Stethoscope, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+    { label: 'Medical Incidents', value: data.incidents.length, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
+    { label: 'Books Borrowed', value: data.borrows.length, icon: BookOpen, color: 'text-violet-600', bg: 'bg-violet-100' },
+    { label: 'Books Returned', value: data.returns.length, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-100' },
   ], [data]);
 
   if (loading) return null;
@@ -126,28 +126,28 @@ export default function ActivityTrends({ filters }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Activity className="w-5 h-5 text-indigo-400" />
-        <h2 className="text-lg font-bold text-white">Activity Trends</h2>
+        <Activity className="w-5 h-5 text-indigo-600" />
+        <h2 className="text-lg font-bold text-foreground">Activity Trends</h2>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpis.map(card => (
-          <div key={card.label} className="bg-[#1e2340] rounded-2xl p-4">
+          <div key={card.label} className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
             </div>
             <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{card.label}</p>
+            <p className="text-muted-foreground text-xs mt-0.5">{card.label}</p>
           </div>
         ))}
       </div>
 
       {/* Trend Chart - Visits & Incidents over time */}
-      <div className="bg-[#1e2340] rounded-2xl p-5">
-        <p className="font-semibold text-white mb-4">Health Activity — Last {days} Days</p>
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <p className="font-semibold text-foreground mb-4">Health Activity — Last {days} Days</p>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={series.combined}>
             <defs>
@@ -172,8 +172,8 @@ export default function ActivityTrends({ filters }) {
       </div>
 
       {/* Library Circulation */}
-      <div className="bg-[#1e2340] rounded-2xl p-5">
-        <p className="font-semibold text-white mb-4">Library Book Circulation — Last {days} Days</p>
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <p className="font-semibold text-foreground mb-4">Library Book Circulation — Last {days} Days</p>
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={series.combined}>
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOR.grid} />
@@ -190,14 +190,14 @@ export default function ActivityTrends({ filters }) {
       {/* Breakdown charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {series.visitReasons.length > 0 && (
-          <div className="bg-[#1e2340] rounded-2xl p-5">
-            <p className="font-semibold text-white mb-3 text-sm">Nurse Visits by Reason</p>
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <p className="font-semibold text-foreground mb-3 text-sm">Nurse Visits by Reason</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={series.visitReasons} layout="vertical" margin={{ left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOR.grid} horizontal={false} />
                 <XAxis type="number" stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} width={80} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#252b48' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f1f5f9' }} />
                 <Bar dataKey="value" name="Visits" fill={CHART_COLOR.visits} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -205,14 +205,14 @@ export default function ActivityTrends({ filters }) {
         )}
 
         {series.incidentTypes.length > 0 && (
-          <div className="bg-[#1e2340] rounded-2xl p-5">
-            <p className="font-semibold text-white mb-3 text-sm">Incidents by Type</p>
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <p className="font-semibold text-foreground mb-3 text-sm">Incidents by Type</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={series.incidentTypes} layout="vertical" margin={{ left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOR.grid} horizontal={false} />
                 <XAxis type="number" stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} width={80} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#252b48' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f1f5f9' }} />
                 <Bar dataKey="value" name="Incidents" fill={CHART_COLOR.incidents} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -220,14 +220,14 @@ export default function ActivityTrends({ filters }) {
         )}
 
         {series.borrowStatus.length > 0 && (
-          <div className="bg-[#1e2340] rounded-2xl p-5">
-            <p className="font-semibold text-white mb-3 text-sm">Book Loans by Status</p>
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <p className="font-semibold text-foreground mb-3 text-sm">Book Loans by Status</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={series.borrowStatus}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOR.grid} />
                 <XAxis dataKey="name" stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} />
                 <YAxis stroke={CHART_COLOR.axis} fontSize={10} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#252b48' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f1f5f9' }} />
                 <Bar dataKey="value" name="Books" fill={CHART_COLOR.borrows} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

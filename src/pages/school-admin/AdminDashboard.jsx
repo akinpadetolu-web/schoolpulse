@@ -215,30 +215,30 @@ export default function AdminDashboard() {
   function handleReset() { setPendingFilters(DEFAULT_FILTERS); setAppliedFilters(DEFAULT_FILTERS); }
 
   if (loading) return (
-    <div className="min-h-full bg-[#12152a] text-white p-6 flex items-center justify-center">
+    <div className="min-h-full bg-background text-foreground p-6 flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin" />
-        <p className="text-slate-400 text-sm">Loading dashboard…</p>
+        <div className="w-10 h-10 border-4 border-border border-t-primary rounded-full animate-spin" />
+        <p className="text-muted-foreground text-sm">Loading dashboard…</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-full bg-[#12152a] text-white p-4 md:p-6 rounded-xl space-y-4">
+    <div className="min-h-full bg-background text-foreground p-4 md:p-6 rounded-xl space-y-4">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Academic Performance Overview</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {user?.schoolName || 'Your School'} · {lastUpdated ? `Updated ${format(lastUpdated, 'h:mm:ss a')}` : 'Loading…'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 bg-[#1e2340] rounded-full px-3 py-1.5 text-xs text-emerald-400 font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live
+          <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5 text-xs text-emerald-600 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live
           </div>
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white bg-[#1e2340] hover:bg-[#252b48] rounded-full"
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground bg-card border border-border hover:bg-accent rounded-full"
             onClick={() => setShowCustomize(v => !v)}>
             <SlidersHorizontal className="w-4 h-4 mr-1" /> Customize
           </Button>
@@ -246,13 +246,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Student / Teacher Toggle */}
-      <div className="flex gap-1 bg-[#1e2340] p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-muted p-1 rounded-xl w-fit">
         <button onClick={() => setView('student')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'student' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'student' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
           <GraduationCap className="w-4 h-4" /> Student Overview
         </button>
         <button onClick={() => setView('teacher')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'teacher' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'teacher' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
           <Users className="w-4 h-4" /> Teacher Overview
         </button>
       </div>
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
           { label: 'Reports', to: '/school-admin/report-cards' },
         ].map(l => (
           <Link key={l.to} to={l.to}>
-            <div className="bg-[#1e2340] hover:bg-[#252b48] transition-colors rounded-xl px-3 py-2.5 text-center text-sm text-slate-300 hover:text-white cursor-pointer">{l.label}</div>
+            <div className="bg-card border border-border hover:bg-accent transition-colors rounded-xl px-3 py-2.5 text-center text-sm text-muted-foreground hover:text-foreground cursor-pointer">{l.label}</div>
           </Link>
         ))}
       </div>
