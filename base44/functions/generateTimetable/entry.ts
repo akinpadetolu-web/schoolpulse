@@ -26,11 +26,26 @@ Deno.serve(async (req) => {
         slotMap[`${e.startTime}-${e.endTime}`] = { start: e.startTime, end: e.endTime };
       }
     }
-    // Breaks allocated by the admin — reserved slots, not subjects
-    const breakList = (breaks || []).filter(b => b && b.start && b.end).map(b => ({ name: b.name || 'Break', start: b.start, end: b.end }));
+    // Breaks allocated by the admin — reserved slots, not subjects. Each break
+    // has default times plus optional per-day overrides (e.g. a shorter Friday).
+    const breakList = (breaks || []).filter(b => b && b.start && b.end).map(b => ({
+      name: b.name || 'Break', start: b.start, end: b.end, overrides: b.overrides || {},
+    }));
+    const breakForDay = (b, day) => {
+      const o = b.overrides && b.overrides[day];
+      return (o && o.start && o.end) ? { name: b.name, start: o.start, end: o.end } : { name: b.name, start: b.start, end: b.end };
+    };
+    // Register every break slot (default + overrides) as a known school time slot
     for (const b of breakList) {
       const key = `${b.start}-${b.end}`;
       if (!slotMap[key]) slotMap[key] = { start: b.start, end: b.end };
+      for (const day of Object.keys(b.overrides)) {
+        const o = b.overrides[day];
+        if (o && o.start && o.end) {
+          const k2 = `${o.start}-${o.end}`;
+          if (!slotMap[k2]) slotMap[k2] = { start: o.start, end: o.end };
+        }
+      }
     }
     const schoolTimeSlots = Object.values(slotMap).sort((a, b) => a.start.localeCompare(b.start));
 
@@ -100,9 +115,9 @@ ${schoolTimeSlots.map((s, i) => `Slot ${i + 1}: ${s.start} - ${s.end}`).join('\n
 These are the time periods already established by this school. Do NOT invent, round, or alter any times. Every entry's startTime and endTime must match one of these slots exactly. Generate one entry per slot per day.` : `## TIME STRUCTURE
 No existing timetable entries found for this school. Follow the time structure described in the USER INSTRUCTIONS above. If none is specified, use a standard school day with consistent period durations.`}
 
-## BREAKS (DO NOT schedule any subject during these times — they apply EVERY day):
-${breakList.length > 0 ? breakList.map(b => `- ${b.name}: ${b.start} - ${b.end}`).join('\n') : 'None specified.'}
-These are rest periods. Never place a subject that overlaps them.
+## BREAKS (rest periods — DO NOT schedule any subject during these times):
+${breakList.length > 0 ? DAYS_LIST.map(day => `- ${day}: ` + breakList.map(b => { const bd = breakForDay(b, day); return `${bd.name} ${bd.start}-${bd.end}`; }).join(', ')).join('\n') : 'None specified.'}
+Never place a subject that overlaps a break on that day.
 
 ## NON-NEGOTIABLE RULES:
 1. ${schoolTimeSlots.length > 0 ? 'You MUST use ONLY the exact time slots listed above. Do NOT invent times or change period durations.' : 'Use the time structure from the USER INSTRUCTIONS. Keep period durations consistent throughout the day.'}
@@ -177,10 +192,11 @@ Return ONLY valid JSON — no markdown, no explanation:
 
       // If the school has established time slots, snap entries to those; dedupe same-day same-slot
       const seenDaySlots = {};
-      // Reserve break slots for every day so no subject is placed there
+      // Reserve break slots for every day (per-day overrides respected) so no subject is placed there
       for (const day of DAYS_LIST) {
         for (const b of breakList) {
-          seenDaySlots[`${day}|${b.start}`] = true;
+          const bd = breakForDay(b, day);
+          seenDaySlots[`${day}|${bd.start}`] = true;
         }
       }
       const sanitizedEntries = [];
@@ -303,11 +319,12 @@ Return ONLY valid JSON — no markdown, no explanation:
       // Insert break rows for this class (one per day) — protected as immovable breaks
       for (const day of DAYS_LIST) {
         for (const b of breakList) {
+          const bd = breakForDay(b, day);
           allEntries.push({
             schoolId, classId: cls.id, className: cls.className,
             subjectId: b.name === 'Short Break' ? 'BREAK_SHORT' : (b.name === 'Long Break' ? 'BREAK_LONG' : `BREAK_${b.name.replace(/\s+/g, '_').toUpperCase()}`),
             subjectName: b.name, teacherId: '', teacherName: '',
-            dayOfWeek: day, startTime: b.start, endTime: b.end,
+            dayOfWeek: day, startTime: bd.start, endTime: bd.end,
           });
         }
       }

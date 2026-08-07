@@ -43,7 +43,7 @@ function timesOverlap(s1, e1, s2, e2) {
  * Detect clashes for a candidate entry against a list of existing entries.
  * Returns array of clash description strings (empty = no clash).
  */
-function detectClashes(candidate, existingEntries, breakSlots = []) {
+function detectClashes(candidate, existingEntries, getBreaksForDay) {
   const clashes = [];
   const { classId, teacherId, dayOfWeek, startTime, endTime } = candidate;
   if (!dayOfWeek || !startTime || !endTime) return clashes;
@@ -62,10 +62,11 @@ function detectClashes(candidate, existingEntries, breakSlots = []) {
       clashes.push(`Teacher clash: ${e.teacherName || 'Teacher'} is already teaching "${e.subjectName}" (${e.className}) at ${e.startTime}–${e.endTime} on ${dayOfWeek}`);
     }
   }
-  // Breaks apply every day — no subject may overlap a break
-  for (const b of breakSlots) {
+  // Breaks — no subject may overlap a break on that day (per-day overrides respected)
+  const dayBreaks = getBreaksForDay ? (getBreaksForDay(dayOfWeek) || []) : [];
+  for (const b of dayBreaks) {
     if (timesOverlap(startTime, endTime, b.start, b.end)) {
-      clashes.push(`Break clash: ${b.name} is scheduled ${b.start}–${b.end} (applies every day)`);
+      clashes.push(`Break clash: ${b.name} is scheduled ${b.start}–${b.end} on ${dayOfWeek}`);
     }
   }
   return clashes;
@@ -92,20 +93,35 @@ export default function AdminTimetable() {
   const [activeTab, setActiveTab] = useState("view");
 
   // Break schedule (Short Break / Long Break) — persisted per school in localStorage.
+  // Each break has default times + optional per-day overrides (e.g. a shorter Friday).
   const [breaks, setBreaks] = useState(() => {
+    const defaults = [
+      { name: 'Short Break', start: '10:00', end: '10:15', overrides: {} },
+      { name: 'Long Break', start: '12:00', end: '13:00', overrides: {} },
+    ];
     try {
       const stored = localStorage.getItem(`timetableBreaks_${user?.schoolId}`);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Migrate older shapes without `overrides`
+        return (Array.isArray(parsed) ? parsed : defaults).map(b => ({
+          name: b.name, start: b.start, end: b.end, overrides: b.overrides || {},
+        }));
+      }
     } catch {}
-    return [
-      { name: 'Short Break', start: '10:00', end: '10:15' },
-      { name: 'Long Break', start: '12:00', end: '13:00' },
-    ];
+    return defaults;
   });
   useEffect(() => {
     try { localStorage.setItem(`timetableBreaks_${user?.schoolId}`, JSON.stringify(breaks)); } catch {}
   }, [breaks, user?.schoolId]);
-  const breakSlots = breaks.filter(b => b.start && b.end);
+  const getBreakSlotsForDay = (day) => breaks
+    .filter(b => b.start && b.end)
+    .map(b => {
+      const o = b.overrides?.[day];
+      return (o && o.start && o.end)
+        ? { name: b.name, start: o.start, end: o.end }
+        : { name: b.name, start: b.start, end: b.end };
+    });
 
   const [manualForm, setManualForm] = useState({
     classId: "", subjectId: "", teacherId: "", dayOfWeek: "", startTime: "", endTime: ""
@@ -125,11 +141,11 @@ export default function AdminTimetable() {
         teacherId: manualForm.teacherId || "", teacherName: teacher?.fullName || "",
         dayOfWeek: manualForm.dayOfWeek, startTime: manualForm.startTime, endTime: manualForm.endTime,
       };
-      setManualClashes(detectClashes(candidate, entries, breakSlots));
+      setManualClashes(detectClashes(candidate, entries, getBreakSlotsForDay));
     } else {
       setManualClashes([]);
     }
-  }, [manualForm, entries, breakSlots]);
+  }, [manualForm, entries, breaks]);
 
   async function loadData() {
     const [e, c, s, t, cat] = await Promise.all([
@@ -372,8 +388,7 @@ export default function AdminTimetable() {
   // Show break rows in the grid. If the AI already created real break rows, use
   // those; otherwise inject virtual break rows (per day) from the Break Schedule.
   const hasRealBreaks = filteredEntries.some(e => isBreak(e));
-  const virtualBreakRowsFor = (day) => hasRealBreaks ? [] : breaks
-    .filter(b => b.start && b.end)
+  const virtualBreakRowsFor = (day) => hasRealBreaks ? [] : getBreakSlotsForDay(day)
     .map(b => ({
       id: `vbreak-${day}-${b.name}`,
       isBreakRow: true,
@@ -395,7 +410,7 @@ export default function AdminTimetable() {
   const viewClashIds = new Set();
   filteredEntries.forEach((entry) => {
     if (isBreak(entry)) return;
-    const clashes = detectClashes(entry, filteredEntries, breakSlots);
+    const clashes = detectClashes(entry, filteredEntries, getBreakSlotsForDay);
     if (clashes.length > 0) viewClashIds.add(entry.id);
   });
 
