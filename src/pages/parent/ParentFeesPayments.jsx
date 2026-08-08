@@ -122,22 +122,28 @@ export default function ParentFeesPayments() {
         if (structure.status !== 'active') continue;
         const applies = structure.applyToAllClasses || (structure.applicableClasses || []).includes(student.classId);
         if (!applies) continue;
-        const alreadyPaid = invoices.some(inv => inv.studentId === student.id && inv.feeStructureId === structure.id && inv.status === 'paid');
-        result.push({ student, structure, alreadyPaid });
+        // Compare confirmed paid amount against the CURRENT structure total so that
+        // fee increases after a payment surface as outstanding instead of "Paid".
+        const structInvoices = invoices.filter(inv => inv.studentId === student.id && inv.feeStructureId === structure.id);
+        const paidAmount = structInvoices.reduce((s, inv) => s + (inv.amountPaid || 0), 0);
+        const currentTotal = structure.totalAmount || 0;
+        const outstanding = Math.max(0, currentTotal - paidAmount);
+        const alreadyPaid = paidAmount > 0 && outstanding <= 0.5;
+        result.push({ student, structure, alreadyPaid, paidAmount, outstanding });
       }
     }
     return result;
   }, [linkedStudents, feeStructures, selectedStudentId, invoices]);
 
   const totalFeesOwed = filteredInvoices.reduce((s, i) => s + (i.outstandingBalance || 0), 0)
-    + applicableStructures.filter(a => !a.alreadyPaid).reduce((s, a) => s + (a.structure.totalAmount || 0), 0);
+    + applicableStructures.filter(a => !a.alreadyPaid).reduce((s, a) => s + (a.outstanding || 0), 0);
   const totalFinesOwed = filteredFines.filter(f => f.status === 'pending').reduce((s, f) => s + (f.amount || 0), 0);
   const totalPaid = filteredPayments.filter(p => p.status === 'confirmed').reduce((s, p) => s + (p.amount || 0), 0);
 
   function openPayDialog(item, type) {
     setPayingItem({ ...item, _type: type });
     if (type === 'fine') setPayAmount(item.amount || 0);
-    else if (type === 'structure') setPayAmount(item.totalAmount || 0);
+    else if (type === 'structure') setPayAmount(item.outstanding || item.totalAmount || 0);
     else setPayAmount(item.outstandingBalance || 0);
   }
 
@@ -282,7 +288,7 @@ export default function ParentFeesPayments() {
             <div className="mb-4">
               <p className="text-sm font-medium text-muted-foreground mb-2">Applicable Fee Structures</p>
               <div className="space-y-3">
-                {applicableStructures.map(({ student, structure, alreadyPaid }) => (
+                {applicableStructures.map(({ student, structure, alreadyPaid, paidAmount, outstanding }) => (
                   <Card key={`${student.id}-${structure.id}`} className="overflow-hidden">
                     <CardContent className="pt-4">
                       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -295,8 +301,16 @@ export default function ParentFeesPayments() {
                         </div>
                         {alreadyPaid ? (
                           <Badge className="bg-green-100 text-green-700"><CheckCircle2 className="w-3 h-3 mr-1" /> Paid</Badge>
+                        ) : paidAmount > 0 && outstanding > 0 ? (
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge className="bg-blue-100 text-blue-700"><Clock className="w-3 h-3 mr-1" /> Partially Paid</Badge>
+                            <Button size="sm" onClick={() => openPayDialog({ ...structure, studentId: student.id, studentName: student.fullName, classId: student.classId, className: student.className, outstanding }, 'structure')}>
+                              <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                              Pay outstanding {currency}{outstanding.toLocaleString()}
+                            </Button>
+                          </div>
                         ) : (
-                          <Button size="sm" onClick={() => openPayDialog({ ...structure, studentId: student.id, studentName: student.fullName, classId: student.classId, className: student.className }, 'structure')}>
+                          <Button size="sm" onClick={() => openPayDialog({ ...structure, outstanding: structure.totalAmount, studentId: student.id, studentName: student.fullName, classId: student.classId, className: student.className }, 'structure')}>
                             <CreditCard className="w-3.5 h-3.5 mr-1.5" />
                             Pay {currency}{(structure.totalAmount || 0).toLocaleString()}
                           </Button>
@@ -314,6 +328,20 @@ export default function ParentFeesPayments() {
                             <span>Total</span>
                             <span>{currency}{(structure.totalAmount || 0).toLocaleString()}</span>
                           </div>
+                          {paidAmount > 0 && !alreadyPaid && (
+                            <>
+                              <div className="flex justify-between text-sm pt-1 border-t">
+                                <span className="text-green-700">Paid</span>
+                                <span className="text-green-700 font-medium">{currency}{paidAmount.toLocaleString()}</span>
+                              </div>
+                              {outstanding > 0 && (
+                                <div className="flex justify-between text-sm font-bold">
+                                  <span className="text-red-700">Outstanding</span>
+                                  <span className="text-red-700">{currency}{outstanding.toLocaleString()}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -479,7 +507,11 @@ export default function ParentFeesPayments() {
                 <p className="text-xs text-muted-foreground mt-1">Outstanding: {currency}{(payingItem?.outstandingBalance || 0).toLocaleString()}</p>
               )}
               {payingItem?._type === 'structure' && (
-                <p className="text-xs text-muted-foreground mt-1">Total: {currency}{(payingItem?.totalAmount || 0).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {payingItem?.outstanding != null && payingItem.outstanding < (payingItem?.totalAmount || 0)
+                    ? <>Outstanding: {currency}{payingItem.outstanding.toLocaleString()} of {currency}{(payingItem?.totalAmount || 0).toLocaleString()}</>
+                    : <>Total: {currency}{(payingItem?.totalAmount || 0).toLocaleString()}</>}
+                </p>
               )}
             </div>
 

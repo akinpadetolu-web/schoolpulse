@@ -14,18 +14,28 @@ export default function AdminFinancialReports() {
   const [payments, setPayments] = useState([]);
   const [filterTerm, setFilterTerm] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [structures, setStructures] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [expandedClass, setExpandedClass] = useState(null);
 
   useEffect(() => { loadAll(); }, [user?.schoolId]);
 
   async function loadAll() {
     if (!user?.schoolId) return;
     try {
-      const [inv, pay] = await Promise.all([
+      const [inv, pay, structs, cls, studs] = await Promise.all([
         base44.entities.FeeInvoice.filter({ schoolId: user.schoolId }),
         base44.entities.FeePayment.filter({ schoolId: user.schoolId }),
+        base44.entities.FeeStructure.filter({ schoolId: user.schoolId }),
+        base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false }),
+        base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student', isArchived: false }),
       ]);
       setInvoices(inv);
       setPayments(pay);
+      setStructures(structs || []);
+      setClasses(cls || []);
+      setStudents(studs || []);
     } catch (e) {}
     setLoading(false);
   }
@@ -62,6 +72,37 @@ export default function AdminFinancialReports() {
     classMap[cls].collected += (inv.totalAmount || 0) - (inv.outstandingBalance || 0);
   });
   const classData = Object.entries(classMap).map(([name, v]) => ({ name, ...v }));
+
+  // Fees by class based on active fee structures: expected (fee × students), collected, outstanding, students owing
+  const activeStructures = structures.filter(s => s.status === 'active' && (filterTerm === 'all' || s.term === filterTerm));
+  const expectedPerClass = {};
+  classes.forEach(c => {
+    const classStructures = activeStructures.filter(s => s.applyToAllClasses || (s.applicableClasses || []).includes(c.id));
+    expectedPerClass[c.id] = classStructures.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+  });
+  const studentFeeMap = students.map(st => {
+    const expected = expectedPerClass[st.classId] || 0;
+    const paid = payments
+      .filter(p => p.studentId === st.id && p.status === 'confirmed' && p.paymentType !== 'library_fine' && (filterTerm === 'all' || p.term === filterTerm))
+      .reduce((s, p) => s + (p.amount || 0), 0);
+    const outstanding = Math.max(0, expected - paid);
+    return { id: st.id, name: st.fullName, classId: st.classId, expected, paid, outstanding, owing: outstanding > 0.5 };
+  });
+  const classFeeData = classes.map(c => {
+    const classStudents = studentFeeMap.filter(st => st.classId === c.id);
+    const totalExpected = classStudents.reduce((s, st) => s + st.expected, 0);
+    const totalCollected = classStudents.reduce((s, st) => s + st.paid, 0);
+    const totalOutstanding = classStudents.reduce((s, st) => s + st.outstanding, 0);
+    const owingStudents = classStudents.filter(st => st.owing);
+    return {
+      id: c.id, name: c.className,
+      feePerStudent: expectedPerClass[c.id] || 0,
+      studentCount: classStudents.length,
+      totalExpected, totalCollected, totalOutstanding,
+      owingCount: owingStudents.length,
+      owingStudents,
+    };
+  }).filter(c => c.studentCount > 0 || c.feePerStudent > 0);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -145,6 +186,78 @@ export default function AdminFinancialReports() {
               </BarChart>
             </ResponsiveContainer>
           ) : <p className="text-muted-foreground text-center py-8">No data</p>}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-base">Fees by Class (Based on Fee Structures)</CardTitle>
+          <p className="text-xs text-muted-foreground">Expected fees per class from active fee structures, amounts collected, outstanding balances, and students owing. Click a row to see students owing.</p>
+        </CardHeader>
+        <CardContent>
+          {classFeeData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 border-b">
+                  <tr>
+                    {['Class', 'Fee/Student', 'Students', 'Total Expected', 'Collected', 'Outstanding', 'Owing'].map(h => (
+                      <th key={h} className="text-left p-3 font-medium text-muted-foreground">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {classFeeData.map(c => (
+                    <React.Fragment key={c.id}>
+                      <tr className="border-b hover:bg-muted/20 cursor-pointer" onClick={() => setExpandedClass(expandedClass === c.id ? null : c.id)}>
+                        <td className="p-3 font-medium">{c.name}</td>
+                        <td className="p-3">₦{c.feePerStudent.toLocaleString()}</td>
+                        <td className="p-3 text-muted-foreground">{c.studentCount}</td>
+                        <td className="p-3 font-medium">₦{c.totalExpected.toLocaleString()}</td>
+                        <td className="p-3 text-green-700">₦{c.totalCollected.toLocaleString()}</td>
+                        <td className="p-3 font-bold text-red-700">₦{c.totalOutstanding.toLocaleString()}</td>
+                        <td className="p-3">
+                          {c.owingCount > 0 ? (
+                            <Badge className="bg-red-100 text-red-700">{c.owingCount} student{c.owingCount > 1 ? 's' : ''} ▾</Badge>
+                          ) : (
+                            <Badge className="bg-green-100 text-green-700">None</Badge>
+                          )}
+                        </td>
+                      </tr>
+                      {expandedClass === c.id && c.owingStudents.length > 0 && (
+                        <tr className="bg-muted/20">
+                          <td colSpan={7} className="p-3">
+                            <div className="pl-4">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Students owing in {c.name}:</p>
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr>
+                                    <th className="text-left pb-1 font-medium">Student</th>
+                                    <th className="text-right pb-1 font-medium">Expected</th>
+                                    <th className="text-right pb-1 font-medium">Paid</th>
+                                    <th className="text-right pb-1 font-medium">Outstanding</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {c.owingStudents.map(st => (
+                                    <tr key={st.id} className="border-t">
+                                      <td className="py-1.5">{st.name}</td>
+                                      <td className="text-right py-1.5 text-muted-foreground">₦{st.expected.toLocaleString()}</td>
+                                      <td className="text-right py-1.5 text-green-700">₦{st.paid.toLocaleString()}</td>
+                                      <td className="text-right py-1.5 font-bold text-red-700">₦{st.outstanding.toLocaleString()}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-muted-foreground text-center py-8">No fee structures set for classes yet</p>}
         </CardContent>
       </Card>
     </div>
