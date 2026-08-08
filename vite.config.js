@@ -5,6 +5,11 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   logLevel: 'error', // Suppress warnings, only show errors
+  resolve: {
+    // Force a single React copy so react & react-dom share one instance
+    // (prevents "Cannot read properties of null (reading 'useState')" from duplicate React)
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'scheduler'],
+  },
   optimizeDeps: {
     force: true, // Force re-optimization to clear stale Vite dep cache
   },
