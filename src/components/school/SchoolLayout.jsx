@@ -5,6 +5,7 @@ import SchoolSidebar from './SchoolSidebar';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 export default function SchoolLayout() {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ export default function SchoolLayout() {
           </AnimatePresence>
         </main>
       </div>
+      <StudentProgressAgentChat subtitle="Ask about any student, class trends, or at-risk learners across your school" />
     </div>
   );
 }

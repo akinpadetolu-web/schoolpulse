@@ -10,6 +10,7 @@ import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 const ROOT_PATHS = ['/student', '/student/timetable', '/student/assignments', '/student/grades', '/student/profile'];
 
@@ -92,6 +93,7 @@ export default function StudentLayout() {
         </main>
       </div>
       {isRootScreen && <MobileBottomNav role="student" />}
+      <StudentProgressAgentChat subtitle="Ask about your grades, strengths, and where to improve" />
     </div>
   );
 }

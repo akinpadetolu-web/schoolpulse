@@ -72,6 +72,14 @@ export default async function (req) {
     const role = caller.role || 'user';
     const norm = (str) => (str || '').toLowerCase().trim();
 
+    // Teachers are restricted to students in their assigned classes and grades in their assigned subjects.
+    const teacherSubjectIds = role === 'teacher'
+      ? [...new Set([...(caller.assignedSubjects || []), ...((caller.teachingAssignments || []).map((a) => a.subjectId).filter(Boolean))])]
+      : [];
+    const teacherClassIds = role === 'teacher'
+      ? [...new Set([...(caller.assignedClasses || []), ...((caller.teachingAssignments || []).map((a) => a.classId).filter(Boolean))])]
+      : [];
+
     // ---- Resolve a target student based on role + request ----
     let targetStudent = null;
 
@@ -84,6 +92,8 @@ export default async function (req) {
         return Response.json({ error: 'You are not linked to this student' }, { status: 403 });
       if (role === 'student' && s.id !== caller.id)
         return Response.json({ error: 'Students can only view their own data' }, { status: 403 });
+      if (role === 'teacher' && teacherClassIds.length && !teacherClassIds.includes(s.classId))
+        return Response.json({ error: 'Student is not in your assigned classes' }, { status: 403 });
       targetStudent = s;
     } else if (studentName) {
       const studs = await base44.asServiceRole.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false });
@@ -95,6 +105,8 @@ export default async function (req) {
           return Response.json({ error: 'You are not linked to this student' }, { status: 403 });
         if (role === 'student' && match.id !== caller.id)
           return Response.json({ error: 'Students can only view their own data' }, { status: 403 });
+        if (role === 'teacher' && teacherClassIds.length && !teacherClassIds.includes(match.classId))
+          return Response.json({ error: 'Student is not in your assigned classes' }, { status: 403 });
         targetStudent = match;
       }
     } else {
@@ -113,7 +125,10 @@ export default async function (req) {
 
     // ---- Target student: return their scoped grades + assignments + summary ----
     if (targetStudent) {
-      const grades = await base44.asServiceRole.entities.Grade.filter({ schoolId, studentId: targetStudent.id });
+      let grades = await base44.asServiceRole.entities.Grade.filter({ schoolId, studentId: targetStudent.id });
+      if (role === 'teacher' && teacherSubjectIds.length) {
+        grades = grades.filter((g) => teacherSubjectIds.includes(g.subjectId));
+      }
 
       const subjectIds = [...new Set((grades || []).map((g) => g.subjectId).filter(Boolean))];
       const allSubjects = await base44.asServiceRole.entities.Subject.filter({ schoolId });
@@ -197,8 +212,11 @@ export default async function (req) {
 
     // Compute each student's overall average from one school-wide grades fetch (memory)
     const allGrades = await base44.asServiceRole.entities.Grade.filter({ schoolId });
+    const scopedAllGrades = (role === 'teacher' && teacherSubjectIds.length)
+      ? (allGrades || []).filter((g) => teacherSubjectIds.includes(g.subjectId))
+      : (allGrades || []);
     const gradesByStudent = {};
-    (allGrades || []).forEach((g) => {
+    scopedAllGrades.forEach((g) => {
       if (!g.studentId) return;
       if (!gradesByStudent[g.studentId]) gradesByStudent[g.studentId] = [];
       gradesByStudent[g.studentId].push(g);

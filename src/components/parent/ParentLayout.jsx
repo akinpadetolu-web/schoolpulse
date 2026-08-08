@@ -10,6 +10,7 @@ import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 const ROOT_PATHS = ['/parent', '/parent/timetable', '/parent/assignments', '/parent/grades', '/parent/fees-payments', '/parent/health', '/parent/hostel', '/parent/notifications'];
 
@@ -92,6 +93,7 @@ export default function ParentLayout() {
         </main>
       </div>
       {isRootScreen && <MobileBottomNav role="parent" />}
+      <StudentProgressAgentChat subtitle="Ask about your child's academic progress, strengths, and support needs" />
     </div>
   );
 }

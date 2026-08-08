@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, X, Sparkles, User } from 'lucide-react';
+import { Send, Loader2, X, Sparkles, User, Maximize2, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -63,6 +63,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
   const [hasReplied, setHasReplied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef(null);
   const initRef = useRef(false);
   const { schoolUser } = useSchoolAuth();
@@ -142,8 +143,11 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-            className="fixed z-50 right-3 sm:right-6 bottom-[9.5rem] sm:bottom-24 w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[380px] rounded-2xl border bg-card text-card-foreground shadow-2xl overflow-hidden flex flex-col"
-            style={{ maxHeight: '70vh' }}
+            className={cn(
+              "fixed z-50 right-3 sm:right-6 bottom-[9.5rem] sm:bottom-24 w-[calc(100vw-1.5rem)] rounded-2xl border bg-card text-card-foreground shadow-2xl overflow-hidden flex flex-col transition-all",
+              expanded ? "sm:w-[600px] max-w-[600px]" : "sm:w-[380px] max-w-[380px]"
+            )}
+            style={{ maxHeight: expanded ? '85vh' : '70vh' }}
           >
             {/* Header */}
             <div className="flex items-center gap-3 p-3.5 border-b bg-primary/5">
@@ -152,6 +156,9 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
                 <p className="font-semibold leading-tight flex items-center gap-1.5">{title}</p>
                 {subtitle && <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>}
               </div>
+              <button onClick={() => setExpanded((e) => !e)} className="rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" aria-label={expanded ? 'Shrink chat' : 'Expand chat'}>
+                {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
               <button onClick={() => setOpen(false)} className="rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                 <X className="w-4 h-4" />
               </button>

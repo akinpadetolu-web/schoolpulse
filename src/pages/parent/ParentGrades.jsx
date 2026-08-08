@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
-import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 function getColor(pct) {
   if (pct >= 70) return 'text-emerald-600';
@@ -247,7 +246,6 @@ export default function ParentGrades() {
         );
       })}
 
-      <StudentProgressAgentChat subtitle="Ask about your child's academic progress, strengths, and support needs" />
     </div>
   );
 }
