@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, Calendar, Bell, GraduationCap } from 'lucide-react';
 
@@ -24,6 +24,9 @@ const parentTabs = [
   { label: "Grades", path: "/parent/grades", icon: GraduationCap },
 ];
 
+// sessionStorage key prefix for per-tab deep-route history
+const STORAGE_PREFIX = 'mbn_history_';
+
 export default function MobileBottomNav({ role }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,19 +36,35 @@ export default function MobileBottomNav({ role }) {
   const isActive = (tab) =>
     tab.path === `/${role}` ? location.pathname === `/${role}` : location.pathname.startsWith(tab.path);
 
+  // The tab that owns the current route (null when on a route outside any tab)
+  const activeTab = tabs.find(t => isActive(t)) || null;
+
+  // Persist the current deep route under the active tab so we can restore it later
+  useEffect(() => {
+    if (!activeTab) return;
+    try { sessionStorage.setItem(`${STORAGE_PREFIX}${activeTab.path}`, location.pathname); } catch {}
+  }, [location.pathname, activeTab]);
+
   function handleTabPress(tab) {
     if (isActive(tab)) {
-      // Already on this tab — reset to root
+      // Already on this tab — reset to root and forget the saved deep route
+      try { sessionStorage.removeItem(`${STORAGE_PREFIX}${tab.path}`); } catch {}
       navigate(tab.path, { replace: true });
-    } else {
-      navigate(tab.path);
+      return;
     }
+    // Switching tabs — restore the last deep route for this tab if we saved one
+    let target = tab.path;
+    try {
+      const saved = sessionStorage.getItem(`${STORAGE_PREFIX}${tab.path}`);
+      if (saved && (saved === tab.path || saved.startsWith(tab.path + '/'))) target = saved;
+    } catch {}
+    navigate(target);
   }
 
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex items-stretch"
-      style={{ 
+      style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         height: 'calc(3.5rem + env(safe-area-inset-bottom))'
       }}

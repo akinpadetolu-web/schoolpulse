@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -116,17 +116,19 @@ export default function VaccinationPanel({ vaccinations, students, classes, onRe
               </div>
               <div>
                 <Label>Vaccine Type</Label>
-                <Select value={form.vaccinationType} onValueChange={v => setForm({ ...form, vaccinationType: v })}>
-                  <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="polio">Polio</SelectItem>
-                    <SelectItem value="measles">Measles</SelectItem>
-                    <SelectItem value="yellow_fever">Yellow Fever</SelectItem>
-                    <SelectItem value="covid19">COVID-19</SelectItem>
-                    <SelectItem value="hepatitis_b">Hepatitis B</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  value={form.vaccinationType}
+                  onValueChange={v => setForm({ ...form, vaccinationType: v })}
+                  disabled={saving}
+                  options={[
+                    { value: 'polio', label: 'Polio' },
+                    { value: 'measles', label: 'Measles' },
+                    { value: 'yellow_fever', label: 'Yellow Fever' },
+                    { value: 'covid19', label: 'COVID-19' },
+                    { value: 'hepatitis_b', label: 'Hepatitis B' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -143,15 +145,17 @@ export default function VaccinationPanel({ vaccinations, students, classes, onRe
 
             <div>
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
-                  <SelectItem value="exempted">Exempted</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.status}
+                onValueChange={v => setForm({ ...form, status: v })}
+                disabled={saving}
+                options={[
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'overdue', label: 'Overdue' },
+                  { value: 'exempted', label: 'Exempted' },
+                ]}
+              />
             </div>
 
             <div>

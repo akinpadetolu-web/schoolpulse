@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import AccountSettings from '@/components/common/AccountSettings';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, User, School, Hash, BookOpen } from 'lucide-react';
 
@@ -55,6 +56,7 @@ export default function StudentSettings() {
 
       {/* Security & Account actions */}
       <AccountSettings />
+      <DeleteAccountDialog />
     </div>
   );
 }

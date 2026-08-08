@@ -6,12 +6,18 @@ import HeaderUserMenu from '@/components/common/HeaderUserMenu';
 import { Button } from '@/components/ui/button';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ParentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { schoolUser: user, isLoadingSchoolAuth } = useSchoolAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const ptr = usePullToRefresh(async () => { await queryClient.refetchQueries(); });
 
   const isRootScreen = location.pathname === '/parent';
 
@@ -47,25 +53,27 @@ export default function ParentLayout() {
           </div>
           <HeaderUserMenu />
         </header>
-        <main className="flex-1 min-h-0 w-full" style={{ overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="p-4 md:p-6 w-full"
-              style={{
-                touchAction: 'pan-y',
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',
-                paddingLeft: 'env(safe-area-inset-left)',
-                paddingRight: 'env(safe-area-inset-right)',
-              }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+        <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">
+          <PullToRefreshWrapper {...ptr}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: 'easeInOut' }}
+                className="p-4 md:p-6 w-full"
+                style={{
+                  touchAction: 'pan-y',
+                  paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',
+                  paddingLeft: 'env(safe-area-inset-left)',
+                  paddingRight: 'env(safe-area-inset-right)',
+                }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </PullToRefreshWrapper>
         </main>
       </div>
     </div>

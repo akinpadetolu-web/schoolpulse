@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -89,21 +89,23 @@ export default function SpecialNeedsPanel({ specialNeeds, students, classes, onR
 
             <div>
               <Label>Need Type *</Label>
-              <Select value={form.needType} onValueChange={v => setForm({ ...form, needType: v })}>
-                <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="physical_disability">Physical Disability</SelectItem>
-                  <SelectItem value="visual_impairment">Visual Impairment</SelectItem>
-                  <SelectItem value="hearing_impairment">Hearing Impairment</SelectItem>
-                  <SelectItem value="learning_disability">Learning Disability</SelectItem>
-                  <SelectItem value="autism">Autism</SelectItem>
-                  <SelectItem value="intellectual_disability">Intellectual Disability</SelectItem>
-                  <SelectItem value="speech_impairment">Speech Impairment</SelectItem>
-                  <SelectItem value="emotional_behavioral">Emotional/Behavioral</SelectItem>
-                  <SelectItem value="chronic_illness">Chronic Illness</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.needType}
+                onValueChange={v => setForm({ ...form, needType: v })}
+                disabled={saving}
+                options={[
+                  { value: 'physical_disability', label: 'Physical Disability' },
+                  { value: 'visual_impairment', label: 'Visual Impairment' },
+                  { value: 'hearing_impairment', label: 'Hearing Impairment' },
+                  { value: 'learning_disability', label: 'Learning Disability' },
+                  { value: 'autism', label: 'Autism' },
+                  { value: 'intellectual_disability', label: 'Intellectual Disability' },
+                  { value: 'speech_impairment', label: 'Speech Impairment' },
+                  { value: 'emotional_behavioral', label: 'Emotional/Behavioral' },
+                  { value: 'chronic_illness', label: 'Chronic Illness' },
+                  { value: 'other', label: 'Other' },
+                ]}
+              />
             </div>
 
             <div>

@@ -8,7 +8,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import StudentPicker from '@/components/health/StudentPicker';
@@ -127,32 +127,36 @@ export default function MedicalRecordPanel({ records, students, classes, onRefre
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Blood Group</Label>
-                <Select value={form.bloodGroup} onValueChange={v => setForm({ ...form, bloodGroup: v })}>
-                  <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="O+">O+</SelectItem>
-                    <SelectItem value="O-">O-</SelectItem>
-                    <SelectItem value="A+">A+</SelectItem>
-                    <SelectItem value="A-">A-</SelectItem>
-                    <SelectItem value="B+">B+</SelectItem>
-                    <SelectItem value="B-">B-</SelectItem>
-                    <SelectItem value="AB+">AB+</SelectItem>
-                    <SelectItem value="AB-">AB-</SelectItem>
-                    <SelectItem value="unknown">Unknown</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  value={form.bloodGroup}
+                  onValueChange={v => setForm({ ...form, bloodGroup: v })}
+                  disabled={saving}
+                  options={[
+                    { value: 'O+', label: 'O+' },
+                    { value: 'O-', label: 'O-' },
+                    { value: 'A+', label: 'A+' },
+                    { value: 'A-', label: 'A-' },
+                    { value: 'B+', label: 'B+' },
+                    { value: 'B-', label: 'B-' },
+                    { value: 'AB+', label: 'AB+' },
+                    { value: 'AB-', label: 'AB-' },
+                    { value: 'unknown', label: 'Unknown' },
+                  ]}
+                />
               </div>
               <div>
                 <Label>Genotype</Label>
-                <Select value={form.genotype} onValueChange={v => setForm({ ...form, genotype: v })}>
-                  <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AA">AA</SelectItem>
-                    <SelectItem value="AS">AS</SelectItem>
-                    <SelectItem value="SS">SS</SelectItem>
-                    <SelectItem value="unknown">Unknown</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  value={form.genotype}
+                  onValueChange={v => setForm({ ...form, genotype: v })}
+                  disabled={saving}
+                  options={[
+                    { value: 'AA', label: 'AA' },
+                    { value: 'AS', label: 'AS' },
+                    { value: 'SS', label: 'SS' },
+                    { value: 'unknown', label: 'Unknown' },
+                  ]}
+                />
               </div>
             </div>
 

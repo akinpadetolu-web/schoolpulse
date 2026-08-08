@@ -3,6 +3,7 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilePictureUpload from '@/components/common/ProfilePictureUpload';
 import AccountSettings from '@/components/common/AccountSettings';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 import ParentNotificationPreferences from '@/components/parent/ParentNotificationPreferences';
 
 export default function ParentSettings() {
@@ -53,6 +54,7 @@ export default function ParentSettings() {
 
       {/* Password & Account */}
       <AccountSettings />
+      <DeleteAccountDialog />
     </div>
   );
 }

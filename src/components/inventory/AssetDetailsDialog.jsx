@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -135,36 +135,36 @@ export default function AssetDetailsDialog({ open, onOpenChange, asset, onSave }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Category *</Label>
-              <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                <SelectTrigger disabled={loading}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="classroom_equipment">Classroom Equipment</SelectItem>
-                  <SelectItem value="laboratory_equipment">Laboratory Equipment</SelectItem>
-                  <SelectItem value="sports_equipment">Sports Equipment</SelectItem>
-                  <SelectItem value="office_equipment">Office Equipment</SelectItem>
-                  <SelectItem value="furniture">Furniture</SelectItem>
-                  <SelectItem value="ict_equipment">ICT Equipment</SelectItem>
-                  <SelectItem value="cleaning_supplies">Cleaning Supplies</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.category}
+                onValueChange={v => setForm({ ...form, category: v })}
+                disabled={loading}
+                options={[
+                  { value: 'classroom_equipment', label: 'Classroom Equipment' },
+                  { value: 'laboratory_equipment', label: 'Laboratory Equipment' },
+                  { value: 'sports_equipment', label: 'Sports Equipment' },
+                  { value: 'office_equipment', label: 'Office Equipment' },
+                  { value: 'furniture', label: 'Furniture' },
+                  { value: 'ict_equipment', label: 'ICT Equipment' },
+                  { value: 'cleaning_supplies', label: 'Cleaning Supplies' },
+                  { value: 'other', label: 'Other' },
+                ]}
+              />
             </div>
             <div>
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                <SelectTrigger disabled={loading}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="damaged">Damaged</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="retired">Retired</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.status}
+                onValueChange={v => setForm({ ...form, status: v })}
+                disabled={loading}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'damaged', label: 'Damaged' },
+                  { value: 'maintenance', label: 'Maintenance' },
+                  { value: 'retired', label: 'Retired' },
+                  { value: 'lost', label: 'Lost' },
+                ]}
+              />
             </div>
           </div>
 

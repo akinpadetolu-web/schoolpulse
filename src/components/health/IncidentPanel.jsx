@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -122,28 +122,32 @@ export default function IncidentPanel({ incidents, students, classes, onRefresh 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Incident Type *</Label>
-                <Select value={form.incidentType} onValueChange={v => setForm({ ...form, incidentType: v })}>
-                  <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="injury">Injury</SelectItem>
-                    <SelectItem value="poisoning">Poisoning</SelectItem>
-                    <SelectItem value="allergic_reaction">Allergic Reaction</SelectItem>
-                    <SelectItem value="accident">Accident</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  value={form.incidentType}
+                  onValueChange={v => setForm({ ...form, incidentType: v })}
+                  disabled={saving}
+                  options={[
+                    { value: 'injury', label: 'Injury' },
+                    { value: 'poisoning', label: 'Poisoning' },
+                    { value: 'allergic_reaction', label: 'Allergic Reaction' },
+                    { value: 'accident', label: 'Accident' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                />
               </div>
               <div>
                 <Label>Severity *</Label>
-                <Select value={form.severity} onValueChange={v => setForm({ ...form, severity: v })}>
-                  <SelectTrigger disabled={saving}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="minor">Minor</SelectItem>
-                    <SelectItem value="moderate">Moderate</SelectItem>
-                    <SelectItem value="severe">Severe</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MobileSelect
+                  value={form.severity}
+                  onValueChange={v => setForm({ ...form, severity: v })}
+                  disabled={saving}
+                  options={[
+                    { value: 'minor', label: 'Minor' },
+                    { value: 'moderate', label: 'Moderate' },
+                    { value: 'severe', label: 'Severe' },
+                    { value: 'critical', label: 'Critical' },
+                  ]}
+                />
               </div>
             </div>
 

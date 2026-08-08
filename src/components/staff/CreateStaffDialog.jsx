@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StaffPermissionsPanel from './StaffPermissionsPanel';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { toast } from 'sonner';
 
 const DEPARTMENTS = [
@@ -124,16 +125,11 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
               </div>
               <div>
                 <Label className="text-xs">Department</Label>
-                <select
-                  name="department"
+                <MobileSelect
                   value={formData.department}
-                  onChange={handleChange}
-                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
-                >
-                  {(departments?.length ? departments : DEPARTMENTS).map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+                  onValueChange={v => setFormData(prev => ({ ...prev, department: v }))}
+                  options={(departments?.length ? departments : DEPARTMENTS).map(d => ({ value: d, label: d }))}
+                />
               </div>
             </div>
           </div>
@@ -174,17 +170,17 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
             <h3 className="font-semibold text-sm">Hostel Access (Optional)</h3>
             <div>
               <Label className="text-xs block mb-2">Gender Access for Hostel Management</Label>
-              <select
-                name="genderAccess"
+              <MobileSelect
                 value={genderAccess}
-                onChange={(e) => setGenderAccess(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
-              >
-                <option value="">No hostel access</option>
-                <option value="all">All Students (Head Hostel Manager)</option>
-                <option value="male">Male Students Only</option>
-                <option value="female">Female Students Only</option>
-              </select>
+                onValueChange={setGenderAccess}
+                placeholder="No hostel access"
+                options={[
+                  { value: '', label: 'No hostel access' },
+                  { value: 'all', label: 'All Students (Head Hostel Manager)' },
+                  { value: 'male', label: 'Male Students Only' },
+                  { value: 'female', label: 'Female Students Only' },
+                ]}
+              />
               <p className="text-xs text-muted-foreground mt-1">Controls which student genders this staff member can manage in the hostel module.</p>
             </div>
           </div>
@@ -220,15 +216,14 @@ export default function CreateStaffDialog({ open, onOpenChange, onSave, departme
             </div>
             <div>
               <Label className="text-xs">Status</Label>
-              <select
-                name="status"
+              <MobileSelect
                 value={formData.status}
-                onChange={handleChange}
-                className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+                onValueChange={v => setFormData(prev => ({ ...prev, status: v }))}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                ]}
+              />
             </div>
           </div>
 

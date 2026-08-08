@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import DeleteAccountDialog from '@/components/mobile/DeleteAccountDialog';
 
 export default function TeacherSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -135,6 +136,8 @@ export default function TeacherSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DeleteAccountDialog />
     </div>
   );
 }
