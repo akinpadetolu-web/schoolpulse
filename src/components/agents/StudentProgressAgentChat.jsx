@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send, Loader2, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Send, Loader2, X, Sparkles, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const AGENT_NAME = 'kairos';
@@ -23,17 +23,10 @@ function ToolCallPill({ toolCall }) {
   const hide = toolCall.display_projection?.hide_details && toolCall.display_projection?.details_redacted;
   return (
     <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span
-        className={cn(
-          'inline-block w-1.5 h-1.5 rounded-full',
-          isFailed ? 'bg-destructive' : isDone ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse',
-        )}
-      />
+      <span className={cn('inline-block w-1.5 h-1.5 rounded-full', isFailed ? 'bg-destructive' : isDone ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse')} />
       <span className="font-medium text-foreground/80">{label}</span>
       <span>· {stateLabel}</span>
-      {!hide && toolCall.arguments_string && (
-        <span className="truncate max-w-[180px] opacity-70">{toolCall.arguments_string}</span>
-      )}
+      {!hide && toolCall.arguments_string && <span className="truncate max-w-[160px] opacity-70">{toolCall.arguments_string}</span>}
     </div>
   );
 }
@@ -42,9 +35,7 @@ function MessageBubble({ message, avatarUrl }) {
   const isUser = message.role === 'user';
   return (
     <div className={cn('flex gap-2.5', isUser ? 'justify-end' : 'justify-start')}>
-      {!isUser && (
-        <img src={avatarUrl} alt="Kairos" className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full object-cover" />
-      )}
+      {!isUser && <img src={avatarUrl} alt="Kairos" className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full object-cover" />}
       <div className={cn('max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm', isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
         {message.content && (isUser ? (
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -55,11 +46,7 @@ function MessageBubble({ message, avatarUrl }) {
         ))}
         {!isUser && message.tool_calls?.map((tc, i) => <ToolCallPill key={i} toolCall={tc} />)}
       </div>
-      {isUser && (
-        <div className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center">
-          <User className="w-4 h-4" />
-        </div>
-      )}
+      {isUser && <div className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"><User className="w-4 h-4" /></div>}
     </div>
   );
 }
@@ -70,12 +57,12 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
+  const [hasReplied, setHasReplied] = useState(false);
   const scrollRef = useRef(null);
   const initRef = useRef(false);
 
-  // Initialize / resume a conversation for this agent
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
@@ -86,113 +73,136 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
           const convs = await base44.agents.listConversations({ agent_name: AGENT_NAME });
           conv = (convs || [])[0];
         } catch {}
-        if (!conv) {
-          conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title } });
-        }
+        if (!conv) conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title } });
         setConversationId(conv.id);
-        if (Array.isArray(conv.messages) && conv.messages.length) setMessages(conv.messages);
+        if (Array.isArray(conv.messages) && conv.messages.length) {
+          setMessages(conv.messages);
+          setHasReplied(conv.messages.some((m) => m.role === 'assistant' && m.content));
+        }
       } catch (e) {
         console.error('Agent init failed', e);
-        setError('Could not start the evaluator. Please try again later.');
+        setError('Could not start Kairos. Please try again later.');
       } finally {
         setLoading(false);
       }
     })();
   }, [title]);
 
-  // Subscribe to streaming updates
   useEffect(() => {
     if (!conversationId) return;
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
       if (data?.messages) setMessages(data.messages);
-      // turn off sending once an assistant message appears
-      if (data?.messages?.some((m) => m.role === 'assistant' && m.content)) setSending(false);
+      if (data?.messages?.some((m) => m.role === 'assistant' && m.content)) {
+        setSending(false);
+        setHasReplied(true);
+      }
     });
     return () => unsub && unsub();
   }, [conversationId]);
 
-  // Autoscroll on new content
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open]);
 
-  const send = useCallback(
-    async (e) => {
-      e?.preventDefault();
-      const text = input.trim();
-      if (!text || !conversationId || sending) return;
-      setInput('');
-      setSending(true);
-      setError(null);
-      // optimistic user bubble
-      setMessages((prev) => [...prev, { role: 'user', content: text }]);
-      try {
-        const conv = await base44.agents.getConversation(conversationId);
-        await base44.agents.addMessage(conv, { role: 'user', content: text });
-      } catch (e) {
-        console.error('send failed', e);
-        setSending(false);
-        setError('Failed to send. Please try again.');
-      }
-    },
-    [input, conversationId, sending],
-  );
+  const send = useCallback(async (e) => {
+    e?.preventDefault();
+    const text = input.trim();
+    if (!text || !conversationId || sending) return;
+    setInput('');
+    setSending(true);
+    setError(null);
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    try {
+      const conv = await base44.agents.getConversation(conversationId);
+      await base44.agents.addMessage(conv, { role: 'user', content: text });
+    } catch (e) {
+      console.error('send failed', e);
+      setSending(false);
+      setError('Failed to send. Please try again.');
+    }
+  }, [input, conversationId, sending]);
+
+  const showBadge = !open && !hasReplied && !loading;
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-3">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between text-left"
-        >
-          <div className="flex items-center gap-2">
-            <img src={avatarUrl} alt="Kairos" className="w-8 h-8 rounded-lg object-cover" />
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">{title}</CardTitle>
-              {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+    <>
+      {/* Chat panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+            className="fixed z-50 right-3 sm:right-6 bottom-[9.5rem] sm:bottom-24 w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[380px] rounded-2xl border bg-card text-card-foreground shadow-2xl overflow-hidden flex flex-col"
+            style={{ maxHeight: '70vh' }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 p-3.5 border-b bg-primary/5">
+              <img src={avatarUrl} alt="Kairos" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold leading-tight flex items-center gap-1.5">{title}</p>
+                {subtitle && <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>}
+              </div>
+              <button onClick={() => setOpen(false)} className="rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          </div>
-          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
-      </CardHeader>
-      {open && (
-        <CardContent className="pt-0">
-          <div ref={scrollRef} className="h-72 overflow-y-auto space-y-3 pr-1 mb-3">
-            {loading ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Starting evaluator…
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-sm text-muted-foreground py-6 text-center">
-                Ask me about a student's grades, performance trends, strengths, or areas to improve.
-              </div>
-            ) : (
-              messages.map((m, i) => <MessageBubble key={i} message={m} avatarUrl={avatarUrl} />)
-            )}
-            {sending && (
-              <div className="flex gap-2.5 justify-start">
-                <img src={avatarUrl} alt="Kairos" className="w-7 h-7 rounded-full object-cover" />
-                <div className="bg-muted rounded-2xl px-3.5 py-2.5 text-sm text-muted-foreground flex items-center">
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing…
+
+            {/* Messages */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 p-3.5">
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Starting Kairos…
                 </div>
-              </div>
-            )}
-            {error && <p className="text-xs text-destructive text-center">{error}</p>}
-          </div>
-          <form onSubmit={send} className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about a student's progress…"
-              disabled={loading || sending}
-            />
-            <Button type="submit" size="icon" disabled={loading || sending || !input.trim()}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        </CardContent>
-      )}
-    </Card>
+              ) : messages.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-8 text-center">
+                  <p className="font-medium text-foreground mb-1">Hi, I'm Kairos 👋</p>
+                  Ask me about a student's grades, performance trends, strengths, or areas to improve.
+                </div>
+              ) : (
+                messages.map((m, i) => <MessageBubble key={i} message={m} avatarUrl={avatarUrl} />)
+              )}
+              {sending && (
+                <div className="flex gap-2.5 justify-start">
+                  <img src={avatarUrl} alt="Kairos" className="w-7 h-7 rounded-full object-cover" />
+                  <div className="bg-muted rounded-2xl px-3.5 py-2.5 text-sm text-muted-foreground flex items-center">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing…
+                  </div>
+                </div>
+              )}
+              {error && <p className="text-xs text-destructive text-center">{error}</p>}
+            </div>
+
+            {/* Input */}
+            <form onSubmit={send} className="p-3 border-t flex gap-2 bg-card">
+              <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask Kairos…" disabled={loading || sending} />
+              <Button type="submit" size="icon" disabled={loading || sending || !input.trim()}>
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating bubble */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={open ? 'Close Kairos chat' : 'Open Kairos chat'}
+        className="fixed z-50 right-3 sm:right-6 bottom-20 sm:bottom-6 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all pl-2 pr-3 sm:pr-4 h-14"
+      >
+        <span className="relative">
+          <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+          {showBadge && (
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-primary" />
+          )}
+        </span>
+        <span className="hidden sm:flex items-center gap-1.5 text-sm font-medium">
+          <Sparkles className="w-4 h-4" />
+          {open ? 'Close' : 'Ask Kairos'}
+        </span>
+      </button>
+    </>
   );
 }
