@@ -3,11 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Send, Loader2, ChevronDown, ChevronUp, Bot, User } from 'lucide-react';
+import { Send, Loader2, ChevronDown, ChevronUp, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 
-const AGENT_NAME = 'student_progress_evaluator';
+const AGENT_NAME = 'kairos';
+const DEFAULT_AVATAR = 'https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/583f31170_generated_image.png';
 
 function ToolCallPill({ toolCall }) {
   const status = toolCall.status || 'pending';
@@ -37,14 +38,12 @@ function ToolCallPill({ toolCall }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, avatarUrl }) {
   const isUser = message.role === 'user';
   return (
     <div className={cn('flex gap-2.5', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <div className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-          <Bot className="w-4 h-4" />
-        </div>
+        <img src={avatarUrl} alt="Kairos" className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full object-cover" />
       )}
       <div className={cn('max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm', isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
         {message.content && (isUser ? (
@@ -65,7 +64,7 @@ function MessageBubble({ message }) {
   );
 }
 
-export default function StudentProgressAgentChat({ title = 'AI Progress Evaluator', subtitle }) {
+export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, avatarUrl = DEFAULT_AVATAR }) {
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -148,9 +147,7 @@ export default function StudentProgressAgentChat({ title = 'AI Progress Evaluato
           className="flex w-full items-center justify-between text-left"
         >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
+            <img src={avatarUrl} alt="Kairos" className="w-8 h-8 rounded-lg object-cover" />
             <div>
               <CardTitle className="text-base flex items-center gap-2">{title}</CardTitle>
               {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -171,11 +168,11 @@ export default function StudentProgressAgentChat({ title = 'AI Progress Evaluato
                 Ask me about a student's grades, performance trends, strengths, or areas to improve.
               </div>
             ) : (
-              messages.map((m, i) => <MessageBubble key={i} message={m} />)
+              messages.map((m, i) => <MessageBubble key={i} message={m} avatarUrl={avatarUrl} />)
             )}
             {sending && (
               <div className="flex gap-2.5 justify-start">
-                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Bot className="w-4 h-4" /></div>
+                <img src={avatarUrl} alt="Kairos" className="w-7 h-7 rounded-full object-cover" />
                 <div className="bg-muted rounded-2xl px-3.5 py-2.5 text-sm text-muted-foreground flex items-center">
                   <Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing…
                 </div>
