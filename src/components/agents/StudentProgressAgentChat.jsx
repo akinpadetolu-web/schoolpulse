@@ -6,9 +6,12 @@ import { Send, Loader2, X, Sparkles, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 
 const AGENT_NAME = 'kairos';
 const DEFAULT_AVATAR = 'https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/a55e9e2fc_ChatGPT_Image_Jul_29__2026__11_57_14_PM-removebg-preview.webp';
+
+const stripContext = (c) => { if (typeof c !== 'string' || !c.startsWith('[SCHOOL_CONTEXT:')) return c; return c.split('\n').slice(1).join('\n').trimStart(); };
 
 function ToolCallPill({ toolCall }) {
   const status = toolCall.status || 'pending';
@@ -38,10 +41,10 @@ function MessageBubble({ message, avatarUrl }) {
       {!isUser && <img src={avatarUrl} alt="Kairos" className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full object-cover" />}
       <div className={cn('max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm', isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
         {message.content && (isUser ? (
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">{stripContext(message.content)}</p>
         ) : (
           <div className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown>{stripContext(message.content)}</ReactMarkdown>
           </div>
         ))}
         {!isUser && message.tool_calls?.map((tc, i) => <ToolCallPill key={i} toolCall={tc} />)}
@@ -62,6 +65,10 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
   const [hasReplied, setHasReplied] = useState(false);
   const scrollRef = useRef(null);
   const initRef = useRef(false);
+  const { schoolUser } = useSchoolAuth();
+  const contextBlock = schoolUser?.schoolId && schoolUser?.id
+    ? `[SCHOOL_CONTEXT: schoolId=${schoolUser.schoolId} | callerId=${schoolUser.id} | role=${schoolUser.role || ''} | schoolName=${schoolUser.schoolName || ''} | callerName=${schoolUser.fullName || ''}]`
+    : '';
 
   useEffect(() => {
     if (initRef.current) return;
@@ -73,7 +80,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
           const convs = await base44.agents.listConversations({ agent_name: AGENT_NAME });
           conv = (convs || [])[0];
         } catch {}
-        if (!conv) conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title } });
+        if (!conv) conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title, schoolId: schoolUser?.schoolId, callerId: schoolUser?.id, role: schoolUser?.role } });
         setConversationId(conv.id);
         if (Array.isArray(conv.messages) && conv.messages.length) {
           setMessages(conv.messages);
@@ -111,16 +118,17 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
     setInput('');
     setSending(true);
     setError(null);
+    const fullContent = contextBlock ? `${contextBlock}\n\n${text}` : text;
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     try {
       const conv = await base44.agents.getConversation(conversationId);
-      await base44.agents.addMessage(conv, { role: 'user', content: text });
+      await base44.agents.addMessage(conv, { role: 'user', content: fullContent });
     } catch (e) {
       console.error('send failed', e);
       setSending(false);
       setError('Failed to send. Please try again.');
     }
-  }, [input, conversationId, sending]);
+  }, [input, conversationId, sending, contextBlock]);
 
   const showBadge = !open && !hasReplied && !loading;
 
@@ -158,7 +166,11 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
               ) : messages.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-8 text-center">
                   <p className="font-medium text-foreground mb-1">Hi, I'm Kairos 👋</p>
-                  Ask me about a student's grades, performance trends, strengths, or areas to improve.
+                  {schoolUser ? (
+                    <>Ask me about a student's grades, performance trends, strengths, or areas to improve.</>
+                  ) : (
+                    <>Please log into your school account first so I can access your school's data.</>
+                  )}
                 </div>
               ) : (
                 messages.map((m, i) => <MessageBubble key={i} message={m} avatarUrl={avatarUrl} />)

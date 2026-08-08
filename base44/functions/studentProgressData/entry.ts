@@ -41,20 +41,33 @@ function buildSummary(grades) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const platformUser = await base44.auth.me();
-    if (!platformUser) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
     const body = await req.json().catch(() => ({}));
-    const { studentId, studentName } = body || {};
+    const { studentId, studentName, callerId, schoolId: bodySchoolId } = body || {};
 
-    // Resolve the caller's SchoolUser by email (SchoolPulse stores school info on SchoolUser)
-    const callers = await base44.asServiceRole.entities.SchoolUser.filter({ email: platformUser.email });
-    const caller = (callers || [])[0];
-    if (!caller) return Response.json({ error: 'No school profile found for this user' }, { status: 403 });
+    // Resolve the caller's SchoolUser.
+    // Preferred: explicit callerId passed from the in-app chat (custom SchoolPulse auth).
+    // Fallback: Base44 platform user email match (WhatsApp/Telegram channels).
+    let caller = null;
+    if (callerId) {
+      const r = await base44.asServiceRole.entities.SchoolUser.filter({ id: callerId });
+      caller = (r || [])[0];
+    }
+    if (!caller) {
+      try {
+        const platformUser = await base44.auth.me();
+        if (platformUser?.email) {
+          const byEmail = await base44.asServiceRole.entities.SchoolUser.filter({ email: platformUser.email });
+          caller = (byEmail || [])[0];
+        }
+      } catch {}
+    }
+    if (!caller) return Response.json({ error: 'No school profile found for this user. Ensure your SchoolPulse account is linked to a school.' }, { status: 403 });
     if (caller.isArchived) return Response.json({ error: 'Account is archived' }, { status: 403 });
 
+    // The caller's own schoolId is the single source of truth — prevents any cross-school data leakage.
     const schoolId = caller.schoolId;
     if (!schoolId) return Response.json({ error: 'No school associated with this account' }, { status: 403 });
+    if (bodySchoolId && bodySchoolId !== schoolId) return Response.json({ error: 'School mismatch' }, { status: 403 });
 
     const role = caller.role || 'user';
     const norm = (str) => (str || '').toLowerCase().trim();
