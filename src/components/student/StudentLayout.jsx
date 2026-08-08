@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import StudentSidebar from './StudentSidebar';
@@ -11,6 +11,8 @@ import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
 
+const ROOT_PATHS = ['/student', '/student/timetable', '/student/assignments', '/student/grades', '/student/profile'];
+
 export default function StudentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,7 +22,18 @@ export default function StudentLayout() {
   const queryClient = useQueryClient();
   const ptr = usePullToRefresh(async () => { await queryClient.refetchQueries(); });
 
-  const isRootScreen = location.pathname === '/student';
+  const isRootScreen = ROOT_PATHS.includes(location.pathname);
+
+  // Track navigation direction for iOS-style slide transitions
+  const navStackRef = useRef([location.pathname]);
+  const directionRef = useRef(1);
+  const navStack = navStackRef.current;
+  if (location.pathname !== navStack[navStack.length - 1]) {
+    const idx = navStack.indexOf(location.pathname);
+    if (idx === -1) { navStack.push(location.pathname); directionRef.current = 1; }
+    else { navStack.length = idx + 1; directionRef.current = -1; }
+  }
+  const direction = directionRef.current;
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -56,13 +69,14 @@ export default function StudentLayout() {
         </header>
         <main className="flex-1 min-h-0 w-full flex flex-col overflow-hidden">
           <PullToRefreshWrapper {...ptr}>
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="wait" initial={false} custom={direction}>
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: 'easeInOut' }}
+                custom={direction}
+                initial={(d) => ({ x: d >= 0 ? '100%' : '-100%', opacity: 0 })}
+                animate={{ x: 0, opacity: 1 }}
+                exit={(d) => ({ x: d >= 0 ? '-30%' : '30%', opacity: 0 })}
+                transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                 className="p-4 md:p-6 w-full"
                 style={{
                   touchAction: 'pan-y',
@@ -77,7 +91,7 @@ export default function StudentLayout() {
           </PullToRefreshWrapper>
         </main>
       </div>
-      <MobileBottomNav role="student" />
+      {isRootScreen && <MobileBottomNav role="student" />}
     </div>
   );
 }

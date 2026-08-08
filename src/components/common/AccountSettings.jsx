@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,16 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { AlertCircle, Loader2, Lock, Trash2 } from 'lucide-react';
 import PasswordInput from '@/components/ui/password-input';
 import { toast } from 'sonner';
 
 export default function AccountSettings() {
   const { schoolUser: user, logout } = useSchoolAuth();
+  const navigate = useNavigate();
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [deactivateLoading, setDeactivateLoading] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -100,6 +105,21 @@ export default function AccountSettings() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      await base44.entities.SchoolUser.delete(user.id);
+      toast.success('Account deleted');
+      setIsDeleteOpen(false);
+      setTimeout(() => { logout(); navigate('/'); }, 1000);
+    } catch (error) {
+      toast.error('Failed to delete account');
+      console.error(error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -136,6 +156,46 @@ export default function AccountSettings() {
           >
             Deactivate Account
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="w-5 h-5" />
+            Delete Account
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">Delete My Account</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">Permanently Delete Account</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your SchoolPulse account and all associated personal data.
+                  <strong className="block mt-2 text-foreground">This action cannot be undone.</strong>
+                  Academic records (grades, attendance) managed by the school may be retained per school policy.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  Yes, Delete My Account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 

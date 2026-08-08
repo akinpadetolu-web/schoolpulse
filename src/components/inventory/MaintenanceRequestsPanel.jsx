@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -116,17 +116,17 @@ export default function MaintenanceRequestsPanel({ requests, onRefresh }) {
                     </div>
 
                     {req.status !== 'completed' && (
-                      <Select value={req.status} onValueChange={v => handleStatusUpdate(req.id, v)}>
-                        <SelectTrigger className="w-40 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect
+                        value={req.status}
+                        onValueChange={v => handleStatusUpdate(req.id, v)}
+                        className="w-40"
+                        options={[
+                          { value: 'pending', label: 'Pending' },
+                          { value: 'in_progress', label: 'In Progress' },
+                          { value: 'completed', label: 'Completed' },
+                          { value: 'cancelled', label: 'Cancelled' },
+                        ]}
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -164,17 +164,17 @@ export default function MaintenanceRequestsPanel({ requests, onRefresh }) {
             </div>
             <div>
               <Label>Priority</Label>
-              <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
-                <SelectTrigger disabled={saving}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.priority}
+                onValueChange={v => setForm({ ...form, priority: v })}
+                disabled={saving}
+                options={[
+                  { value: 'low', label: 'Low' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'high', label: 'High' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+              />
             </div>
             <div>
               <Label>Assign To (Optional)</Label>

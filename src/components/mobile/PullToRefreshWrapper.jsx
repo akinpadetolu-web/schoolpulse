@@ -18,7 +18,7 @@ export default function PullToRefreshWrapper({
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto overscroll-none"
+      className="flex-1 overflow-y-auto overflow-x-hidden overscroll-none"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

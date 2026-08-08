@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -76,10 +76,11 @@ export default function StaffProfileDialog({ open, onOpenChange, member, schoolU
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Department *</Label>
-              <Select value={form.department} onValueChange={v => set('department', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{(departments?.length ? departments : DEPARTMENTS).map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.department}
+                onValueChange={v => set('department', v)}
+                options={(departments?.length ? departments : DEPARTMENTS).map(d => ({ value: d, label: d }))}
+              />
             </div>
             <div>
               <Label>Job Title</Label>
@@ -91,14 +92,16 @@ export default function StaffProfileDialog({ open, onOpenChange, member, schoolU
             </div>
             <div>
               <Label>Gender</Label>
-              <Select value={form.gender} onValueChange={v => set('gender', v)}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.gender}
+                onValueChange={v => set('gender', v)}
+                placeholder="Select"
+                options={[
+                  { value: 'Male', label: 'Male' },
+                  { value: 'Female', label: 'Female' },
+                  { value: 'Other', label: 'Other' },
+                ]}
+              />
             </div>
           </div>
 
@@ -106,17 +109,19 @@ export default function StaffProfileDialog({ open, onOpenChange, member, schoolU
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Employment Type</Label>
-              <Select value={form.employmentType} onValueChange={v => set('employmentType', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{EMPLOYMENT_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t.replace('_', ' ')}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.employmentType}
+                onValueChange={v => set('employmentType', v)}
+                options={EMPLOYMENT_TYPES.map(t => ({ value: t, label: t.replace('_', ' ') }))}
+              />
             </div>
             <div>
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={v => set('status', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace('_', ' ')}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.status}
+                onValueChange={v => set('status', v)}
+                options={STATUSES.map(s => ({ value: s, label: s.replace('_', ' ') }))}
+              />
             </div>
             <div>
               <Label>Start Date</Label>

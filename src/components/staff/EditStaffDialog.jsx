@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StaffPermissionsPanel from './StaffPermissionsPanel';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { toast } from 'sonner';
 
 const DEPARTMENTS = [
@@ -105,16 +106,11 @@ export default function EditStaffDialog({ open, onOpenChange, staff, onSave, dep
               </div>
               <div>
                 <Label className="text-xs">Department</Label>
-                <select
-                  name="department"
+                <MobileSelect
                   value={formData.department}
-                  onChange={handleChange}
-                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
-                >
-                  {(departments?.length ? departments : DEPARTMENTS).map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
+                  onValueChange={v => setFormData(prev => ({ ...prev, department: v }))}
+                  options={(departments?.length ? departments : DEPARTMENTS).map(d => ({ value: d, label: d }))}
+                />
               </div>
             </div>
           </div>
@@ -136,17 +132,16 @@ export default function EditStaffDialog({ open, onOpenChange, staff, onSave, dep
           {/* Status */}
           <div className="space-y-3">
             <h3 className="font-semibold text-sm">Status</h3>
-            <select
-              name="status"
+            <MobileSelect
               value={formData.status}
-              onChange={handleChange}
-              className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="on_leave">On Leave</option>
-              <option value="terminated">Terminated</option>
-            </select>
+              onValueChange={v => setFormData(prev => ({ ...prev, status: v }))}
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+                { value: 'on_leave', label: 'On Leave' },
+                { value: 'terminated', label: 'Terminated' },
+              ]}
+            />
           </div>
 
           {/* Permissions */}
