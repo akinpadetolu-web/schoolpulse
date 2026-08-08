@@ -13,6 +13,7 @@ import DashboardCustomize, {
 import StudentOverview from '@/components/dashboard/StudentOverview';
 import TeacherOverview from '@/components/dashboard/TeacherOverview';
 import ActivityTrends from '@/components/dashboard/ActivityTrends';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 import {
   startOfDay, endOfDay, subDays, startOfWeek, endOfWeek,
@@ -312,6 +313,8 @@ export default function AdminDashboard() {
 
       {/* Activity Trends */}
       <ActivityTrends filters={appliedFilters} />
+
+      <StudentProgressAgentChat subtitle="Ask about any student, class trends, or at-risk learners across your school" />
 
       {/* Quick Links */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 pt-2">

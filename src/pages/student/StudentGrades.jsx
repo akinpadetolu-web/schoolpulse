@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, TrendingUp, Info } from 'lucide-react';
 import { getGradeLabel } from '@/lib/gradeMapper';
 import { getSubjectFinalGrade, formatBreakdown } from '@/lib/gradeWeightCalculator';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 function pct(score, max) {
   if (!max) return 0;
@@ -198,6 +199,8 @@ export default function StudentGrades() {
           </div>
         </>
       )}
+
+      <StudentProgressAgentChat subtitle="Ask about your grades, strengths, and where to improve" />
     </div>
   );
 }

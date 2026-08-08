@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import TermAverages from '@/components/teacher/TermAverages';
 import MyStudentsSection from '@/components/teacher/MyStudentsSection';
 import BulkGradeEntryDialog from '@/components/teacher/BulkGradeEntryDialog';
+import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -429,6 +430,8 @@ export default function TeacherGrades() {
           <TermAverages grades={allGrades} classes={allClasses} subjects={allSubjects} />
         </TabsContent>
       </Tabs>
+
+      <StudentProgressAgentChat subtitle="Ask about any student's grades, trends, and where they need support" />
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
