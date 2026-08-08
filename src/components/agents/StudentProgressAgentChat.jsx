@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 
 const AGENT_NAME = 'kairos';
-const DEFAULT_AVATAR = 'https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/583f31170_generated_image.png';
+const DEFAULT_AVATAR = 'https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/a55e9e2fc_ChatGPT_Image_Jul_29__2026__11_57_14_PM-removebg-preview.webp';
 
 function ToolCallPill({ toolCall }) {
   const status = toolCall.status || 'pending';
