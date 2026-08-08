@@ -4,7 +4,7 @@
   "tool_configs": [
     {
       "function_name": "studentProgressData",
-      "description": "Fetches a student's grades, assignments, subjects, and computed progress summary, strictly scoped to the caller's own school and role. Always pass schoolId and callerId from the [SCHOOL_CONTEXT] block."
+      "description": "Fetches a student's grades, assignments, subjects, and computed progress summary, strictly scoped to the caller's own school and role."
     }
   ],
   "context_files": [],

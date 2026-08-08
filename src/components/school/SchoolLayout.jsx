@@ -69,7 +69,9 @@ export default function SchoolLayout() {
           </AnimatePresence>
         </main>
       </div>
-      <StudentProgressAgentChat subtitle="Ask about any student, class trends, or at-risk learners across your school" />
+      {isRootScreen && (
+        <StudentProgressAgentChat subtitle="Ask about any student, class trends, or at-risk learners across your school" />
+      )}
     </div>
   );
 }
