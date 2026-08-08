@@ -71,12 +71,18 @@ export default function ParentGrades() {
   async function downloadReport(child) {
     setDownloadingId(child.id);
     try {
-      const response = await base44.functions.invoke('downloadSubjectAverageReport', { studentId: child.id });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const res = await base44.functions.invoke('downloadSubjectAverageReport', { studentId: child.id, callerId: user.id });
+      const payload = res?.data ?? res;
+      const pdfBase64 = payload?.pdf;
+      if (!pdfBase64) throw new Error('No PDF returned');
+      const binary = atob(pdfBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `subject_averages_${child.fullName.replace(/\s+/g, '_')}.pdf`;
+      a.download = payload?.filename || `subject_averages_${child.fullName.replace(/\s+/g, '_')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -159,18 +165,16 @@ export default function ParentGrades() {
                       Overall: {overallAvg}% {anyWeighted && '(weighted)'}
                     </Badge>
                   )}
-                  {child.subjectAverages && child.subjectAverages.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => downloadReport(child)}
-                      disabled={downloadingId === child.id}
-                      className="gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      {downloadingId === child.id ? 'Downloading...' : 'Report'}
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadReport(child)}
+                    disabled={downloadingId === child.id}
+                    className="gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    {downloadingId === child.id ? 'Downloading...' : 'Report'}
+                  </Button>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>
