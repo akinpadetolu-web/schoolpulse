@@ -46,7 +46,6 @@ export default function AdminFinancialReports() {
 
   const totalBilled = filtered.reduce((s, i) => s + (i.totalAmount || 0), 0);
   const totalCollected = filteredPayments.filter(p => p.status === 'confirmed').reduce((s, p) => s + (p.amount || 0), 0);
-  const totalOutstanding = filtered.reduce((s, i) => s + (i.outstandingBalance || 0), 0);
   const collectionRate = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 0;
 
   const statusData = [
@@ -88,6 +87,8 @@ export default function AdminFinancialReports() {
     const outstanding = Math.max(0, expected - paid);
     return { id: st.id, name: st.fullName, classId: st.classId, expected, paid, outstanding, owing: outstanding > 0.5 };
   });
+  // Accurate outstanding: sum of (expected fee − confirmed payments) across all students.
+  const totalOutstanding = studentFeeMap.reduce((s, st) => s + st.outstanding, 0);
   const classFeeData = classes.map(c => {
     const classStudents = studentFeeMap.filter(st => st.classId === c.id);
     const totalExpected = classStudents.reduce((s, st) => s + st.expected, 0);
