@@ -79,59 +79,61 @@ export default function MaintenanceRequestsPanel({ requests, onRefresh }) {
     }
   };
 
-  if (requests.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Wrench className="w-12 h-12 mx-auto mb-3 opacity-20" />
-        <p className="text-muted-foreground mb-4">No maintenance requests</p>
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Create Request</Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
-      </div>
+    <>
+      <div className="space-y-4">
+        {requests.length === 0 ? (
+          <div className="text-center py-12">
+            <Wrench className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="text-muted-foreground mb-4">No maintenance requests</p>
+            <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> Create Request</Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-end">
+              <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
+            </div>
 
-      <div className="grid gap-4">
-        {requests.map(req => (
-          <Card key={req.id} className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{req.assetName}</h3>
-                  <p className="text-sm text-muted-foreground">{req.issue}</p>
-                </div>
-                <div className="flex gap-2 flex-wrap justify-end flex-shrink-0">
-                  <Badge className={priorityColor[req.priority]}>{req.priority}</Badge>
-                  <Badge className={statusColor[req.status]}>{req.status}</Badge>
-                </div>
-              </div>
+            <div className="grid gap-4">
+              {requests.map(req => (
+                <Card key={req.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{req.assetName || req.inventoryId}</h3>
+                        <p className="text-sm text-muted-foreground">{req.issue}</p>
+                      </div>
+                      <div className="flex gap-2 flex-wrap justify-end flex-shrink-0">
+                        <Badge className={priorityColor[req.priority]}>{req.priority}</Badge>
+                        <Badge className={statusColor[req.status]}>{req.status}</Badge>
+                      </div>
+                    </div>
 
-              <div className="text-sm text-muted-foreground mb-3 space-y-1">
-                <p><span className="font-medium">Requested:</span> {req.requestedByName} on {new Date(req.requestedAt).toLocaleDateString()}</p>
-                {req.assignedToName && <p><span className="font-medium">Assigned to:</span> {req.assignedToName}</p>}
-                {req.estimatedCost && <p><span className="font-medium">Est. Cost:</span> {req.estimatedCost}</p>}
-              </div>
+                    <div className="text-sm text-muted-foreground mb-3 space-y-1">
+                      <p><span className="font-medium">Requested:</span> {req.requestedByName} on {new Date(req.requestedAt).toLocaleDateString()}</p>
+                      {req.assignedToName && <p><span className="font-medium">Assigned to:</span> {req.assignedToName}</p>}
+                      {req.estimatedCost && <p><span className="font-medium">Est. Cost:</span> {req.estimatedCost}</p>}
+                    </div>
 
-              {req.status !== 'completed' && (
-                <Select value={req.status} onValueChange={v => handleStatusUpdate(req.id, v)}>
-                  <SelectTrigger className="w-40 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                    {req.status !== 'completed' && (
+                      <Select value={req.status} onValueChange={v => handleStatusUpdate(req.id, v)}>
+                        <SelectTrigger className="w-40 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create Request Dialog */}
@@ -195,6 +197,6 @@ export default function MaintenanceRequestsPanel({ requests, onRefresh }) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

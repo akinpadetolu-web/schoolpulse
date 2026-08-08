@@ -46,7 +46,7 @@ export default function PurchaseRequestsPanel({ requests, onRefresh }) {
     try {
       const unitPrice = Number(form.estimatedUnitPrice);
       const totalPrice = unitPrice * Number(form.quantity);
-      
+
       await base44.entities.PurchaseRequest.create({
         schoolId: user?.schoolId,
         schoolName: user?.schoolName,
@@ -85,56 +85,58 @@ export default function PurchaseRequestsPanel({ requests, onRefresh }) {
     }
   };
 
-  if (requests.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-20" />
-        <p className="text-muted-foreground mb-4">No pending purchase requests</p>
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
-      </div>
+    <>
+      <div className="space-y-4">
+        {requests.length === 0 ? (
+          <div className="text-center py-12">
+            <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="text-muted-foreground mb-4">No pending purchase requests</p>
+            <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-end">
+              <Button onClick={() => setShowDialog(true)}><Plus className="w-4 h-4 mr-2" /> New Request</Button>
+            </div>
 
-      <div className="grid gap-4">
-        {requests.map(req => (
-          <Card key={req.id} className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{req.itemName}</h3>
-                  {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
-                </div>
-                <Badge className={statusColor[req.status]}>{req.status}</Badge>
-              </div>
+            <div className="grid gap-4">
+              {requests.map(req => (
+                <Card key={req.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{req.itemName}</h3>
+                        {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
+                      </div>
+                      <Badge className={statusColor[req.status]}>{req.status}</Badge>
+                    </div>
 
-              <div className="text-sm text-muted-foreground mb-3 space-y-1">
-                <p><span className="font-medium">Qty:</span> {req.quantity} {req.unit} • <span className="font-medium">Est. Price:</span> {req.estimatedTotalPrice.toLocaleString()}</p>
-                <p><span className="font-medium">Requested by:</span> {req.requestedByName} on {new Date(req.requestedAt).toLocaleDateString()}</p>
-                {req.justification && <p className="italic text-xs">{req.justification}</p>}
-              </div>
+                    <div className="text-sm text-muted-foreground mb-3 space-y-1">
+                      <p><span className="font-medium">Qty:</span> {req.quantity} {req.unit} • <span className="font-medium">Est. Price:</span> {req.estimatedTotalPrice.toLocaleString()}</p>
+                      <p><span className="font-medium">Requested by:</span> {req.requestedByName} on {new Date(req.requestedAt).toLocaleDateString()}</p>
+                      {req.justification && <p className="italic text-xs">{req.justification}</p>}
+                    </div>
 
-              {['draft', 'submitted'].includes(req.status) && (
-                <Select value={req.status} onValueChange={v => handleStatusUpdate(req.id, v)}>
-                  <SelectTrigger className="w-40 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="approved">Approve</SelectItem>
-                    <SelectItem value="rejected">Reject</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                    {['draft', 'submitted'].includes(req.status) && (
+                      <Select value={req.status} onValueChange={v => handleStatusUpdate(req.id, v)}>
+                        <SelectTrigger className="w-40 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="approved">Approve</SelectItem>
+                          <SelectItem value="rejected">Reject</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create Request Dialog */}
@@ -235,6 +237,6 @@ export default function PurchaseRequestsPanel({ requests, onRefresh }) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
