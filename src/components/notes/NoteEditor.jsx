@@ -40,7 +40,7 @@ async function downloadTextAsPdf(note, title, content) {
   doc.save(`${title || 'note'}.pdf`);
 }
 
-export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare }) {
+export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare, onCreated }) {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [subject, setSubject] = useState(note?.subject || '');
@@ -63,6 +63,7 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
         } else {
           const created = await onSave({ title: trimmedTitle, content: newContent, subject: newSubject, description: newDescription, mode: 'text' });
           if (created?.id) noteIdRef.current = created.id;
+          onCreated?.(created);
         }
         setSaveStatus('saved');
       } catch (e) {
@@ -70,7 +71,7 @@ export default function NoteEditor({ note, onSave, onAutoSave, onCancel, onShare
         setSaveStatus('error');
       }
     }, 1500);
-  }, [onSave, onAutoSave]);
+  }, [onSave, onAutoSave, onCreated]);
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);

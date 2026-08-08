@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,10 +42,12 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
   const [editingGrade, setEditingGrade] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const firstLoadRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!student?.id || !user?.schoolId) return;
-    setLoading(true);
+    const showLoading = !firstLoadRef.current;
+    if (showLoading) setLoading(true);
     const [g, subs, cats] = await Promise.all([
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: student.id }),
       base44.entities.Subject.filter({ schoolId: user.schoolId, isArchived: false }),
@@ -62,11 +64,12 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
     // Only show grades for subjects this teacher is assigned to teach in this class
     setGrades((g || []).filter(grade => assignedSubjectIdSet.has(grade.subjectId)));
     setCategories((cats || []).filter(c => assignedSubjectIdSet.has(c.subjectId)));
-    setLoading(false);
+    if (showLoading) { setLoading(false); firstLoadRef.current = true; }
   }, [student?.id, student?.classId, user?.schoolId, user?.id, user?.teachingAssignments]);
 
   useEffect(() => {
     if (open) {
+      firstLoadRef.current = false;
       load();
       const unsub = base44.entities.Grade.subscribe(() => { if (student?.id) load(); });
       return unsub;
@@ -165,10 +168,12 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
       if (editingGrade) {
         await base44.entities.Grade.update(editingGrade.id, payload);
         gradeId = editingGrade.id;
+        setGrades(prev => prev.map(g => g.id === gradeId ? { ...g, ...payload, lastUpdatedAt: new Date().toISOString() } : g));
         toast.success("Grade updated");
       } else {
         const result = await base44.entities.Grade.create(payload);
         gradeId = result?.id;
+        setGrades(prev => [{ ...payload, id: gradeId, lastUpdatedAt: new Date().toISOString(), created_date: result?.created_date, updated_date: result?.updated_date }, ...prev]);
         toast.success("Grade saved");
       }
       if (gradeId) {
@@ -330,32 +335,30 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
                   <form onSubmit={handleSubmit} className="space-y-3">
                     <div className="space-y-2">
                       <Label>Subject *</Label>
-                      <Select value={form.subjectId} onValueChange={v => setForm({ ...form, subjectId: v })}>
-                        <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
-                        <SelectContent>
-                          {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect
+                        value={form.subjectId}
+                        onValueChange={v => setForm({ ...form, subjectId: v })}
+                        placeholder="Select subject"
+                        options={subjects.map(s => ({ value: s.id, label: s.name }))}
+                      />
                       {subjects.length === 0 && <p className="text-xs text-amber-600">No subjects assigned to you for this student's class.</p>}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Assessment Type</Label>
-                        <Select value={form.assessmentType} onValueChange={v => setForm({ ...form, assessmentType: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ASSESSMENT_TYPES.map(t => <SelectItem key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect
+                          value={form.assessmentType}
+                          onValueChange={v => setForm({ ...form, assessmentType: v })}
+                          options={ASSESSMENT_TYPES.map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Term</Label>
-                        <Select value={form.term} onValueChange={v => setForm({ ...form, term: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect
+                          value={form.term}
+                          onValueChange={v => setForm({ ...form, term: v })}
+                          options={TERMS.map(t => ({ value: t, label: t }))}
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">

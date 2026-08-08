@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/mobile/MobileSelect';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2, RefreshCw, Copy, Home } from 'lucide-react';
@@ -159,24 +159,23 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
             {/* Gender */}
             <div className="space-y-2">
               <Label>Gender</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={gender}
+                onValueChange={setGender}
+                placeholder="Select gender"
+                options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }]}
+              />
             </div>
 
             {/* Class */}
             <div className="space-y-2">
               <Label>Class</Label>
-              <Select value={classId} onValueChange={v => { setClassId(v); setAssignedSubjects([]); }}>
-                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                <SelectContent>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={classId}
+                onValueChange={v => { setClassId(v); setAssignedSubjects([]); }}
+                placeholder="Select class"
+                options={classes.map(c => ({ value: c.id, label: c.className }))}
+              />
             </div>
 
             {/* Subset / Track */}
@@ -186,12 +185,12 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
                 {subsets.length === 1 ? (
                   <div className="px-3 py-2 rounded-md border bg-muted text-sm text-muted-foreground">{subsets[0]}</div>
                 ) : (
-                  <Select value={subsetName} onValueChange={setSubsetName}>
-                    <SelectTrigger><SelectValue placeholder="Select subset" /></SelectTrigger>
-                    <SelectContent>
-                      {subsets.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <MobileSelect
+                    value={subsetName}
+                    onValueChange={setSubsetName}
+                    placeholder="Select subset"
+                    options={subsets.map(s => ({ value: s, label: s }))}
+                  />
                 )}
               </div>
             )}
@@ -207,12 +206,12 @@ export default function StudentProfileDialog({ open, onOpenChange, student, clas
                   </div>
                 ) : (
                   <>
-                    <Select value={studentStream} onValueChange={v => { setStudentStream(v); setAssignedSubjects([]); }}>
-                      <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
-                      <SelectContent>
-                        {STREAM_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <MobileSelect
+                      value={studentStream}
+                      onValueChange={v => { setStudentStream(v); setAssignedSubjects([]); }}
+                      placeholder="Select stream"
+                      options={STREAM_OPTIONS}
+                    />
                     <p className="text-xs text-muted-foreground">Subjects below are filtered to this stream + Core subjects</p>
                   </>
                 )}

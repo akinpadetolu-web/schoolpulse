@@ -53,8 +53,7 @@ export default function StudentNotes() {
       subject: subject || '',
       mode: 'text',
     });
-    load();
-    return created; // Return so NoteEditor can track the id
+    return created; // Return so NoteEditor can track the id; list updates via onCreated
   };
 
   // Auto-save for EXISTING notes (debounced from NoteEditor)
@@ -210,6 +209,7 @@ export default function StudentNotes() {
             onAutoSave={handleAutoSaveText}
             onCancel={() => { setDialogMode(null); setEditingNote(null); load(); }}
             onShare={handleShareFromEditor}
+            onCreated={(note) => setNotes(prev => [note, ...prev])}
           />
         </DialogContent>
       </Dialog>
