@@ -65,23 +65,32 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
   const [hasReplied, setHasReplied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef(null);
-  const initRef = useRef(false);
+  const startedForRef = useRef(null);
   const { schoolUser } = useSchoolAuth();
   const contextBlock = schoolUser?.schoolId && schoolUser?.id
     ? `[SCHOOL_CONTEXT: schoolId=${schoolUser.schoolId} | callerId=${schoolUser.id} | role=${schoolUser.role || ''} | schoolName=${schoolUser.schoolName || ''} | callerName=${schoolUser.fullName || ''}]`
     : '';
 
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
+    // Isolate Kairos conversations per SchoolUser identity (id + role + schoolId).
+    // The app runs custom SchoolPulse auth over a shared Base44 platform session,
+    // so listConversations returns ALL conversations for that platform account.
+    // Without this filter, a student portal would load the admin's chat history.
+    const uid = schoolUser?.id;
+    if (!uid || startedForRef.current === uid) return;
+    startedForRef.current = uid;
     (async () => {
       try {
+        const matchesMine = (c) =>
+          c?.metadata?.callerId === uid &&
+          c?.metadata?.role === schoolUser?.role &&
+          c?.metadata?.schoolId === schoolUser?.schoolId;
         let conv = null;
         try {
           const convs = await base44.agents.listConversations({ agent_name: AGENT_NAME });
-          conv = (convs || [])[0];
+          conv = (convs || []).find(matchesMine);
         } catch {}
-        if (!conv) conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title, schoolId: schoolUser?.schoolId, callerId: schoolUser?.id, role: schoolUser?.role } });
+        if (!conv) conv = await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: title, schoolId: schoolUser?.schoolId, callerId: uid, role: schoolUser?.role } });
         setConversationId(conv.id);
         if (Array.isArray(conv.messages) && conv.messages.length) {
           setMessages(conv.messages);
@@ -94,7 +103,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
         setLoading(false);
       }
     })();
-  }, [title]);
+  }, [title, schoolUser?.id, schoolUser?.role, schoolUser?.schoolId]);
 
   useEffect(() => {
     if (!conversationId) return;
