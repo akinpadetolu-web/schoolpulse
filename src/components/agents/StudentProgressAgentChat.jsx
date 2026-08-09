@@ -47,7 +47,6 @@ function MessageBubble({ message, avatarUrl }) {
             <ReactMarkdown>{stripContext(message.content)}</ReactMarkdown>
           </div>
         ))}
-        {!isUser && message.tool_calls?.map((tc, i) => <ToolCallPill key={i} toolCall={tc} />)}
       </div>
       {isUser && <div className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"><User className="w-4 h-4" /></div>}
     </div>
