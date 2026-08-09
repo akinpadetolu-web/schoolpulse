@@ -30,6 +30,8 @@ export default function AdminPayments() {
   const [payments, setPayments] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [students, setStudents] = useState([]);
+  const [structures, setStructures] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -44,23 +46,44 @@ export default function AdminPayments() {
   async function loadAll() {
     if (!user?.schoolId) return;
     try {
-      const [pays, invs, sts] = await Promise.all([
+      const [pays, invs, sts, structs, cls] = await Promise.all([
         base44.entities.FeePayment.filter({ schoolId: user.schoolId }),
         base44.entities.FeeInvoice.filter({ schoolId: user.schoolId }),
         base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' }),
+        base44.entities.FeeStructure.filter({ schoolId: user.schoolId }),
+        base44.entities.SchoolClass.filter({ schoolId: user.schoolId, isArchived: false }),
       ]);
       setPayments(pays);
       setInvoices(invs);
       setStudents(sts);
+      setStructures(structs || []);
+      setClasses(cls || []);
     } catch (e) {}
     setLoading(false);
   }
 
   const pending = payments.filter(p => p.status === 'pending');
   const confirmed = payments.filter(p => p.status === 'confirmed');
-  const totalCollected = confirmed.reduce((s, p) => s + (+p.amount || 0), 0);
-  const totalExpected = invoices.reduce((s, i) => s + (+i.totalAmount || 0), 0);
-  const totalOutstanding = invoices.reduce((s, i) => s + (+i.outstandingBalance || 0), 0);
+  // Accurate, consistent KPIs: expected fees from active fee structures × students,
+  // minus confirmed school-fee payments. Collection rate can only reach 100% when
+  // no student owes, and outstanding stays in sync with the Fees by Class report.
+  const activeStructures = structures.filter(s => s.status === 'active');
+  const expectedPerClass = {};
+  classes.forEach(c => {
+    const classStructures = activeStructures.filter(s => s.applyToAllClasses || (s.applicableClasses || []).includes(c.id));
+    expectedPerClass[c.id] = classStructures.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+  });
+  const studentFeeMap = students.map(st => {
+    const expected = expectedPerClass[st.classId] || 0;
+    const paid = payments
+      .filter(p => p.studentId === st.id && p.status === 'confirmed' && p.paymentType !== 'library_fine')
+      .reduce((s, p) => s + (+p.amount || 0), 0);
+    return { expected, paid, outstanding: Math.max(0, expected - paid) };
+  });
+  const totalExpected = studentFeeMap.reduce((s, st) => s + st.expected, 0);
+  const totalCollected = studentFeeMap.reduce((s, st) => s + st.paid, 0);
+  const totalOutstanding = studentFeeMap.reduce((s, st) => s + st.outstanding, 0);
+  const collectionRate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
 
   async function confirmPayment(payment) {
     const inv = invoices.find(i => i.id === payment.invoiceId);
@@ -119,7 +142,7 @@ export default function AdminPayments() {
         <KPICard label="Total Expected" value={`₦${totalExpected.toLocaleString()}`} icon={DollarSign} />
         <KPICard label="Total Collected" value={`₦${totalCollected.toLocaleString()}`} color="text-green-700" icon={TrendingUp} />
         <KPICard label="Outstanding" value={`₦${totalOutstanding.toLocaleString()}`} color="text-red-700" icon={AlertTriangle} />
-        <KPICard label="Collection Rate" value={totalExpected > 0 ? `${Math.round((totalCollected / totalExpected) * 100)}%` : '0%'} icon={TrendingUp} />
+        <KPICard label="Collection Rate" value={`${collectionRate}%`} icon={TrendingUp} />
         <KPICard label="Pending Confirmations" value={pending.length} color={pending.length > 0 ? 'text-orange-600' : 'text-foreground'} sub={pending.length > 0 ? 'Requires action' : 'None pending'} icon={Clock} />
         <KPICard label="Confirmed Payments" value={confirmed.length} color="text-green-700" icon={CheckCircle} />
       </div>

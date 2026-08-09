@@ -44,10 +44,6 @@ export default function AdminFinancialReports() {
   const filtered = filterTerm === 'all' ? invoices : invoices.filter(i => i.term === filterTerm);
   const filteredPayments = filterTerm === 'all' ? payments : payments.filter(p => p.term === filterTerm);
 
-  const totalBilled = filtered.reduce((s, i) => s + (i.totalAmount || 0), 0);
-  const totalCollected = filteredPayments.filter(p => p.status === 'confirmed').reduce((s, p) => s + (p.amount || 0), 0);
-  const collectionRate = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 0;
-
   const statusData = [
     { name: 'Paid', value: filtered.filter(i => i.status === 'paid').length },
     { name: 'Partial', value: filtered.filter(i => i.status === 'partially_paid').length },
@@ -61,16 +57,6 @@ export default function AdminFinancialReports() {
       return acc;
     }, {})
   ).map(([name, value]) => ({ name, value }));
-
-  // Class breakdown
-  const classMap = {};
-  filtered.forEach(inv => {
-    const cls = inv.className || 'Unknown';
-    if (!classMap[cls]) classMap[cls] = { billed: 0, collected: 0 };
-    classMap[cls].billed += inv.totalAmount || 0;
-    classMap[cls].collected += (inv.totalAmount || 0) - (inv.outstandingBalance || 0);
-  });
-  const classData = Object.entries(classMap).map(([name, v]) => ({ name, ...v }));
 
   // Fees by class based on active fee structures: expected (fee × students), collected, outstanding, students owing
   const activeStructures = structures.filter(s => s.status === 'active' && (filterTerm === 'all' || s.term === filterTerm));
@@ -87,8 +73,12 @@ export default function AdminFinancialReports() {
     const outstanding = Math.max(0, expected - paid);
     return { id: st.id, name: st.fullName, classId: st.classId, expected, paid, outstanding, owing: outstanding > 0.5 };
   });
-  // Accurate outstanding: sum of (expected fee − confirmed payments) across all students.
+  // Accurate, consistent KPIs derived from fee structures × students − confirmed payments.
+  // Collection rate can only reach 100% when no student owes.
+  const totalExpected = studentFeeMap.reduce((s, st) => s + st.expected, 0);
+  const totalCollected = studentFeeMap.reduce((s, st) => s + st.paid, 0);
   const totalOutstanding = studentFeeMap.reduce((s, st) => s + st.outstanding, 0);
+  const collectionRate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
   const classFeeData = classes.map(c => {
     const classStudents = studentFeeMap.filter(st => st.classId === c.id);
     const totalExpected = classStudents.reduce((s, st) => s + st.expected, 0);
@@ -122,7 +112,7 @@ export default function AdminFinancialReports() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Billed', value: `₦${totalBilled.toLocaleString()}`, color: 'text-blue-600' },
+          { label: 'Total Expected', value: `₦${totalExpected.toLocaleString()}`, color: 'text-blue-600' },
           { label: 'Total Collected', value: `₦${totalCollected.toLocaleString()}`, color: 'text-green-600' },
           { label: 'Outstanding', value: `₦${totalOutstanding.toLocaleString()}`, color: 'text-red-600' },
           { label: 'Collection Rate', value: `${collectionRate}%`, color: 'text-purple-600' },
@@ -174,16 +164,16 @@ export default function AdminFinancialReports() {
       <Card>
         <CardHeader><CardTitle className="text-base">Collection by Class</CardTitle></CardHeader>
         <CardContent>
-          {classData.length > 0 ? (
+          {classFeeData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={classData}>
+              <BarChart data={classFeeData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={v => `₦${(+v).toLocaleString()}`} />
                 <Legend />
-                <Bar dataKey="billed" name="Billed" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="collected" name="Collected" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalExpected" name="Expected" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalCollected" name="Collected" fill="#22c55e" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : <p className="text-muted-foreground text-center py-8">No data</p>}
