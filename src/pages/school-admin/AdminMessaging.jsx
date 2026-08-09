@@ -15,6 +15,7 @@ export default function AdminMessaging() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [school, setSchool] = useState(null);
+  const [parentInfo, setParentInfo] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -26,9 +27,11 @@ export default function AdminMessaging() {
   async function loadMessages() {
     if (!user?.schoolId) return;
     try {
-      const [allMessages, schools] = await Promise.all([
+      const [allMessages, schools, parents, students] = await Promise.all([
         base44.entities.Message.filter({ schoolId: user.schoolId }),
         base44.entities.School.filter({ id: user.schoolId }),
+        base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'parent' }),
+        base44.entities.SchoolUser.filter({ schoolId: user.schoolId, role: 'student' }),
       ]);
 
       // Filter to only parent conversations
@@ -39,6 +42,19 @@ export default function AdminMessaging() {
 
       setMessages(relevantMessages);
       setSchool((schools || [])[0] || null);
+
+      // Resolve real parent names and the students linked to each parent
+      const studentMap = {};
+      (students || []).forEach(s => { studentMap[s.id] = s; });
+      const info = {};
+      (parents || []).forEach(p => {
+        const linked = (p.linkedStudentIds || []).map(id => studentMap[id]).filter(Boolean);
+        info[p.id] = {
+          name: p.fullName || 'Parent',
+          students: linked.map(s => s.fullName).filter(Boolean),
+        };
+      });
+      setParentInfo(info);
 
       // Mark parent messages as read
       for (const msg of relevantMessages) {
@@ -57,9 +73,13 @@ export default function AdminMessaging() {
   const grouped = {};
   messages.forEach(msg => {
     const parentId = msg.senderRole === 'parent' ? msg.senderId : msg.receiverId;
-    const parentName = msg.senderRole === 'parent' ? msg.senderName : msg.receiverName || 'Parent';
     if (!grouped[parentId]) {
-      grouped[parentId] = { parentName, messages: [] };
+      const info = parentInfo[parentId];
+      grouped[parentId] = {
+        parentName: info?.name || (msg.senderRole === 'parent' ? msg.senderName : msg.receiverName) || 'Parent',
+        linkedStudents: info?.students || [],
+        messages: [],
+      };
     }
     grouped[parentId].messages.push(msg);
   });
@@ -184,6 +204,11 @@ export default function AdminMessaging() {
                       </span>
                     )}
                   </div>
+                  {data.linkedStudents.length > 0 && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      Linked: {data.linkedStudents.join(', ')}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground truncate">
                     {getLastMessage(data.messages)}
                   </p>
@@ -201,6 +226,11 @@ export default function AdminMessaging() {
             {/* Chat Header */}
             <div className="p-4 border-b border-border shrink-0 bg-card">
               <h3 className="font-semibold">{grouped[selectedParent]?.parentName}</h3>
+              {grouped[selectedParent]?.linkedStudents?.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Linked students: {grouped[selectedParent].linkedStudents.join(', ')}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {thread.length} message{thread.length !== 1 ? 's' : ''}
               </p>
