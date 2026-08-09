@@ -253,13 +253,13 @@ export default function SchoolPortal() {
   if (isLoadingSchoolAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen overflow-y-auto flex flex-col items-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+    <div className="force-light h-screen overflow-y-auto flex flex-col items-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md flex-shrink-0 my-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 shadow-sm overflow-hidden">
