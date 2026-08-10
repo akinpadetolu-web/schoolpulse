@@ -15,7 +15,9 @@ import {
   CheckCircle2, Copy, GraduationCap, Users, UserCog, Shield, CreditCard
 } from 'lucide-react';
 import SubscriptionPricingPanel from '@/components/backend/SubscriptionPricingPanel';
+import SchoolFeatureToggles from '@/components/backend/SchoolFeatureToggles';
 import { toast } from 'sonner';
+import { ToggleLeft } from 'lucide-react';
 import { getDefaultFeatures, clearFeatureCache } from '@/lib/featureToggleManager';
 import { PORTAL_FEATURES, PORTAL_LABELS, ALL_FEATURES } from '@/lib/featureCatalog';
 import PortalFeaturePanel from '@/components/backend/PortalFeaturePanel';
@@ -122,8 +124,11 @@ export default function SchoolCustomization() {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="admin">
-              <TabsList className="mb-4">
+            <Tabs defaultValue="features">
+              <TabsList className="mb-4 flex flex-wrap">
+                <TabsTrigger value="features">
+                  <ToggleLeft className="w-3.5 h-3.5 mr-1.5" /> All Features
+                </TabsTrigger>
                 <TabsTrigger value="admin">
                   <Shield className="w-3.5 h-3.5 mr-1.5" /> Admin Portal
                 </TabsTrigger>
@@ -141,6 +146,9 @@ export default function SchoolCustomization() {
                 </TabsTrigger>
               </TabsList>
 
+              <TabsContent value="features">
+                <SchoolFeatureToggles school={selectedSchool} />
+              </TabsContent>
               <TabsContent value="admin">
                 <PortalFeaturePanel school={selectedSchool} role="admin" />
               </TabsContent>

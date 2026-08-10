@@ -28,7 +28,8 @@
     },
     "features": {
       "type": "object",
-      "description": "Feature flags as key-value pairs",
+      "description": "Feature flags as key-value pairs. Includes top-level features, module master toggles, and dotted sub-feature keys (e.g. adminHostel.allocations).",
+      "additionalProperties": true,
       "properties": {
         "adminDashboard": {
           "type": "boolean",
@@ -159,6 +160,110 @@
           "default": true
         },
         "studentReports": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminGradeWeighting": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminExamTimetable": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHostel.dashboard": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHostel.hostels": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHostel.allocations": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHostel.attendance": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHostel.reports": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminLibrary.catalog": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminLibrary.borrowing": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminLibrary.returns": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminLibrary.fines": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminInventory.assets": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminInventory.purchaseRequests": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminInventory.maintenance": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.fees": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.invoices": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.payments": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.reports": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.paymentSettings": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminFinance.subscriptions": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminStudents.bulkImport": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminStudents.profiles": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminClasses.streams": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminSubjects.assignment": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminHR.accessControl": {
+          "type": "boolean",
+          "default": true
+        },
+        "adminExaminations.invigilators": {
           "type": "boolean",
           "default": true
         }
