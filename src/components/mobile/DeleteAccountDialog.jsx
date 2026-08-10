@@ -21,11 +21,15 @@ export default function DeleteAccountDialog() {
     setLoading(true);
     setError('');
     try {
-      await base44.entities.SchoolUser.delete(user.id);
+      // Soft-delete (archive): the account is deactivated and the user is signed out,
+      // but NO data is erased. Per SchoolEduPulse data-retention policy, all records
+      // (profile, grades, attendance, etc.) are retained and remain accessible to
+      // school administrators and the SchoolEduPulse platform.
+      await base44.entities.SchoolUser.update(user.id, { isArchived: true });
       logout();
       navigate('/');
     } catch (e) {
-      setError('Failed to delete account. Please contact your administrator.');
+      setError('Failed to deactivate account. Please contact your administrator.');
       setLoading(false);
     }
   }
@@ -34,7 +38,8 @@ export default function DeleteAccountDialog() {
     <div className="mt-8 pt-6 border-t border-destructive/20">
       <h3 className="text-sm font-semibold text-destructive mb-1">Danger Zone</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Permanently delete your account and all associated data. This action cannot be undone.
+        Deactivates your account and signs you out. Your records are retained securely per
+        SchoolEduPulse data-retention policy and remain accessible to your school's administrators — they are not erased.
       </p>
       {error && <p className="text-xs text-destructive mb-2">{error}</p>}
       <AlertDialog>
@@ -47,9 +52,10 @@ export default function DeleteAccountDialog() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Account</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete your SchoolPulse account, including your profile and all personal data. 
-              <strong className="block mt-2 text-foreground">This action cannot be undone.</strong>
-              Academic records (grades, attendance) managed by the school may be retained per school policy.
+              This deactivates your SchoolPulse account and signs you out. Your profile and academic
+              records are retained securely and remain accessible to your school's administrators and the
+              SchoolEduPulse platform — no data is erased.
+              <strong className="block mt-2 text-foreground">You will not be able to log back in.</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -60,7 +66,7 @@ export default function DeleteAccountDialog() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 select-none"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-              Yes, Delete My Account
+              Yes, Deactivate My Account
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
