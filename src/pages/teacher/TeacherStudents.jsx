@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, Users, ChevronRight } from 'lucide-react';
+import { Loader2, Search, Users, ChevronRight, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import UserAvatar from '@/components/common/UserAvatar';
 import TeacherStudentGradeDialog from '@/components/teacher/TeacherStudentGradeDialog';
 
@@ -16,6 +18,7 @@ export default function TeacherStudents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClass, setFilterClass] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     async function loadStudents() {
@@ -81,15 +84,36 @@ export default function TeacherStudents() {
     });
   }, [students, searchQuery, filterClass]);
 
+  async function handleGenerateAll() {
+    if (!user?.schoolId) return;
+    setGenerating(true);
+    try {
+      const res = await base44.functions.invoke('generateStudentInsights', { schoolId: user.schoolId });
+      const data = res?.data ?? res;
+      const n = data?.generated ?? 0;
+      toast.success(n > 0 ? `Generated ${n} insight${n !== 1 ? 's' : ''} for your students` : 'Insights are up to date');
+    } catch {
+      toast.error('Failed to generate insights');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">My Students</h1>
-        <p className="text-sm text-muted-foreground mt-1">Students enrolled in your assigned classes</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">My Students</h1>
+          <p className="text-sm text-muted-foreground mt-1">Students enrolled in your assigned classes</p>
+        </div>
+        <Button onClick={handleGenerateAll} disabled={generating} variant="outline">
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          <span className="ml-2 hidden sm:inline">Generate Insights</span>
+        </Button>
       </div>
 
       {/* Filters */}

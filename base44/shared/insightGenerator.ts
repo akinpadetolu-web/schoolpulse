@@ -1,5 +1,6 @@
 // Kairos Insight Generator — shared logic for grade analysis.
-// Imported by onGradeSubmittedV2 (auto trigger) and generateGradeInsight (manual/admin trigger).
+// Imported by onGradeSubmittedV2 (auto trigger), generateGradeInsight (manual single),
+// and generateStudentInsights (bulk backfill for a teacher's students).
 
 const PCT = (g) => (g && g.maxScore ? (g.score / g.maxScore) * 100 : 0);
 const round1 = (n) => (n == null ? null : Math.round(n * 10) / 10);
@@ -23,7 +24,6 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
     };
   }
 
-  // Weight map: prefer per-class per-subject GradeCategory config, fallback to GradingSystem.assessmentWeights
   const weightMap = {};
   if (safeCats.length > 0) {
     safeCats.forEach((c) => { weightMap[c.assessmentType] = c.weight; });
@@ -31,7 +31,6 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
     assessmentWeights.forEach((w) => { weightMap[w.assessmentType] = w.weight; });
   }
 
-  // Group grades by assessmentType
   const grouped = {};
   safeGrades.forEach((g) => {
     const t = g.assessmentType;
@@ -50,7 +49,6 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
   const examCompleted = examGrades.length > 0;
   const examScore = examCompleted ? round1(examGrades.reduce((s, g) => s + PCT(g), 0) / examGrades.length) : null;
 
-  // No weight config → simple average fallback (can't isolate exam)
   if (Object.keys(weightMap).length === 0) {
     const simpleAvg = safeGrades.reduce((s, g) => s + PCT(g), 0) / safeGrades.length;
     return {
@@ -80,12 +78,11 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
   const projectedFinal = round1(preExamContribution);
   const currentFinal = examCompleted ? round1(preExamContribution + (examScore * examWeight / 100)) : null;
 
-  // Only compute a "required exam score" when the exam has NOT been taken yet.
   let requiredExamScore = null;
   if (examWeight > 0 && !examCompleted) {
     const needed = (pass - preExamContribution) / (examWeight / 100);
     if (needed <= 0) requiredExamScore = 0;
-    else if (needed > 100) requiredExamScore = -1; // impossible
+    else if (needed > 100) requiredExamScore = -1;
     else requiredExamScore = round1(needed);
   }
 
@@ -107,7 +104,6 @@ export function determineInsightType(metrics, trendDirection, passMark) {
   const pass = passMark ?? 40;
 
   if (metrics.examCompleted) {
-    // Exam already done → judge by the actual final result.
     const cf = metrics.currentFinal;
     if (cf == null) return 'neutral';
     if (cf < pass) return 'negative';
@@ -122,7 +118,7 @@ export function determineInsightType(metrics, trendDirection, passMark) {
   return 'neutral';
 }
 
-function buildFallbackInsight(input) {
+export function buildFallbackInsight(input) {
   const name = input.studentName;
   const subj = input.subjectName;
   const pass = input.passMark;
@@ -145,40 +141,36 @@ function buildFallbackInsight(input) {
   return `${name} is on track in ${subj} with a pre-exam standing of ${input.preExamAverage}% and a ${input.trendDirection} trend.`;
 }
 
+const INSIGHT_PROMPT = (llmInput, passMark) => `You are Kairos, an academic progress evaluator. Generate ONE concise, actionable insight (1-2 sentences, under 40 words, no markdown, no greeting, no quotes) describing a student's academic standing. This insight is read by teachers and parents, so write in the THIRD PERSON about the student (e.g. "Awemokhe's performance is stable...", NOT "your performance").
+
+Data (JSON):
+${JSON.stringify(llmInput)}
+
+Rules:
+- Always refer to the student by first name in the third person. NEVER use "you" or "your".
+- If examCompleted is true, the exam is ALREADY DONE: report the student's current result (currentFinal%) relative to the pass mark (${passMark}%), and recommend next-step support or recognition. Do NOT mention an upcoming exam or a required exam score.
+- If examCompleted is false and requiredExamScore is a number greater than 0, state the student needs roughly that % on the upcoming exam to pass (pass mark = ${passMark}%).
+- If examCompleted is false and requiredExamScore is "impossible", gently warn that even a perfect exam won't reach the pass mark and the student needs extra support now.
+- If examCompleted is false and requiredExamScore is 0 or null (already safe), acknowledge strong standing and suggest maintaining focus.
+- Reference the trend (improving/declining/stable) naturally where relevant.
+- Be specific and supportive. No bullet points.`;
+
 /**
- * Fetch all required data, compute metrics, generate the AI insight, and append a new StudentInsight record.
- * @param {object} base44 - base44 client (created via createClientFromRequest)
- * @param {object} args - { schoolId, studentId, subjectId, term, classId, generatedBy }
+ * Build a StudentInsight payload from pre-fetched data. Returns null if no grades.
+ * When useLlm is true (and base44Client provided), generates polished LLM text;
+ * otherwise uses the deterministic third-person fallback (fast, free — used for bulk backfill).
  */
-export async function generateAndStoreInsight(base44, args) {
-  const { schoolId, studentId, subjectId, term, classId, generatedBy } = args;
-
-  const [students, subjects, gradeCats, gradingSystems, grades, existingInsights] = await Promise.all([
-    base44.asServiceRole.entities.SchoolUser.filter({ id: studentId }),
-    base44.asServiceRole.entities.Subject.filter({ id: subjectId }),
-    classId
-      ? base44.asServiceRole.entities.GradeCategory.filter({ schoolId, classId, subjectId })
-      : base44.asServiceRole.entities.GradeCategory.filter({ schoolId, subjectId }),
-    base44.asServiceRole.entities.GradingSystem.filter({ schoolId }),
-    base44.asServiceRole.entities.Grade.filter({ schoolId, studentId, subjectId, term }),
-    base44.asServiceRole.entities.StudentInsight.filter({ schoolId, studentId, subjectId, term }),
-  ]);
-
-  const student = (students || [])[0];
-  const subject = (subjects || [])[0];
-  const gradingSystem = (gradingSystems || [])[0];
+export async function buildInsightPayload({
+  schoolId, student, subject, grades, gradeCats, gradingSystem, prev,
+  term, classId, generatedBy = 'grade_submitted', useLlm = true, base44Client = null,
+}) {
   const allGrades = grades || [];
-  const prevInsights = (existingInsights || []).sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-  const prev = prevInsights[0];
-
   if (allGrades.length === 0) return null;
 
   const assessmentWeights = gradingSystem?.assessmentWeights || null;
   const passMark = gradingSystem?.passMark ?? 40;
-
   const metrics = computePreExamMetrics(allGrades, gradeCats, assessmentWeights, passMark);
 
-  // Trend: compare current pre-exam average to the previous stored insight
   let trendDirection = 'new';
   if (prev && prev.preExamAverage != null && metrics.preExamAverage != null) {
     const diff = metrics.preExamAverage - prev.preExamAverage;
@@ -205,43 +197,31 @@ export async function generateAndStoreInsight(base44, args) {
     gradeCount: allGrades.length,
   };
 
-  const prompt = `You are Kairos, an academic progress evaluator. Generate ONE concise, actionable insight (1-2 sentences, under 40 words, no markdown, no greeting, no quotes) describing a student's academic standing. This insight is read by teachers and parents, so write in the THIRD PERSON about the student (e.g. "Awemokhe's performance is stable...", NOT "your performance").
-
-Data (JSON):
-${JSON.stringify(llmInput)}
-
-Rules:
-- Always refer to the student by first name in the third person. NEVER use "you" or "your".
-- If examCompleted is true, the exam is ALREADY DONE: report the student's current result (currentFinal%) relative to the pass mark (${passMark}%), and recommend next-step support or recognition. Do NOT mention an upcoming exam or a required exam score.
-- If examCompleted is false and requiredExamScore is a number greater than 0, state the student needs roughly that % on the upcoming exam to pass (pass mark = ${passMark}%).
-- If examCompleted is false and requiredExamScore is "impossible", gently warn that even a perfect exam won't reach the pass mark and the student needs extra support now.
-- If examCompleted is false and requiredExamScore is 0 or null (already safe), acknowledge strong standing and suggest maintaining focus.
-- Reference the trend (improving/declining/stable) naturally where relevant.
-- Be specific and supportive. No bullet points.`;
-
   let insightText = '';
-  try {
-    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt,
-      response_json_schema: {
-        type: 'object',
-        properties: { insightText: { type: 'string' } },
-        required: ['insightText'],
-      },
-    });
-    insightText = (res?.insightText || '').trim();
-  } catch (e) {
-    console.error('[insightGenerator] LLM failed:', e?.message || e);
+  if (useLlm && base44Client) {
+    try {
+      const res = await base44Client.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: INSIGHT_PROMPT(llmInput, passMark),
+        response_json_schema: {
+          type: 'object',
+          properties: { insightText: { type: 'string' } },
+          required: ['insightText'],
+        },
+      });
+      insightText = (res?.insightText || '').trim();
+    } catch (e) {
+      console.error('[insightGenerator] LLM failed:', e?.message || e);
+    }
   }
   if (!insightText) insightText = buildFallbackInsight(llmInput);
 
-  const payload = {
+  return {
     schoolId,
-    studentId,
+    studentId: student?.id || '',
     studentName: student?.fullName || '',
     classId: classId || student?.classId || '',
     className: student?.className || '',
-    subjectId,
+    subjectId: subject?.id || '',
     subjectName: subject?.name || '',
     term: term || '',
     insightText,
@@ -256,13 +236,43 @@ Rules:
     trendDirection,
     passMark,
     gradeCount: allGrades.length,
-    generatedBy: generatedBy || 'grade_submitted',
+    generatedBy,
   };
+}
 
-  // Always append a new insight record so a full, dated history accumulates across the term
-  // (parents/teachers/students can refer back to past insights). Trend is still computed against `prev`.
+/**
+ * Fetch all required data for a single student/subject/term, build the payload (with LLM),
+ * and append a new StudentInsight record. Used by onGradeSubmittedV2 and generateGradeInsight.
+ */
+export async function generateAndStoreInsight(base44, args) {
+  const { schoolId, studentId, subjectId, term, classId, generatedBy } = args;
+
+  const [students, subjects, gradeCats, gradingSystems, grades, existingInsights] = await Promise.all([
+    base44.asServiceRole.entities.SchoolUser.filter({ id: studentId }),
+    base44.asServiceRole.entities.Subject.filter({ id: subjectId }),
+    classId
+      ? base44.asServiceRole.entities.GradeCategory.filter({ schoolId, classId, subjectId })
+      : base44.asServiceRole.entities.GradeCategory.filter({ schoolId, subjectId }),
+    base44.asServiceRole.entities.GradingSystem.filter({ schoolId }),
+    base44.asServiceRole.entities.Grade.filter({ schoolId, studentId, subjectId, term }),
+    base44.asServiceRole.entities.StudentInsight.filter({ schoolId, studentId, subjectId, term }),
+  ]);
+
+  const student = (students || [])[0];
+  const subject = (subjects || [])[0];
+  const gradingSystem = (gradingSystems || [])[0];
+  const allGrades = grades || [];
+  const prevInsights = (existingInsights || []).sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+  const prev = prevInsights[0];
+
+  const payload = await buildInsightPayload({
+    schoolId, student, subject, grades: allGrades, gradeCats, gradingSystem, prev,
+    term, classId, generatedBy: generatedBy || 'grade_submitted',
+    useLlm: true, base44Client: base44,
+  });
+  if (!payload) return null;
+
+  // Always append a new insight record so a full, dated history accumulates across the term.
   const created = await base44.asServiceRole.entities.StudentInsight.create(payload);
-  const insightId = created?.id;
-
-  return { insightId, ...payload };
+  return { insightId: created?.id, ...payload };
 }

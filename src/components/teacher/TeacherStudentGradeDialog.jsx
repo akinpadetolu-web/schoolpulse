@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import MobileSelect from '@/components/mobile/MobileSelect';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, X, Sparkles, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import UserAvatar from '@/components/common/UserAvatar';
+import StudentInsightBanner from '@/components/insights/StudentInsightBanner';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import posthog from '@/lib/posthog';
 
@@ -43,6 +44,7 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const firstLoadRef = useRef(false);
+  const [generating, setGenerating] = useState(false);
 
   const load = useCallback(async () => {
     if (!student?.id || !user?.schoolId) return;
@@ -213,6 +215,21 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
     }
   }
 
+  async function handleGenerateInsights() {
+    if (!student?.id || !user?.schoolId) return;
+    setGenerating(true);
+    try {
+      const res = await base44.functions.invoke('generateStudentInsights', { schoolId: user.schoolId, studentId: student.id });
+      const data = res?.data ?? res;
+      const n = data?.generated ?? 0;
+      toast.success(n > 0 ? `Generated ${n} insight${n !== 1 ? 's' : ''}` : 'Insights are up to date');
+    } catch {
+      toast.error('Failed to generate insights');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   const sortedGrades = useMemo(() => {
     return [...grades].sort((a, b) => new Date(b.lastUpdatedAt || b.updated_date || 0) - new Date(a.lastUpdatedAt || a.updated_date || 0));
   }, [grades]);
@@ -262,6 +279,20 @@ export default function TeacherStudentGradeDialog({ open, onOpenChange, student 
                   <p className="text-xl font-bold mt-0.5">{new Set(grades.map(g => g.term).filter(Boolean)).size}</p>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Kairos Insights */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-primary" /> Kairos Insights
+                </h3>
+                <Button size="sm" variant="outline" onClick={handleGenerateInsights} disabled={generating}>
+                  {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                  {generating ? 'Generating...' : 'Generate'}
+                </Button>
+              </div>
+              <StudentInsightBanner studentId={student?.id} limit={3} />
             </div>
 
             {/* Assessment type breakdown */}
