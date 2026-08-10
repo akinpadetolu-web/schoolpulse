@@ -33,9 +33,7 @@ export default function StudentGrades() {
         setSubjects(s || []);
         setCategories(cats || []);
       } catch {
-        setGrades([]);
-        setSubjects([]);
-        setCategories([]);
+        // keep existing data on transient failures so the section doesn't blank out
       }
       setLoading(false);
     }
@@ -47,8 +45,7 @@ export default function StudentGrades() {
     const unsubQuiz = base44.entities.QuizSubmission.subscribe((event) => {
       if (event.data?.studentId === user?.id && event.data?.schoolId === user?.schoolId) load();
     });
-    const poll = setInterval(load, 5000);
-    return () => { unsubGrade(); unsubQuiz(); clearInterval(poll); };
+    return () => { unsubGrade(); unsubQuiz(); };
   }, [user?.id, user?.schoolId]);
 
   useEffect(() => {

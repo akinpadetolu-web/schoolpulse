@@ -210,17 +210,18 @@ export default async function (req) {
       return true;
     });
 
-    // Compute each student's overall average from one school-wide grades fetch (memory)
-    const allGrades = await base44.asServiceRole.entities.Grade.filter({ schoolId });
-    const scopedAllGrades = (role === 'teacher' && teacherSubjectIds.length)
-      ? (allGrades || []).filter((g) => teacherSubjectIds.includes(g.subjectId))
-      : (allGrades || []);
+    // Fetch grades per roster student — scoped per user, never the whole school's gradebook
     const gradesByStudent = {};
-    scopedAllGrades.forEach((g) => {
-      if (!g.studentId) return;
-      if (!gradesByStudent[g.studentId]) gradesByStudent[g.studentId] = [];
-      gradesByStudent[g.studentId].push(g);
-    });
+    await Promise.all(rosterStudents.map(async (s) => {
+      try {
+        const sg = await base44.asServiceRole.entities.Grade.filter({ schoolId, studentId: s.id });
+        gradesByStudent[s.id] = (role === 'teacher' && teacherSubjectIds.length)
+          ? (sg || []).filter((g) => teacherSubjectIds.includes(g.subjectId))
+          : (sg || []);
+      } catch {
+        gradesByStudent[s.id] = [];
+      }
+    }));
 
     const roster = rosterStudents.map((s) => {
       const g = gradesByStudent[s.id] || [];
