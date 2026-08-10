@@ -296,7 +296,6 @@ export default function StudentSubjects() {
                                 <div className="min-w-0">
                                   <span className="font-medium">{ASSESSMENT_LABELS[g.assessmentType] || g.assessmentType || 'Assessment'}</span>
                                   {g.term && <span className="text-muted-foreground ml-2">· {g.term}</span>}
-                                  {g.description && <p className="text-xs text-muted-foreground truncate">{g.description}</p>}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                   <span className="text-xs text-muted-foreground">{g.score}/{g.maxScore}</span>
