@@ -18,23 +18,23 @@ export default function ParentNotifications() {
 
   useEffect(() => {
     if (!user?.schoolId) return;
+    let active = true;
     async function load() {
-      // Get linked students
-      const allStudents = await base44.entities.SchoolUser.filter({
-        schoolId: user.schoolId,
-        role: 'student',
-      });
-      const myStudents = (allStudents || []).filter(s =>
-        (user?.linkedStudentIds || []).includes(s.id)
-      );
+      const linkedIds = (user?.linkedStudentIds || []);
+
+      // Fetch linked students, announcements, and per-student grades concurrently.
+      // Narrowing grades to linked students avoids pulling the whole school's gradebook.
+      const [studentResults, ann, gradeResults] = await Promise.all([
+        Promise.all(linkedIds.map(id => base44.entities.SchoolUser.get(id).catch(() => null))),
+        base44.entities.Announcement.filter({ schoolId: user.schoolId }).catch(() => []),
+        Promise.all(linkedIds.map(id => base44.entities.Grade.filter({ studentId: id }).catch(() => []))),
+      ]);
+      if (!active) return;
+
+      const myStudents = studentResults.filter(Boolean);
       setLinkedStudents(myStudents);
 
-      // Get announcements
       const linkedClassIds = myStudents.map(s => s.classId).filter(Boolean);
-      const ann = await base44.entities.Announcement.filter({
-        schoolId: user.schoolId,
-      });
-
       const filteredAnn = (ann || [])
         .filter(a => {
           if (!a.isPublished && a.isPublished !== undefined) return false;
@@ -47,15 +47,9 @@ export default function ParentNotifications() {
         })
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-      // Get grades for all linked students
-      const allGrades = await base44.entities.Grade.filter({
-        schoolId: user.schoolId,
-      });
-
-      const studentGrades = (allGrades || [])
-        .filter(g =>
-          myStudents.map(s => s.id).includes(g.studentId) && g.score != null
-        )
+      const allGrades = gradeResults.flat();
+      const studentGrades = allGrades
+        .filter(g => g.score != null)
         .map(g => ({
           ...g,
           studentName: myStudents.find(s => s.id === g.studentId)?.fullName,
@@ -67,6 +61,7 @@ export default function ParentNotifications() {
       setLoading(false);
     }
     load();
+    return () => { active = false; };
   }, [user?.schoolId, user?.linkedStudentIds]);
 
   // Resolve grade labels
