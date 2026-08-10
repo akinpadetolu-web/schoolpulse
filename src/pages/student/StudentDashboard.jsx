@@ -85,6 +85,7 @@ export default function StudentDashboard() {
     }).filter(d => d.avg > 0).sort((a, b) => b.avg - a.avg);
   }, [grades, gradeCategories]);
 
+  const hasExamGrade = grades.some(g => g.assessmentType === 'exam');
   const submittedIds = useMemo(() => new Set(submissions.map(s => s.assignmentId)), [submissions]);
   const completedCount = assignments.filter(a => submittedIds.has(a.id)).length;
   const pendingCount = assignments.length - completedCount;
@@ -139,8 +140,10 @@ export default function StudentDashboard() {
                      {overallAvg != null ? (
                        <div className="flex items-baseline gap-1 md:gap-2 mt-1">
                          <p className="text-lg md:text-3xl font-bold">{overallAvg}%</p>
-                         <span className={`text-xs md:text-lg font-bold ${letterGrade?.color}`}>{letterGrade?.label}</span>
-                      </div>
+                         {hasExamGrade && letterGrade && (
+                           <span className={`text-xs md:text-lg font-bold ${letterGrade.color}`}>{letterGrade.label}</span>
+                         )}
+                         </div>
                     ) : (
                       <p className="text-lg md:text-2xl font-bold mt-1 text-muted-foreground">N/A</p>
                       )}

@@ -26,6 +26,7 @@ function getGrade(avg) {
 export default function TermProgressTab({ user, grades }) {
   // Build term-by-term subject averages from termSubjectGrades on the user entity
   const termSubjectGrades = user?.termSubjectGrades || [];
+  const hasExamGrade = grades.some(g => g.assessmentType === 'exam');
 
   // Get unique terms in order
   const terms = useMemo(() => {
@@ -105,9 +106,11 @@ export default function TermProgressTab({ user, grades }) {
                 <p className={`text-2xl font-bold ${getGrade(latestTermData.avg).color}`}>
                   {latestTermData.avg}%
                 </p>
-                <span className={`text-sm font-semibold ${getGrade(latestTermData.avg).color}`}>
-                  {getGrade(latestTermData.avg).label}
-                </span>
+                {hasExamGrade && (
+                  <span className={`text-sm font-semibold ${getGrade(latestTermData.avg).color}`}>
+                    {getGrade(latestTermData.avg).label}
+                  </span>
+                )}
               </div>
             ) : <p className="text-2xl font-bold mt-1 text-muted-foreground">N/A</p>}
             {overallTrend != null && (
