@@ -50,9 +50,22 @@
       "type": "number",
       "description": "Weight % of the exam category in the final grade"
     },
+    "examCompleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether at least one exam grade already exists for this term/subject"
+    },
+    "examScore": {
+      "type": "number",
+      "description": "Actual exam score (%) once the exam has been completed. null if exam not yet done."
+    },
+    "currentFinal": {
+      "type": "number",
+      "description": "Computed final grade (%) once the exam is complete. null if exam not yet done."
+    },
     "requiredExamScore": {
       "type": "number",
-      "description": "% score the student needs on the upcoming exam to reach the pass mark. -1 = impossible even with 100%. 0 = already safe. null = no exam weight configured."
+      "description": "% score the student needs on the upcoming exam to reach the pass mark. -1 = impossible even with 100%. 0 = already safe. null = exam already done or no exam weight configured."
     },
     "projectedFinal": {
       "type": "number",

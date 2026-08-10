@@ -39,16 +39,29 @@ export default function InsightCard({ insight, showSubject = true }) {
           {when && <span className="text-xs text-muted-foreground ml-auto">{when}</span>}
         </div>
         <p className="text-sm text-foreground leading-relaxed">{insight.insightText}</p>
-        {(insight.preExamAverage != null || insight.requiredExamScore != null) && (
+        {(insight.preExamAverage != null || insight.requiredExamScore != null || insight.examCompleted) && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-            {insight.preExamAverage != null && (
-              <span>Pre-exam: <strong>{insight.preExamAverage}%</strong></span>
+            {insight.examCompleted ? (
+              <>
+                {insight.examScore != null && (
+                  <span>Exam: <strong>{insight.examScore}%</strong></span>
+                )}
+                {insight.currentFinal != null && (
+                  <span>Final: <strong>{insight.currentFinal}%</strong></span>
+                )}
+              </>
+            ) : (
+              <>
+                {insight.preExamAverage != null && (
+                  <span>Pre-exam: <strong>{insight.preExamAverage}%</strong></span>
+                )}
+                {insight.requiredExamScore === -1 ? (
+                  <span className="text-amber-700 font-medium">Cannot pass with exam alone</span>
+                ) : insight.requiredExamScore != null && insight.requiredExamScore > 0 ? (
+                  <span>Needs <strong>{insight.requiredExamScore}%</strong> on exam</span>
+                ) : null}
+              </>
             )}
-            {insight.requiredExamScore === -1 ? (
-              <span className="text-amber-700 font-medium">Cannot pass with exam alone</span>
-            ) : insight.requiredExamScore != null && insight.requiredExamScore > 0 ? (
-              <span>Needs <strong>{insight.requiredExamScore}%</strong> on exam</span>
-            ) : null}
             {insight.trendDirection && insight.trendDirection !== 'new' && (
               <span className="capitalize">Trend: {insight.trendDirection}</span>
             )}

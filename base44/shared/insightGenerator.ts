@@ -1,13 +1,14 @@
-// Kairos Insight Generator — shared logic for pre-exam grade analysis.
+// Kairos Insight Generator — shared logic for grade analysis.
 // Imported by onGradeSubmittedV2 (auto trigger) and generateGradeInsight (manual/admin trigger).
 
 const PCT = (g) => (g && g.maxScore ? (g.score / g.maxScore) * 100 : 0);
 const round1 = (n) => (n == null ? null : Math.round(n * 10) / 10);
 
 /**
- * Compute pre-exam weighted metrics from a student's grades.
- * preExamAverage = sum of non-exam category contributions (what's earned before the exam).
- * requiredExamScore = % needed on exam to reach passMark (-1 = impossible, 0 = already safe, null = no exam weight).
+ * Compute weighted metrics from a student's grades.
+ * - When no exam grade exists yet: preExamAverage = non-exam contribution, requiredExamScore = % needed on the upcoming exam.
+ * - When an exam grade already exists: examCompleted = true, examScore + currentFinal reflect the actual result;
+ *   requiredExamScore is nulled so we never advise on an "upcoming" exam that's already done.
  */
 export function computePreExamMetrics(grades, gradeCategories, assessmentWeights, passMark) {
   const safeGrades = grades || [];
@@ -15,7 +16,11 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
   const pass = passMark ?? 40;
 
   if (safeGrades.length === 0) {
-    return { preExamAverage: null, examWeight: 0, projectedFinal: null, requiredExamScore: null, categoryAverages: [], hasWeights: safeCats.length > 0 };
+    return {
+      preExamAverage: null, examWeight: 0, projectedFinal: null, requiredExamScore: null,
+      categoryAverages: [], hasWeights: safeCats.length > 0,
+      examCompleted: false, examScore: null, currentFinal: null,
+    };
   }
 
   // Weight map: prefer per-class per-subject GradeCategory config, fallback to GradingSystem.assessmentWeights
@@ -41,6 +46,10 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
     count: gs.length,
   }));
 
+  const examGrades = grouped['exam'] || [];
+  const examCompleted = examGrades.length > 0;
+  const examScore = examCompleted ? round1(examGrades.reduce((s, g) => s + PCT(g), 0) / examGrades.length) : null;
+
   // No weight config → simple average fallback (can't isolate exam)
   if (Object.keys(weightMap).length === 0) {
     const simpleAvg = safeGrades.reduce((s, g) => s + PCT(g), 0) / safeGrades.length;
@@ -51,6 +60,9 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
       requiredExamScore: null,
       categoryAverages,
       hasWeights: false,
+      examCompleted,
+      examScore,
+      currentFinal: round1(simpleAvg),
     };
   }
 
@@ -66,10 +78,11 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
   });
 
   const projectedFinal = round1(preExamContribution);
+  const currentFinal = examCompleted ? round1(preExamContribution + (examScore * examWeight / 100)) : null;
 
-  // final = preExamContribution + (examScore% * examWeight/100) >= pass
+  // Only compute a "required exam score" when the exam has NOT been taken yet.
   let requiredExamScore = null;
-  if (examWeight > 0) {
+  if (examWeight > 0 && !examCompleted) {
     const needed = (pass - preExamContribution) / (examWeight / 100);
     if (needed <= 0) requiredExamScore = 0;
     else if (needed > 100) requiredExamScore = -1; // impossible
@@ -83,32 +96,57 @@ export function computePreExamMetrics(grades, gradeCategories, assessmentWeights
     requiredExamScore,
     categoryAverages,
     hasWeights: true,
+    examCompleted,
+    examScore,
+    currentFinal,
   };
 }
 
-export function determineInsightType(metrics, trendDirection) {
+export function determineInsightType(metrics, trendDirection, passMark) {
   if (metrics.preExamAverage == null) return 'neutral';
+  const pass = passMark ?? 40;
+
+  if (metrics.examCompleted) {
+    // Exam already done → judge by the actual final result.
+    const cf = metrics.currentFinal;
+    if (cf == null) return 'neutral';
+    if (cf < pass) return 'negative';
+    if (cf >= 70) return 'positive';
+    return 'neutral';
+  }
+
   if (metrics.requiredExamScore === -1) return 'warning';
   if (metrics.requiredExamScore != null && metrics.requiredExamScore > 70) return 'negative';
   if (trendDirection === 'declining') return 'negative';
-  if (trendDirection === 'improving' && (metrics.projectedFinal == null || metrics.projectedFinal >= 40)) return 'positive';
+  if (trendDirection === 'improving' && (metrics.projectedFinal == null || metrics.projectedFinal >= pass)) return 'positive';
   return 'neutral';
 }
 
 function buildFallbackInsight(input) {
   const name = input.studentName;
   const subj = input.subjectName;
+  const pass = input.passMark;
+
+  if (input.examCompleted) {
+    const cf = input.currentFinal;
+    if (cf == null) return `${name}'s ${subj} exam has been recorded.`;
+    if (cf < pass) {
+      return `${name} has completed the ${subj} exam and is currently at ${cf}%, below the ${pass}% pass mark. Targeted support is recommended to close the gap.`;
+    }
+    return `${name} has completed the ${subj} exam and is currently at ${cf}%, ${cf >= 70 ? 'a strong result' : 'meeting the pass mark'}. Encourage continued effort next term.`;
+  }
+
   if (input.requiredExamScore === -1) {
-    return `${name} is at risk in ${subj}: even a perfect exam won't reach the ${input.passMark}% pass mark. Urgent support is needed now.`;
+    return `${name} is at risk in ${subj}: even a perfect exam won't reach the ${pass}% pass mark. Urgent support is needed now.`;
   }
   if (typeof input.requiredExamScore === 'number' && input.requiredExamScore > 0) {
-    return `${name} needs about ${input.requiredExamScore}% on the upcoming ${subj} exam to reach the ${input.passMark}% pass mark. Pre-exam standing is ${input.preExamAverage}% and trend is ${input.trendDirection}.`;
+    return `${name} needs about ${input.requiredExamScore}% on the upcoming ${subj} exam to reach the ${pass}% pass mark. Pre-exam standing is ${input.preExamAverage}% with a ${input.trendDirection} trend.`;
   }
-  return `${name} is on track in ${subj} with a pre-exam standing of ${input.preExamAverage}% and a ${input.trendDirection} trend. Keep it up!`;
+  return `${name} is on track in ${subj} with a pre-exam standing of ${input.preExamAverage}% and a ${input.trendDirection} trend.`;
 }
 
 /**
- * Fetch all required data, compute metrics, generate the AI insight, and upsert the StudentInsight record.
+ * Fetch all required data, compute metrics, generate the AI insight, and append a new StudentInsight record.
  * @param {object} base44 - base44 client (created via createClientFromRequest)
  * @param {object} args - { schoolId, studentId, subjectId, term, classId, generatedBy }
  */
@@ -149,7 +187,7 @@ export async function generateAndStoreInsight(base44, args) {
     else trendDirection = 'stable';
   }
 
-  const insightType = determineInsightType(metrics, trendDirection);
+  const insightType = determineInsightType(metrics, trendDirection, passMark);
 
   const llmInput = {
     studentName: student?.fullName || 'the student',
@@ -157,7 +195,9 @@ export async function generateAndStoreInsight(base44, args) {
     term,
     preExamAverage: metrics.preExamAverage,
     examWeight: metrics.examWeight,
-    projectedFinal: metrics.projectedFinal,
+    examCompleted: metrics.examCompleted,
+    examScore: metrics.examScore,
+    currentFinal: metrics.currentFinal,
     requiredExamScore: metrics.requiredExamScore === -1 ? 'impossible' : metrics.requiredExamScore,
     passMark,
     trendDirection,
@@ -165,17 +205,19 @@ export async function generateAndStoreInsight(base44, args) {
     gradeCount: allGrades.length,
   };
 
-  const prompt = `You are Kairos, an academic progress evaluator. Generate ONE concise, encouraging, actionable insight (1-2 sentences, under 40 words, no markdown, no greeting, no quotes) for a student's pre-exam standing.
+  const prompt = `You are Kairos, an academic progress evaluator. Generate ONE concise, actionable insight (1-2 sentences, under 40 words, no markdown, no greeting, no quotes) describing a student's academic standing. This insight is read by teachers and parents, so write in the THIRD PERSON about the student (e.g. "Awemokhe's performance is stable...", NOT "your performance").
 
 Data (JSON):
 ${JSON.stringify(llmInput)}
 
 Rules:
-- If requiredExamScore is a number greater than 0, mention the student needs roughly that % on the upcoming exam to pass (pass mark = ${passMark}%).
-- If requiredExamScore is "impossible", gently warn that even a perfect exam won't reach the pass mark and they need extra support now.
-- If requiredExamScore is 0 or null (already safe), acknowledge strong standing and suggest maintaining focus.
-- Reference the trend (improving/declining/stable) naturally.
-- Use the student's first name. Be direct, warm, and specific. No bullet points.`;
+- Always refer to the student by first name in the third person. NEVER use "you" or "your".
+- If examCompleted is true, the exam is ALREADY DONE: report the student's current result (currentFinal%) relative to the pass mark (${passMark}%), and recommend next-step support or recognition. Do NOT mention an upcoming exam or a required exam score.
+- If examCompleted is false and requiredExamScore is a number greater than 0, state the student needs roughly that % on the upcoming exam to pass (pass mark = ${passMark}%).
+- If examCompleted is false and requiredExamScore is "impossible", gently warn that even a perfect exam won't reach the pass mark and the student needs extra support now.
+- If examCompleted is false and requiredExamScore is 0 or null (already safe), acknowledge strong standing and suggest maintaining focus.
+- Reference the trend (improving/declining/stable) naturally where relevant.
+- Be specific and supportive. No bullet points.`;
 
   let insightText = '';
   try {
@@ -206,6 +248,9 @@ Rules:
     insightType,
     preExamAverage: metrics.preExamAverage,
     examWeight: metrics.examWeight,
+    examCompleted: metrics.examCompleted,
+    examScore: metrics.examScore,
+    currentFinal: metrics.currentFinal,
     requiredExamScore: metrics.requiredExamScore,
     projectedFinal: metrics.projectedFinal,
     trendDirection,
