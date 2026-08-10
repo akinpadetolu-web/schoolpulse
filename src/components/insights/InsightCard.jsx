@@ -8,10 +8,18 @@ const TYPE_CONFIG = {
   neutral: { icon: Minus, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
 };
 
+function formatWhen(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
 export default function InsightCard({ insight, showSubject = true }) {
   if (!insight) return null;
   const cfg = TYPE_CONFIG[insight.insightType] || TYPE_CONFIG.neutral;
   const Icon = cfg.icon;
+  const when = formatWhen(insight.created_date || insight.updated_date);
 
   return (
     <div className={`rounded-xl border ${cfg.border} ${cfg.bg} p-4 flex gap-3`}>
@@ -28,6 +36,7 @@ export default function InsightCard({ insight, showSubject = true }) {
           {insight.studentName && !showSubject && (
             <span className="text-xs text-muted-foreground">• {insight.studentName}</span>
           )}
+          {when && <span className="text-xs text-muted-foreground ml-auto">{when}</span>}
         </div>
         <p className="text-sm text-foreground leading-relaxed">{insight.insightText}</p>
         {(insight.preExamAverage != null || insight.requiredExamScore != null) && (

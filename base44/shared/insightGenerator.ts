@@ -214,14 +214,10 @@ Rules:
     generatedBy: generatedBy || 'grade_submitted',
   };
 
-  let insightId;
-  if (prev) {
-    await base44.asServiceRole.entities.StudentInsight.update(prev.id, payload);
-    insightId = prev.id;
-  } else {
-    const created = await base44.asServiceRole.entities.StudentInsight.create(payload);
-    insightId = created?.id;
-  }
+  // Always append a new insight record so a full, dated history accumulates across the term
+  // (parents/teachers/students can refer back to past insights). Trend is still computed against `prev`.
+  const created = await base44.asServiceRole.entities.StudentInsight.create(payload);
+  const insightId = created?.id;
 
   return { insightId, ...payload };
 }
