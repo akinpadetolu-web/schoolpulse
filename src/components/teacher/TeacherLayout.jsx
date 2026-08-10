@@ -10,7 +10,6 @@ import PullToRefreshWrapper from '@/components/mobile/PullToRefreshWrapper';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
-import StudentProgressAgentChat from '@/components/agents/StudentProgressAgentChat';
 
 const MemoTeacherSidebar = memo(TeacherSidebar);
 
@@ -97,7 +96,6 @@ export default function TeacherLayout() {
         </main>
       </div>
       {isRootScreen && <MobileBottomNav role="teacher" />}
-      <StudentProgressAgentChat subtitle="Ask about students in your classes — grades, trends, and support needs" />
     </div>
   );
 }

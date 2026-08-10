@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
+import StudentInsightBanner from '@/components/insights/StudentInsightBanner';
 
 function getColor(pct) {
   if (pct >= 70) return 'text-emerald-600';
@@ -180,6 +181,9 @@ export default function ParentGrades() {
               <p className="text-sm text-muted-foreground">{child.className || 'No class assigned'}</p>
             </CardHeader>
             <CardContent>
+              <div className="mb-4">
+                <StudentInsightBanner studentId={child.id} limit={2} />
+              </div>
               <Tabs defaultValue="classwork">
                 <TabsList className="mb-4">
                   <TabsTrigger value="classwork">Classwork & Tests</TabsTrigger>

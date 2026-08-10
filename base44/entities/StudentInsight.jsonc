@@ -1,0 +1,95 @@
+{
+  "name": "StudentInsight",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string",
+      "description": "Academic term this insight applies to"
+    },
+    "insightText": {
+      "type": "string",
+      "description": "Kairos-generated concise narrative insight"
+    },
+    "insightType": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "negative",
+        "neutral",
+        "warning"
+      ],
+      "default": "neutral",
+      "description": "positive = on track, negative = needs attention, warning = at risk, neutral = informational"
+    },
+    "preExamAverage": {
+      "type": "number",
+      "description": "Weighted contribution from non-exam assessments toward the final grade (0-100)"
+    },
+    "examWeight": {
+      "type": "number",
+      "description": "Weight % of the exam category in the final grade"
+    },
+    "requiredExamScore": {
+      "type": "number",
+      "description": "% score the student needs on the upcoming exam to reach the pass mark. -1 = impossible even with 100%. 0 = already safe. null = no exam weight configured."
+    },
+    "projectedFinal": {
+      "type": "number",
+      "description": "Projected final grade if the student scores 0 on the exam"
+    },
+    "trendDirection": {
+      "type": "string",
+      "enum": [
+        "improving",
+        "stable",
+        "declining",
+        "new"
+      ],
+      "default": "new"
+    },
+    "passMark": {
+      "type": "number",
+      "default": 40
+    },
+    "gradeCount": {
+      "type": "number",
+      "description": "Number of grade records considered"
+    },
+    "generatedBy": {
+      "type": "string",
+      "enum": [
+        "grade_submitted",
+        "manual",
+        "scheduled"
+      ],
+      "default": "grade_submitted"
+    }
+  },
+  "required": [
+    "schoolId",
+    "studentId",
+    "subjectId",
+    "insightText"
+  ]
+}

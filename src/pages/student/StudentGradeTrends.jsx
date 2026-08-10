@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
+import StudentInsightBanner from '@/components/insights/StudentInsightBanner';
 
 function gradeLabel(p) {
   if (p >= 70) return { label: "A", color: "#10b981" };
@@ -123,6 +124,9 @@ export default function StudentGradeTrends() {
         <h1 className="text-2xl font-bold mb-2">Grade Trends</h1>
         <p className="text-muted-foreground">Track your academic progress throughout the term</p>
       </div>
+
+      {/* Kairos Insights */}
+      <StudentInsightBanner studentId={user?.id} limit={3} />
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

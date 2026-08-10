@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { generateAndStoreInsight } from '../../shared/insightGenerator.ts';
+import { waitUntil } from 'base44:runtime';
 
 Deno.serve(async (req) => {
   try {
@@ -198,6 +200,18 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Notification.bulkCreate(alertNotifications);
       }
     }
+
+    // Fire-and-forget Kairos insight generation (doesn't block the response, worker stays alive via waitUntil)
+    waitUntil(
+      generateAndStoreInsight(base44, {
+        schoolId,
+        studentId,
+        subjectId,
+        term,
+        classId: grade.classId,
+        generatedBy: 'grade_submitted',
+      }).catch((e) => console.error('[onGradeSubmittedV2] insight generation failed:', e?.message || e))
+    );
 
     return Response.json({ success: true, weightedAverage, term });
   } catch (error) {

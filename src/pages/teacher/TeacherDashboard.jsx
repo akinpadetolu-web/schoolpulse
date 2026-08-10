@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, FileText, BookOpen, Loader2 } from 'lucide-react';
 import TeacherLiveAnalytics from '@/components/teacher/TeacherLiveAnalytics';
+import TeacherInsightWatchlist from '@/components/insights/TeacherInsightWatchlist';
 
 export default function TeacherDashboard() {
   const { schoolUser: user } = useSchoolAuth();
@@ -48,6 +49,7 @@ export default function TeacherDashboard() {
       </div>
 
       <TeacherLiveAnalytics />
+      <TeacherInsightWatchlist />
     </div>
   );
 }
