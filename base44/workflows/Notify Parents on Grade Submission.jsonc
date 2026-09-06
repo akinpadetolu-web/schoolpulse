@@ -1,0 +1,45 @@
+{
+  "name": "Notify Parents on Grade Submission",
+  "description": "Automatically sends email and push notifications to parents when a grade is submitted for their child",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Grade"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "notify_parents_on_grade_submission",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notifyParentGradeSubmission",
+            "args": {
+              "gradeId": "{{event.entity_id}}",
+              "schoolId": "{{data.schoolId}}",
+              "studentId": "{{data.studentId}}",
+              "subjectName": "{{data.subjectName}}",
+              "score": "{{data.score}}",
+              "maxScore": "{{data.maxScore}}",
+              "assessmentType": "{{data.assessmentType}}"
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "notifyParentGradeSubmission"
+  }
+}
