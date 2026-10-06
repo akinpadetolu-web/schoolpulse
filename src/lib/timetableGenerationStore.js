@@ -1,5 +1,5 @@
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { generateWeeklyTimetable } from '@/lib/timetableAIGenerator';
 
 let generationState = {
   status: 'idle', // 'idle' | 'generating' | 'success' | 'error'
@@ -40,43 +40,23 @@ export async function startGeneration(schoolId, targetClassIds, prompt, breaks) 
   notify();
 
   try {
-    const res = await base44.functions.invoke('generateTimetable', {
-      schoolId,
-      targetClassIds,
-      prompt,
-      breaks: breaks || [],
-    });
+    const data = await generateWeeklyTimetable({ schoolId, targetClassIds, prompt, breaks });
 
-    const hasSlots = res.data?.slots?.length > 0;
-    if (hasSlots) {
-      generationState = {
-        ...generationState,
-        status: 'success',
-        result: res.data,
-        error: null,
-      };
-      toast.success(`Generated ${res.data.slots.length} timetable entries`);
+    if (data?.error) {
+      generationState = { ...generationState, status: 'error', result: data, error: data.error };
+      toast.error(data.error);
+    } else if (data?.slots?.length > 0) {
+      generationState = { ...generationState, status: 'success', result: data, error: null };
+      toast.success(`Generated ${data.slots.length} timetable entries`);
     } else {
-      const errMsg = res.data?.error || 'No entries were generated';
-      generationState = {
-        ...generationState,
-        status: 'error',
-        result: res.data,
-        error: errMsg,
-      };
+      const errMsg = 'No entries were generated';
+      generationState = { ...generationState, status: 'error', result: data, error: errMsg };
       toast.error(errMsg);
     }
   } catch (err) {
     const errorMsg = err?.message || 'Generation failed';
-    const displayMsg = errorMsg.includes('504')
-      ? 'Request timeout (504): AI generation took too long'
-      : errorMsg;
-    generationState = {
-      ...generationState,
-      status: 'error',
-      error: displayMsg,
-    };
-    toast.error(displayMsg);
+    generationState = { ...generationState, status: 'error', error: errorMsg };
+    toast.error(errorMsg);
   }
   notify();
 }

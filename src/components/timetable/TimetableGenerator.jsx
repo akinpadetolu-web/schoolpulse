@@ -127,7 +127,7 @@ export default function TimetableGenerator({ schoolId, classes, breaks, onGenera
 
       <Button className="w-full h-11" onClick={handleGenerate} disabled={generating}>
         {generating
-          ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating... (this may take up to 70s)</>
+          ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating… (a minute or more for several classes)</>
           : <><Wand2 className="w-4 h-4 mr-2" /> Generate Timetable</>
         }
       </Button>
