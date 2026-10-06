@@ -237,8 +237,9 @@ export default function AdminTimetable() {
     if (!window.confirm("Are you sure you want to delete ALL timetable entries? This cannot be undone.")) return;
     setSaving(true);
     try {
-      const result = await base44.functions.invoke('resetTimetable', { schoolId });
-      toast.success(`Reset all ${result.data.deleted} timetable entries`);
+      const deleted = entries.length;
+      await base44.entities.TimetableEntry.deleteMany({ schoolId });
+      toast.success(`Reset all ${deleted} timetable entries`);
       loadData();
     } catch (error) {
       console.error('Failed to reset timetable:', error);
