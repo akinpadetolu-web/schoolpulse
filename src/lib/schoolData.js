@@ -120,15 +120,13 @@ export async function autoLinkTeachersToTimetable(schoolId) {
         )
       );
       if (match) {
-        updates.push(
-          base44.entities.TimetableEntry.update(entry.id, {
-            teacherId: match.id,
-            teacherName: match.fullName,
-          })
-        );
+        updates.push({ id: entry.id, teacherId: match.id, teacherName: match.fullName });
       }
     }
-    await Promise.all(updates);
+    // One batched write instead of a request per entry (avoids rate limits).
+    for (let i = 0; i < updates.length; i += 500) {
+      await base44.entities.TimetableEntry.bulkUpdate(updates.slice(i, i + 500));
+    }
     return updates.length;
   } catch (e) {
     console.error('autoLinkTeachersToTimetable error', e);

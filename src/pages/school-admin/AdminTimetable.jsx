@@ -144,7 +144,7 @@ export default function AdminTimetable() {
     classId: "", subjectId: "", teacherId: "", dayOfWeek: "", startTime: "", endTime: ""
   });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData({ lookups: true }); }, []);
 
   // Live clash check whenever manual form changes
   useEffect(() => {
@@ -164,20 +164,36 @@ export default function AdminTimetable() {
     }
   }, [manualForm, entries, breaks]);
 
-  async function loadData() {
-    const [e, c, s, t, cat] = await Promise.all([
-      base44.entities.TimetableEntry.filter({ schoolId }),
+  // Only the timetable entries change while working on this page, so an action
+  // reloads just the entries (one request). Classes / subjects / teachers /
+  // categories are loaded once and refreshed only when lookups: true is passed.
+  async function loadEntries() {
+    const e = await base44.entities.TimetableEntry.filter({ schoolId });
+    setEntries(e || []);
+  }
+
+  async function loadLookups() {
+    const [c, s, t, cat] = await Promise.all([
       base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
       base44.entities.Subject.filter({ schoolId, isArchived: false }),
       base44.entities.SchoolUser.filter({ schoolId, role: "teacher", isArchived: false }),
       base44.entities.SubjectCategory.filter({ schoolId, isArchived: false }),
     ]);
-    setEntries(e || []);
     setClasses(c || []);
     setSubjects(s || []);
     setTeachers(t || []);
     setCategories(cat || []);
-    setLoading(false);
+  }
+
+  async function loadData({ lookups = false } = {}) {
+    try {
+      if (lookups) await loadLookups();
+      await loadEntries();
+    } catch (err) {
+      toast.error(err?.message || "Could not load timetable data");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const subjectsForManualClass = manualForm.classId
@@ -225,11 +241,10 @@ export default function AdminTimetable() {
 
   async function handleClearClass() {
     if (selectedClass === "all") return toast.error("Select a specific class to clear");
-    const toDelete = entries.filter(e => e.classId === selectedClass);
-    if (!toDelete.length) return toast.info("No entries to clear");
-    const results = await Promise.allSettled(toDelete.map(e => base44.entities.TimetableEntry.delete(e.id)));
-    const deleted = results.filter(r => r.status === "fulfilled").length;
-    toast.success(`Cleared ${deleted} entries`);
+    const count = entries.filter(e => e.classId === selectedClass).length;
+    if (!count) return toast.info("No entries to clear");
+    await base44.entities.TimetableEntry.deleteMany({ schoolId, classId: selectedClass });
+    toast.success(`Cleared ${count} entries`);
     loadData();
   }
 
