@@ -187,8 +187,11 @@ export default function AdminTimetable() {
 
   async function loadData({ lookups = false } = {}) {
     try {
-      if (lookups) await loadLookups();
-      await loadEntries();
+      // Run lookups and entries together so the first load is a single round trip.
+      await Promise.all([
+        lookups ? loadLookups() : Promise.resolve(),
+        loadEntries(),
+      ]);
     } catch (err) {
       toast.error(err?.message || "Could not load timetable data");
     } finally {
