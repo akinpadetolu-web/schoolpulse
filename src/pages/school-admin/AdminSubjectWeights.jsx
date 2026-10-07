@@ -160,7 +160,7 @@ export default function AdminSubjectWeights() {
           {totalWeight !== 100 && (
             <Card className="border-0 shadow-sm bg-amber-50 border-l-4 border-amber-400">
               <CardContent className="py-3 text-sm text-amber-800">
-                Total weight is {totalWeight}%. Consider setting it to 100% for accurate calculations.
+                ⚠️ Total weight is {totalWeight}%. Consider setting it to 100% for accurate calculations.
               </CardContent>
             </Card>
           )}

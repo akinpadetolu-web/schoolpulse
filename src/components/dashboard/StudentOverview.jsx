@@ -320,7 +320,7 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
                   <span className="text-xs text-muted-foreground">{s.className}</span>
                   <span className="text-red-600 text-sm font-semibold shrink-0">{s.avg}%</span>
                 </div>
-              )) : <p className="text-emerald-600 text-sm text-center py-4">No underperforming students</p>}
+              )) : <p className="text-emerald-600 text-sm text-center py-4">No underperforming students 🎉</p>}
             </div>
           </div>
         )}

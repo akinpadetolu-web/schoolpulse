@@ -4,23 +4,19 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import {
-  BarChart2, BarChart3, BarChartHorizontal, Layers, ChevronDown,
-  LineChart as LineChartIcon, AreaChart as AreaChartIcon,
-  PieChart as PieChartIcon, Radar as RadarIcon,
-} from 'lucide-react';
+import { BarChart2, ChevronDown } from 'lucide-react';
 
 const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#a78bfa', '#f97316', '#ec4899'];
 
 const CHART_TYPES = {
-  bar:          { label: 'Bar Chart',           icon: BarChart3 },
-  bar_h:        { label: 'Horizontal Bar',       icon: BarChartHorizontal },
-  line:         { label: 'Line Chart',           icon: LineChartIcon },
-  area:         { label: 'Area Chart',            icon: AreaChartIcon },
-  pie:          { label: 'Pie Chart',            icon: PieChartIcon },
-  donut:        { label: 'Donut Chart',          icon: PieChartIcon },
-  radar:        { label: 'Radar Chart',          icon: RadarIcon },
-  stacked_bar:  { label: 'Stacked Bar',          icon: Layers },
+  bar:          { label: 'Bar Chart',           icon: '▐▐▐' },
+  bar_h:        { label: 'Horizontal Bar',       icon: '═══' },
+  line:         { label: 'Line Chart',           icon: '〜〜' },
+  area:         { label: 'Area Chart',            icon: '▲▲▲' },
+  pie:          { label: 'Pie Chart',            icon: '◉' },
+  donut:        { label: 'Donut Chart',          icon: '⊙' },
+  radar:        { label: 'Radar Chart',          icon: '✦' },
+  stacked_bar:  { label: 'Stacked Bar',          icon: '▐▌▐' },
 };
 
 const COMMON_STYLE = {
@@ -176,16 +172,13 @@ export default function ChartWidget({ id, title, subtitle, data, dataKeys = ['va
           </button>
           {open && (
             <div className="absolute right-0 top-8 bg-card border border-border rounded-xl shadow-xl z-50 py-1 w-44">
-              {available.filter(t => CHART_TYPES[t]).map(t => {
-                const ChartIcon = CHART_TYPES[t].icon;
-                return (
-                  <button key={t} onClick={() => { setChartType(t); setOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors flex items-center gap-2 ${chartType === t ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                    <ChartIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    {CHART_TYPES[t].label}
-                  </button>
-                );
-              })}
+              {available.filter(t => CHART_TYPES[t]).map(t => (
+                <button key={t} onClick={() => { setChartType(t); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors flex items-center gap-2 ${chartType === t ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                  <span className="w-5 text-center">{CHART_TYPES[t].icon}</span>
+                  {CHART_TYPES[t].label}
+                </button>
+              ))}
             </div>
           )}
         </div>

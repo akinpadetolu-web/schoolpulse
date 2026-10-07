@@ -122,7 +122,7 @@ Return assignments for ALL entries.`,
       {/* Unassigned exams */}
       {unassigned.length > 0 && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="font-semibold text-red-700 text-sm mb-2">{unassigned.length} exam{unassigned.length !== 1 ? 's' : ''} without an invigilator</p>
+          <p className="font-semibold text-red-700 text-sm mb-2">⚠️ {unassigned.length} exam{unassigned.length !== 1 ? 's' : ''} without an invigilator</p>
           <ul className="space-y-1">
             {unassigned.map((e, i) => (
               <li key={i} className="text-xs text-red-600">• {e.subjectName} — {e.date} {e.startTime && `at ${e.startTime}`} {(e.classNames || []).join(', ')}</li>

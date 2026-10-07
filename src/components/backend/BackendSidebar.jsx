@@ -69,7 +69,7 @@ export default function BackendSidebar({ isOpen, onClose }) {
             </div>
             <div>
               <span className="font-bold text-sm">SchoolPulse</span>
-              <p className="text-xs text-sidebar-foreground/75">Super Admin</p>
+              <p className="text-xs text-sidebar-foreground/50">Super Admin</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>
@@ -80,7 +80,7 @@ export default function BackendSidebar({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto touch-pan-y py-4 px-3" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {navGroups.map((group, gi) => (
             <div key={gi} className="mb-4">
-              <p className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-sidebar-foreground/70 uppercase">{group.label}</p>
+              <p className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider text-sidebar-foreground/40 uppercase">{group.label}</p>
               <div className="space-y-0.5">
                 {group.items.map(item => (
                   <Link
@@ -89,8 +89,8 @@ export default function BackendSidebar({ isOpen, onClose }) {
                     onClick={onClose}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.path)
-                        ? 'bg-sky-500/20 text-white shadow-glass ring-1 ring-inset ring-sky-400/40'
-                        : 'text-sidebar-foreground/90 hover:bg-white/[0.08] hover:text-white'
+                        ? 'bg-white/[0.12] text-white shadow-glass ring-1 ring-inset ring-sky-400/30'
+                        : 'text-sidebar-foreground/70 hover:bg-white/[0.07] hover:text-sidebar-foreground'
                     }`}
                   >
                     <item.icon className="w-4 h-4 shrink-0" />
@@ -109,12 +109,12 @@ export default function BackendSidebar({ isOpen, onClose }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{admin?.fullName || admin?.email || "Super Admin"}</p>
-              <p className="text-xs text-sidebar-foreground/75 truncate">{admin?.email || ""}</p>
+              <p className="text-xs text-sidebar-foreground/50 truncate">{admin?.email || ""}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full transition-colors"
           >
             <LogOut className="w-4 h-4" /> Sign Out
           </button>

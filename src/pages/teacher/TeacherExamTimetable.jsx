@@ -108,7 +108,7 @@ export default function TeacherExamTimetable() {
           ) : (
             <div className="space-y-3">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                You have <strong>{myInvigilation.length}</strong> invigilation {myInvigilation.length === 1 ? 'duty' : 'duties'} assigned. Please confirm each one below.
+                📋 You have <strong>{myInvigilation.length}</strong> invigilation {myInvigilation.length === 1 ? 'duty' : 'duties'} assigned. Please confirm each one below.
               </div>
               {myInvigilation.map((entry, i) => {
                 // Find my assignment within invigilators array
@@ -147,7 +147,7 @@ export default function TeacherExamTimetable() {
                         </div>
                         <div className="shrink-0">
                           {myAssignment?.confirmed
-                            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">Confirmed</Badge>
+                            ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">✓ Confirmed</Badge>
                             : <Badge className="bg-amber-100 text-amber-700 border-amber-300">⏳ Pending</Badge>}
                         </div>
                       </div>
@@ -175,7 +175,7 @@ export default function TeacherExamTimetable() {
             <p className="text-sm text-muted-foreground">Your uploaded lesson plans help students generate AI Study Plans and Exam Tips. Make sure all exam subjects are covered.</p>
             {lessonPlans.length === 0 ? (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                You haven't uploaded any lesson plans yet. Students need lesson plans to generate AI Study Plans and Exam Tips.
+                ⚠️ You haven't uploaded any lesson plans yet. Students need lesson plans to generate AI Study Plans and Exam Tips.
               </div>
             ) : (
               <div className="space-y-2">

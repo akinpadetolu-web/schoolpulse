@@ -85,7 +85,7 @@ export default function StudentExamTimetable() {
       {/* Countdown banner */}
       {daysToStart !== null && (
         <div className={`p-3 rounded-xl border text-sm font-medium text-center ${daysToStart > 0 ? 'bg-blue-50 border-blue-200 text-blue-800' : daysToStart === 0 ? 'bg-red-50 border-red-200 text-red-800' : 'bg-muted border-border'}`}>
-          {daysToStart > 0 ? `Exams start in ${daysToStart} day${daysToStart !== 1 ? 's' : ''}` : daysToStart === 0 ? 'Exam period starts today' : 'Exam period is ongoing'}
+          {daysToStart > 0 ? `⏳ Exams start in ${daysToStart} day${daysToStart !== 1 ? 's' : ''}` : daysToStart === 0 ? '🎯 Exam period starts TODAY!' : '📚 Exam period is ongoing'}
         </div>
       )}
 

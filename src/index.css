@@ -25,12 +25,12 @@
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 96%;
     --muted: 217 33% 16%;
-    --muted-foreground: 215 22% 78%;
+    --muted-foreground: 215 25% 72%;
     --accent: 217 33% 20%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 56%;
     --destructive-foreground: 0 0% 100%;
-    --border: 216 28% 30%;
+    --border: 216 30% 26%;
     --input: 216 30% 26%;
     --ring: 199 89% 60%;
     --chart-1: 199 89% 60%;
@@ -45,7 +45,7 @@
     --sidebar-primary-foreground: 222 47% 8%;
     --sidebar-accent: 217 33% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 216 28% 30%;
+    --sidebar-border: 216 30% 24%;
     --sidebar-ring: 199 89% 60%;
 
     /* Glass surface tokens — components read these so the light sign-in
@@ -71,12 +71,12 @@
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 96%;
     --muted: 217 33% 16%;
-    --muted-foreground: 215 22% 78%;
+    --muted-foreground: 215 25% 72%;
     --accent: 217 33% 20%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 56%;
     --destructive-foreground: 0 0% 100%;
-    --border: 216 28% 30%;
+    --border: 216 30% 26%;
     --input: 216 30% 26%;
     --ring: 199 89% 60%;
     --sidebar-background: 222 47% 8%;
@@ -85,7 +85,7 @@
     --sidebar-primary-foreground: 222 47% 8%;
     --sidebar-accent: 217 33% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 216 28% 30%;
+    --sidebar-border: 216 30% 24%;
     --sidebar-ring: 199 89% 60%;
   }
 

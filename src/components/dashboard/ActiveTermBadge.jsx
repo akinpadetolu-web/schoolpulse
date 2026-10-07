@@ -18,7 +18,7 @@ export default function ActiveTermBadge({ schoolId }) {
 
   return (
     <Badge className="bg-green-100 text-green-800 text-xs font-semibold">
-      {activeTerm.name} {activeTerm.academicYear}
+      📚 {activeTerm.name} {activeTerm.academicYear}
     </Badge>
   );
 }

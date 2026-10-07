@@ -400,7 +400,7 @@ export default function AdminGradeWeighting() {
               {previewTotal !== null && (
                 <div className={`mt-1.5 text-xs font-medium flex items-center gap-1 ${previewTotal > 100 ? 'text-red-600' : previewTotal === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
                   {previewTotal > 100 ? <AlertCircle className="w-3 h-3" /> : previewTotal === 100 ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                  Running total: {previewTotal}% {previewTotal === 100 ? 'Perfect' : previewTotal > 100 ? '— over limit!' : `— ${(100 - previewTotal).toFixed(0)}% remaining`}
+                  Running total: {previewTotal}% {previewTotal === 100 ? '✓ Perfect' : previewTotal > 100 ? '— over limit!' : `— ${(100 - previewTotal).toFixed(0)}% remaining`}
                 </div>
               )}
             </div>

@@ -8,7 +8,7 @@ const GAMES = [
     name: 'MathSnake',
     description: 'Practice math while playing the classic snake game!',
     url: 'https://mathsnake.schooledupulse.com',
-    icon: Gamepad2,
+    emoji: '🐍',
     tag: 'Math',
   },
 ];
@@ -26,8 +26,8 @@ export default function StudentGames() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {GAMES.map(game => (
           <div key={game.id} className="rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col">
-            <div className="bg-primary/10 flex items-center justify-center h-32">
-              <game.icon className="w-14 h-14 text-primary" aria-hidden="true" />
+            <div className="bg-primary/10 flex items-center justify-center h-32 text-6xl">
+              {game.emoji}
             </div>
             <div className="p-4 flex flex-col flex-1">
               <div className="flex items-center gap-2 mb-1">

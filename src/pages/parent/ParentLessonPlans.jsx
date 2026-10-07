@@ -144,7 +144,7 @@ export default function ParentLessonPlans() {
                 <CardContent className="p-0">
                   {todayHighlight && (
                     <div className="px-4 pt-2.5 pb-0">
-                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Today's Lesson</span>
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">📅 Today's Lesson</span>
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-3 p-4">
@@ -230,7 +230,7 @@ export default function ParentLessonPlans() {
 
                       {plan.homework && (
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <p className="text-xs font-semibold text-amber-700 mb-1">Homework</p>
+                          <p className="text-xs font-semibold text-amber-700 mb-1">📝 Homework</p>
                           <p className="text-sm">{plan.homework}</p>
                         </div>
                       )}
