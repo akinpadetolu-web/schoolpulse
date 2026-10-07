@@ -14,6 +14,19 @@ import { resolveClashes } from '@/lib/timetableClashResolver';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
+// Accept whatever day wording the model returns (any case, or abbreviations).
+const DAY_LOOKUP = {
+  monday: 'Monday', mon: 'Monday',
+  tuesday: 'Tuesday', tue: 'Tuesday', tues: 'Tuesday',
+  wednesday: 'Wednesday', wed: 'Wednesday', weds: 'Wednesday',
+  thursday: 'Thursday', thu: 'Thursday', thur: 'Thursday', thurs: 'Thursday',
+  friday: 'Friday', fri: 'Friday',
+};
+
+function normalizeDay(day) {
+  return DAY_LOOKUP[String(day || '').toLowerCase().replace(/[^a-z]/g, '')] || null;
+}
+
 function toMin(t) {
   const [h, m] = String(t || '').split(':').map(Number);
   return (Number.isNaN(h) ? 0 : h) * 60 + (Number.isNaN(m) ? 0 : m);
@@ -61,7 +74,7 @@ function snapToSlot(time, timeSlots) {
     Math.abs(toMin(s.start) - toMin(time)) < Math.abs(toMin(closest.start) - toMin(time)) ? s : closest);
 }
 
-function buildClassPrompt({ cls, classSubjects, teachers, timeSlots, breakList, userPrompt }) {
+function buildClassPrompt({ cls, classSubjects, teachers, timeSlots, breakList, userPrompt, onlyDays }) {
   const slotBlock = timeSlots.length > 0
     ? `## SCHOOL'S EXISTING DAILY TIME PERIODS (MANDATORY — use ONLY these exact start/end times):
 ${timeSlots.map((s, i) => `Period ${i + 1}: ${s.start} - ${s.end}`).join('\n')}
@@ -77,7 +90,11 @@ This school has no existing periods yet. Follow the time structure described in 
       }).join(', ')).join('\n')
     : 'None specified.';
 
-  return `You are a school timetable scheduling expert. Build a weekly timetable for ONE class, strictly following the user's instructions and using only the school's real data below.
+  const dayBlock = onlyDays && onlyDays.length
+    ? `THIS REQUEST COVERS ONLY THESE DAYS: ${onlyDays.join(', ')}. Return a COMPLETE day of periods for each of those days, and nothing for any other day.`
+    : `Return a COMPLETE week — every period of every one of these five days: ${WEEK_DAYS.join(', ')}.`;
+
+  return `You are a school timetable scheduling expert. Build a timetable for ONE class, strictly following the user's instructions and using only the school's real data below.
 
 ## USER INSTRUCTIONS:
 ${userPrompt || 'Generate a balanced weekly timetable distributing all subjects evenly across the week.'}
@@ -92,6 +109,9 @@ ${JSON.stringify(classSubjects.map(s => ({ id: s.id, name: s.name })), null, 2)}
 ## TEACHERS (with their assignments for this class):
 ${JSON.stringify(teachers, null, 2)}
 
+## DAYS REQUIRED (mandatory):
+${dayBlock}
+
 ${slotBlock}
 
 ## BREAKS (rest periods — never schedule a subject during these times):
@@ -104,6 +124,7 @@ ${breakBlock}
 4. dayOfWeek must be exactly one of: Monday, Tuesday, Wednesday, Thursday, Friday.
 5. Never schedule the same subject more than once on the same day — spread subjects across the week.
 6. Never place a subject that overlaps a break on that day.
+7. Output EVERY entry for EVERY period of EVERY required day. A partial timetable (for example only Monday) is invalid and will be rejected — never give a sample, a summary or a pattern, and never stop early.
 
 ## OUTPUT — return ONLY valid JSON, no markdown:
 {
@@ -119,9 +140,39 @@ ${breakBlock}
       "startTime": "HH:MM",
       "endTime": "HH:MM"
     }
-  ],
-  "warnings": ["string"]
+  ]
 }`;
+}
+
+// One model request for a class — the whole week, or onlyDays for a follow-up.
+async function requestEntries({ cls, classSubjects, teachers, timeSlots, breakList, userPrompt, onlyDays }) {
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt: buildClassPrompt({ cls, classSubjects, teachers, timeSlots, breakList, userPrompt, onlyDays }),
+    response_json_schema: {
+      type: 'object',
+      properties: {
+        entries: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              classId: { type: 'string' },
+              className: { type: 'string' },
+              subjectId: { type: 'string' },
+              subjectName: { type: 'string' },
+              teacherId: { type: 'string' },
+              teacherName: { type: 'string' },
+              dayOfWeek: { type: 'string' },
+              startTime: { type: 'string' },
+              endTime: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  });
+  const data = res?.response || res;
+  return data?.entries || [];
 }
 
 /**
@@ -168,35 +219,18 @@ export async function generateWeeklyTimetable({ schoolId, targetClassIds, prompt
       ? classTeachers
       : (allTeachers || []).map(t => ({ id: t.id, name: t.fullName, teachingAssignments: [], assignedSubjects: [] }));
 
-    let data;
+    let rawEntries = [];
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: buildClassPrompt({ cls, classSubjects, teachers: teachersForPrompt, timeSlots, breakList, userPrompt: prompt }),
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            entries: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  classId: { type: 'string' },
-                  className: { type: 'string' },
-                  subjectId: { type: 'string' },
-                  subjectName: { type: 'string' },
-                  teacherId: { type: 'string' },
-                  teacherName: { type: 'string' },
-                  dayOfWeek: { type: 'string' },
-                  startTime: { type: 'string' },
-                  endTime: { type: 'string' },
-                },
-              },
-            },
-            warnings: { type: 'array', items: { type: 'string' } },
-          },
-        },
-      });
-      data = res?.response || res;
+      rawEntries = await requestEntries({ cls, classSubjects, teachers: teachersForPrompt, timeSlots, breakList, userPrompt: prompt });
+      // The model sometimes answers with only part of the week. Fill every
+      // missing weekday with a focused follow-up so the week is always complete.
+      const missingDays = WEEK_DAYS.filter(d => !rawEntries.some(e => normalizeDay(e.dayOfWeek) === d));
+      if (missingDays.length) {
+        const extras = await Promise.all(missingDays.map(day =>
+          requestEntries({ cls, classSubjects, teachers: teachersForPrompt, timeSlots, breakList, userPrompt: prompt, onlyDays: [day] })
+        ));
+        rawEntries = rawEntries.concat(...extras);
+      }
     } catch (err) {
       warnings.push(`[${cls.className}] Generation failed: ${err?.message || err}`);
       continue;
@@ -210,9 +244,10 @@ export async function generateWeeklyTimetable({ schoolId, targetClassIds, prompt
       }
     }
 
-    for (const e of (data?.entries || [])) {
-      if (!e.subjectId || e.subjectId === '<UNKNOWN>' || !e.dayOfWeek || !e.startTime || !e.endTime) continue;
-      if (!WEEK_DAYS.includes(e.dayOfWeek)) continue;
+    for (const e of rawEntries) {
+      if (!e.subjectId || e.subjectId === '<UNKNOWN>' || !e.startTime || !e.endTime) continue;
+      const day = normalizeDay(e.dayOfWeek);
+      if (!day) continue;
 
       const subject = classSubjects.find(s => s.id === e.subjectId);
       if (!subject) continue; // ignore subjects that don't belong to this class
@@ -224,7 +259,7 @@ export async function generateWeeklyTimetable({ schoolId, targetClassIds, prompt
         if (slot) { start = slot.start; end = slot.end; }
       }
 
-      const key = `${e.dayOfWeek}|${start}`;
+      const key = `${day}|${start}`;
       if (seenDaySlots[key]) continue;
       seenDaySlots[key] = true;
 
@@ -249,13 +284,11 @@ export async function generateWeeklyTimetable({ schoolId, targetClassIds, prompt
         subjectName: subject.name || e.subjectName || '',
         teacherId,
         teacherName,
-        dayOfWeek: e.dayOfWeek,
+        dayOfWeek: day,
         startTime: start,
         endTime: end,
       });
     }
-
-    if (data?.warnings?.length) warnings.push(...data.warnings.map(w => `[${cls.className}] ${w}`));
   }
 
   if (collected.length === 0) {
