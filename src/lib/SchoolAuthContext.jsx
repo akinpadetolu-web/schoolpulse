@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { loadAndApplySchoolBrandColors, clearBrandColors } from '@/lib/brandColors';
 import posthog from '@/lib/posthog';
+import { setPortalScopeUser, clearPortalScope } from '@/lib/portalScope';
 
 const SchoolAuthContext = createContext(null);
 
@@ -61,6 +62,7 @@ export function SchoolAuthProvider({ children }) {
         const user = (users || [])[0];
         if (user && !user.isArchived) {
           const { passwordHash, ...safe } = user;
+          setPortalScopeUser(safe);
           setSchoolUser(safe);
           identifySchoolUser(safe);
           loadAndApplySchoolBrandColors(user.schoolId);
@@ -82,6 +84,7 @@ export function SchoolAuthProvider({ children }) {
     if (schoolUser?.id && schoolUser.id !== safe.id) {
       posthog.reset();
     }
+    setPortalScopeUser(safe);
     setSchoolUser(safe);
     identifySchoolUser(safe);
     writeStoredSession(user);
@@ -90,6 +93,7 @@ export function SchoolAuthProvider({ children }) {
 
   const logout = () => {
     posthog.reset();
+    clearPortalScope();
     setSchoolUser(null);
     clearStoredSession();
     clearBrandColors();

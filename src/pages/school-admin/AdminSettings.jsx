@@ -9,6 +9,7 @@ import CommunicationSettings from '@/components/school/settings/CommunicationSet
 import AcademicQuickLinks from '@/components/school/settings/AcademicQuickLinks';
 import BrandColorsSettings from '@/components/school/settings/BrandColorsSettings';
 import DepartmentsSettings from '@/components/school/settings/DepartmentsSettings';
+import PastSessionAccessSettings from '@/components/school/settings/PastSessionAccessSettings';
 
 export default function AdminSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -61,6 +62,9 @@ export default function AdminSettings() {
 
       {/* Academic Settings Quick Links */}
       <AcademicQuickLinks />
+
+      {/* Past session access for students, parents and teachers */}
+      <PastSessionAccessSettings school={school} onSaved={loadSchool} />
 
       {/* Communication Settings */}
       <CommunicationSettings school={school} onSaved={loadSchool} />

@@ -192,6 +192,24 @@
         "type": "string"
       },
       "description": "School-configured departments for non-teaching staff"
+    },
+    "pastSessionAccess": {
+      "type": "object",
+      "description": "Roles the school has authorized to view records from previous academic sessions. By default students, parents and teachers only see the current session.",
+      "properties": {
+        "student": {
+          "type": "boolean",
+          "default": false
+        },
+        "parent": {
+          "type": "boolean",
+          "default": false
+        },
+        "teacher": {
+          "type": "boolean",
+          "default": false
+        }
+      }
     }
   },
   "required": [

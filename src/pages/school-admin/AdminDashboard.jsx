@@ -13,6 +13,7 @@ import DashboardCustomize, {
 import StudentOverview from '@/components/dashboard/StudentOverview';
 import TeacherOverview from '@/components/dashboard/TeacherOverview';
 import ActivityTrends from '@/components/dashboard/ActivityTrends';
+import { rangeOf, toDate, currentPeriod } from '@/lib/periodUtils';
 
 import {
   startOfDay, endOfDay, subDays, startOfWeek, endOfWeek,
@@ -23,38 +24,6 @@ import {
 // The Sessions page owns the academic calendar: a session or term scopes records
 // purely by its own start/end dates, so a period with no records returns no data
 // instead of falling back to the whole history.
-
-function rangeOf(record) {
-  if (!record?.startDate || !record?.endDate) return null;
-  return { from: startOfDay(new Date(record.startDate)), to: endOfDay(new Date(record.endDate)) };
-}
-
-function termsOfSession(sessions, terms, session) {
-  if (!session) return terms;
-  return terms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear));
-}
-
-// The session and term covering today, plus the ones immediately before them, so
-// "last term" / "last year" resolve against the real calendar.
-function currentPeriod(sessions, terms) {
-  const today = new Date().toISOString().split('T')[0];
-  const covers = (r) => Boolean(r.startDate && r.endDate && r.startDate <= today && r.endDate >= today);
-  const byStart = (a, b) => (a.startDate || '').localeCompare(b.startDate || '');
-  const ordered = [...(sessions || [])].sort(byStart);
-
-  const session = ordered.find(covers) || ordered.find(s => s.isCurrent) || null;
-  const sessionTerms = termsOfSession(ordered, terms || [], session).sort(byStart);
-  const term = sessionTerms.find(covers) || sessionTerms.find(t => t.isCurrent) || null;
-
-  const tIdx = term ? sessionTerms.findIndex(t => t.id === term.id) : -1;
-  const sIdx = session ? ordered.findIndex(s => s.id === session.id) : -1;
-  return {
-    session,
-    term,
-    prevTerm: tIdx > 0 ? sessionTerms[tIdx - 1] : null,
-    prevSession: sIdx > 0 ? ordered[sIdx - 1] : null,
-  };
-}
 
 function getDateRange(f, sessions, terms) {
   const now = new Date();
@@ -74,10 +43,10 @@ function getDateRange(f, sessions, terms) {
   return null;
 }
 
-// The dashboard opens on whichever session/term covers today.
+// The dashboard always opens on the current session; Reset returns to it.
 function resolveCurrentPeriod(sessions, terms) {
-  const { session, term } = currentPeriod(sessions, terms);
-  return { ...DEFAULT_FILTERS, sessionId: session?.id || 'all', term: term?.id || 'all' };
+  const { session } = currentPeriod(sessions, terms);
+  return { ...DEFAULT_FILTERS, sessionId: session?.id || 'all' };
 }
 
 const PASS_MARK = 40;
@@ -108,9 +77,9 @@ function applyFiltersToData(raw, filters) {
   const inDate = (d) => {
     if (!ranges.length) return true;
     if (!d) return false;
-    const t = new Date(d).getTime();
-    if (Number.isNaN(t)) return false;
-    return ranges.every(r => t >= r.from.getTime() && t <= r.to.getTime());
+    const date = toDate(d);
+    if (!date) return false;
+    return ranges.every(r => date >= r.from && date <= r.to);
   };
 
   // Grades only carry lastUpdatedAt once they've been edited — fall back to the
