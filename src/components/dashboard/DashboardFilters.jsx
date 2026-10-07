@@ -77,8 +77,9 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
   const [draft, setDraft] = useState(filters);
   const panelRef = useRef(null);
 
-  // Sync draft when panel opens
-  useEffect(() => { if (panelOpen) setDraft(filters); }, [panelOpen]);
+  // Keep the panel in step with the applied filters — including the current
+  // session/term the dashboard resolves once its data has loaded.
+  useEffect(() => { if (panelOpen) setDraft(filters); }, [panelOpen, filters]);
 
   // Close panel on outside click
   useEffect(() => {

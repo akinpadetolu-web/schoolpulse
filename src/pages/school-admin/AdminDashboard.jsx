@@ -19,7 +19,44 @@ import {
   startOfMonth, endOfMonth, subMonths, subYears, startOfYear, endOfYear,
 } from 'date-fns';
 
-function getDateRange(f) {
+// ── Academic calendar ───────────────────────────────────────────────────────
+// The Sessions page owns the academic calendar: a session or term scopes records
+// purely by its own start/end dates, so a period with no records returns no data
+// instead of falling back to the whole history.
+
+function rangeOf(record) {
+  if (!record?.startDate || !record?.endDate) return null;
+  return { from: startOfDay(new Date(record.startDate)), to: endOfDay(new Date(record.endDate)) };
+}
+
+function termsOfSession(sessions, terms, session) {
+  if (!session) return terms;
+  return terms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear));
+}
+
+// The session and term covering today, plus the ones immediately before them, so
+// "last term" / "last year" resolve against the real calendar.
+function currentPeriod(sessions, terms) {
+  const today = new Date().toISOString().split('T')[0];
+  const covers = (r) => Boolean(r.startDate && r.endDate && r.startDate <= today && r.endDate >= today);
+  const byStart = (a, b) => (a.startDate || '').localeCompare(b.startDate || '');
+  const ordered = [...(sessions || [])].sort(byStart);
+
+  const session = ordered.find(covers) || ordered.find(s => s.isCurrent) || null;
+  const sessionTerms = termsOfSession(ordered, terms || [], session).sort(byStart);
+  const term = sessionTerms.find(covers) || sessionTerms.find(t => t.isCurrent) || null;
+
+  const tIdx = term ? sessionTerms.findIndex(t => t.id === term.id) : -1;
+  const sIdx = session ? ordered.findIndex(s => s.id === session.id) : -1;
+  return {
+    session,
+    term,
+    prevTerm: tIdx > 0 ? sessionTerms[tIdx - 1] : null,
+    prevSession: sIdx > 0 ? ordered[sIdx - 1] : null,
+  };
+}
+
+function getDateRange(f, sessions, terms) {
   const now = new Date();
   if (f.timePeriod === 'today') return { from: startOfDay(now), to: endOfDay(now) };
   if (f.timePeriod === 'yesterday') { const y = subDays(now, 1); return { from: startOfDay(y), to: endOfDay(y) }; }
@@ -27,24 +64,19 @@ function getDateRange(f) {
   if (f.timePeriod === 'last_week') { const lw = subDays(now, 7); return { from: startOfWeek(lw), to: endOfWeek(lw) }; }
   if (f.timePeriod === 'this_month') return { from: startOfMonth(now), to: now };
   if (f.timePeriod === 'last_month') { const lm = subMonths(now, 1); return { from: startOfMonth(lm), to: endOfMonth(lm) }; }
-  if (f.timePeriod === 'this_term') return { from: subMonths(now, 3), to: now };
-  if (f.timePeriod === 'last_term') return { from: subMonths(now, 6), to: subMonths(now, 3) };
-  if (f.timePeriod === 'this_session') return { from: startOfYear(now), to: now };
-  if (f.timePeriod === 'last_session') { const ly = subYears(now, 1); return { from: startOfYear(ly), to: endOfYear(ly) }; }
-  if (f.timePeriod === 'custom' && f.customFrom && f.customTo) return { from: new Date(f.customFrom), to: new Date(f.customTo) };
+  if (f.timePeriod === 'custom' && f.customFrom && f.customTo) return { from: startOfDay(new Date(f.customFrom)), to: endOfDay(new Date(f.customTo)) };
+  // Calendar-backed options read straight from the sessions and terms the school created.
+  const period = currentPeriod(sessions, terms);
+  if (f.timePeriod === 'this_term') return rangeOf(period.term);
+  if (f.timePeriod === 'last_term') return rangeOf(period.prevTerm);
+  if (f.timePeriod === 'this_session') return rangeOf(period.session);
+  if (f.timePeriod === 'last_session') return rangeOf(period.prevSession);
   return null;
 }
 
-// The dashboard opens on whichever session/term covers today, falling back to the
-// ones flagged as current on the Sessions page.
+// The dashboard opens on whichever session/term covers today.
 function resolveCurrentPeriod(sessions, terms) {
-  const today = new Date().toISOString().split('T')[0];
-  const covers = (r) => Boolean(r.startDate && r.endDate && r.startDate <= today && r.endDate >= today);
-  const session = sessions.find(covers) || sessions.find(s => s.isCurrent) || null;
-  const sessionTerms = session
-    ? terms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear))
-    : terms;
-  const term = sessionTerms.find(covers) || sessionTerms.find(t => t.isCurrent) || null;
+  const { session, term } = currentPeriod(sessions, terms);
   return { ...DEFAULT_FILTERS, sessionId: session?.id || 'all', term: term?.id || 'all' };
 }
 
@@ -64,53 +96,42 @@ function gradeRangeFilter(score) {
 }
 
 function applyFiltersToData(raw, filters) {
-  const dr = getDateRange(filters);
+  const allTerms = raw.academicTerms || [];
+  const allSessions = raw.sessions || [];
+
+  const session = filters.sessionId === 'all' ? null : allSessions.find(s => s.id === filters.sessionId) || null;
+  const selectedTerm = filters.term === 'all' ? null : allTerms.find(t => t.id === filters.term) || null;
+
+  // Every active period constrains the record date, so a session or term holding
+  // no records correctly returns no data rather than the whole history.
+  const ranges = [getDateRange(filters, allSessions, allTerms), rangeOf(session), rangeOf(selectedTerm)].filter(Boolean);
   const inDate = (d) => {
-    if (!dr) return true;
+    if (!ranges.length) return true;
     if (!d) return false;
     const t = new Date(d).getTime();
     if (Number.isNaN(t)) return false;
-    return t >= dr.from.getTime() && t <= dr.to.getTime();
+    return ranges.every(r => t >= r.from.getTime() && t <= r.to.getTime());
   };
 
   // Grades only carry lastUpdatedAt once they've been edited — fall back to the
   // record timestamps so date filters don't discard untouched grades.
   const gradeDate = (g) => g.lastUpdatedAt || g.updated_date || g.created_date;
-
-  // ── Session & term scope ──────────────────────────────────────────────────
-  // Grades are stamped with the term as free text, so sessions and terms are
-  // matched on a normalised key ("First Term" / "1st Term" / "Term 1" → "1").
-  const termKey = (value) => {
-    const t = (value || '').toLowerCase();
-    if (/\b(first|1st)\b/.test(t) || /\bterm\s*1\b/.test(t)) return '1';
-    if (/\b(second|2nd)\b/.test(t) || /\bterm\s*2\b/.test(t)) return '2';
-    if (/\b(third|3rd)\b/.test(t) || /\bterm\s*3\b/.test(t)) return '3';
-    return t.replace(/[^a-z0-9]/g, '');
-  };
-  const allTerms = raw.academicTerms || [];
-
-  // A session covers the terms recorded under it (linked by sessionId, or by
-  // academic year for terms created before the link existed).
-  const session = filters.sessionId === 'all'
-    ? null
-    : (raw.sessions || []).find(s => s.id === filters.sessionId) || null;
-  const sessionTerms = session
-    ? allTerms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear))
-    : [];
-  const sessionKeys = session && sessionTerms.length
-    ? new Set(sessionTerms.map(t => termKey(t.name)))
-    : null;
-
-  const selectedTerm = filters.term === 'all' ? null : allTerms.find(t => t.id === filters.term) || null;
-  const termKeyValue = selectedTerm ? termKey(selectedTerm.name) : null;
+  const assignDate = (a) => a.dueDate || a.created_date;
 
   let grades = raw.grades;
   if (filters.classId !== 'all') grades = grades.filter(g => g.classId === filters.classId);
   if (filters.subjectId !== 'all') grades = grades.filter(g => g.subjectId === filters.subjectId);
   if (filters.teacherId !== 'all') grades = grades.filter(g => g.teacherId === filters.teacherId);
-  if (sessionKeys) grades = grades.filter(g => sessionKeys.has(termKey(g.term)));
-  if (termKeyValue) grades = grades.filter(g => termKey(g.term) === termKeyValue);
-  if (dr) grades = grades.filter(g => inDate(gradeDate(g)));
+  if (ranges.length) grades = grades.filter(g => inDate(gradeDate(g)));
+
+  // Assignments and their submissions follow the same period, so orphaned
+  // submissions never inflate the counts.
+  let assignments = raw.assignments;
+  if (filters.classId !== 'all') assignments = assignments.filter(a => a.classId === filters.classId);
+  if (filters.teacherId !== 'all') assignments = assignments.filter(a => a.teacherId === filters.teacherId);
+  if (ranges.length) assignments = assignments.filter(a => inDate(assignDate(a)));
+  const assignmentIds = new Set(assignments.map(a => a.id));
+  const submissions = raw.submissions.filter(s => assignmentIds.has(s.assignmentId));
 
   let students = raw.students;
   if (filters.classId !== 'all') students = students.filter(s => s.classId === filters.classId);
@@ -139,13 +160,12 @@ function applyFiltersToData(raw, filters) {
 
   let attendance = raw.attendance;
   if (filters.classId !== 'all') attendance = attendance.filter(a => a.classId === filters.classId);
-  if (dr) attendance = attendance.filter(a => inDate(a.date));
+  if (ranges.length) attendance = attendance.filter(a => inDate(a.date));
 
   // Attendance range filter (per-student attendance rate)
   if (filters.attendanceRange !== 'all') {
     const attMap = {};
-    raw.attendance.forEach(a => {
-      if (filters.classId !== 'all' && a.classId !== filters.classId) return;
+    attendance.forEach(a => {
       if (!attMap[a.studentId]) attMap[a.studentId] = { total: 0, present: 0 };
       attMap[a.studentId].total++;
       if (a.status === 'present') attMap[a.studentId].present++;
@@ -165,16 +185,11 @@ function applyFiltersToData(raw, filters) {
   // Assignment submission status filter (per-student)
   if (filters.assignmentStatus !== 'all') {
     const classAssignCount = {};
-    raw.assignments.forEach(a => {
-      if (filters.classId !== 'all' && a.classId !== filters.classId) return;
-      if (filters.teacherId !== 'all' && a.teacherId !== filters.teacherId) return;
+    assignments.forEach(a => {
       classAssignCount[a.classId] = (classAssignCount[a.classId] || 0) + 1;
     });
     const subMap = {};
-    raw.submissions.forEach(sub => {
-      const assign = raw.assignments.find(a => a.id === sub.assignmentId);
-      if (!assign) return;
-      if (filters.classId !== 'all' && assign.classId !== filters.classId) return;
+    submissions.forEach(sub => {
       if (!subMap[sub.studentId]) subMap[sub.studentId] = { submitted: 0, late: 0 };
       subMap[sub.studentId].submitted++;
       if (sub.isLate) subMap[sub.studentId].late++;
@@ -189,18 +204,10 @@ function applyFiltersToData(raw, filters) {
     });
   }
 
-  let assignments = raw.assignments;
-  if (filters.classId !== 'all') assignments = assignments.filter(a => a.classId === filters.classId);
-  if (filters.teacherId !== 'all') assignments = assignments.filter(a => a.teacherId === filters.teacherId);
-  if (filters.term !== 'all') {
-    const termMap = { first: 'first', second: 'second', third: 'third' };
-    if (termMap[filters.term]) assignments = assignments.filter(a => a.term?.toLowerCase().includes(filters.term));
-  }
-
   let teachers = raw.teachers;
   if (filters.teacherId !== 'all') teachers = teachers.filter(t => t.id === filters.teacherId);
 
-  return { ...raw, grades, students, teachers, attendance, assignments };
+  return { ...raw, grades, students, teachers, attendance, assignments, submissions };
 }
 
 function useLocalPref(key, def) {
