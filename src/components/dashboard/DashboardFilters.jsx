@@ -20,6 +20,8 @@ export const DEFAULT_FILTERS = {
   assignmentStatus: 'all',
 };
 
+const CALENDAR_PERIODS = ['this_term', 'last_term', 'this_session', 'last_session'];
+
 // Human-readable labels for active chips
 const FILTER_LABELS = {
   timePeriod: {
@@ -85,6 +87,9 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
   useEffect(() => {
     if (!panelOpen) return;
     function handleClick(e) {
+      // Dropdown lists render in a portal outside the panel — picking an option
+      // there is not an outside click.
+      if (e.target.closest?.('[role="listbox"], [role="option"], [data-radix-popper-content-wrapper]')) return;
       if (panelRef.current && !panelRef.current.contains(e.target)) setPanelOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
@@ -108,8 +113,24 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
     onApply && onApply(next);
   }
 
+  // Calendar-backed periods (e.g. Last Term) replace the Session/Term pickers and
+  // vice versa, so the two never intersect into an empty result.
   function updateDraft(key, val) {
-    setDraft(d => ({ ...d, [key]: val }));
+    setDraft(d => {
+      const next = { ...d, [key]: val };
+      if (key === 'timePeriod' && CALENDAR_PERIODS.includes(val)) { next.sessionId = 'all'; next.term = 'all'; }
+      if (key === 'term' && val !== 'all' && CALENDAR_PERIODS.includes(d.timePeriod)) next.timePeriod = 'all';
+      return next;
+    });
+  }
+
+  function selectSession(val) {
+    setDraft(d => ({
+      ...d,
+      sessionId: val,
+      term: 'all',
+      timePeriod: val !== 'all' && CALENDAR_PERIODS.includes(d.timePeriod) ? 'all' : d.timePeriod,
+    }));
   }
 
   // Apply the panel draft (used by the in-panel Apply button)
@@ -247,10 +268,7 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground mb-1">Session</p>
-                  <Select
-                    value={draft.sessionId}
-                    onValueChange={v => setDraft(d => ({ ...d, sessionId: v, term: 'all' }))}
-                  >
+                  <Select value={draft.sessionId} onValueChange={selectSession}>
                     <SelectTrigger className={selCls}><SelectValue placeholder="Session" /></SelectTrigger>
                     <SelectContent className={cntCls}>
                       <SelectItem value="all">All Sessions</SelectItem>
