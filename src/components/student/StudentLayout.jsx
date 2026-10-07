@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import SepLoader from '@/components/common/SepLoader';
 import StudentSidebar from './StudentSidebar';
 import HeaderUserMenu from '@/components/common/HeaderUserMenu';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export default function StudentLayout() {
     if (!isLoadingSchoolAuth && (!user || user.role !== "student")) navigate("/");
   }, [user, isLoadingSchoolAuth, navigate]);
 
-  if (isLoadingSchoolAuth) return <div className="fixed inset-0 flex items-center justify-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
+  if (isLoadingSchoolAuth) return <SepLoader />;
   if (!user || user.role !== "student") return null;
 
   return (
@@ -51,8 +52,8 @@ export default function StudentLayout() {
       <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
-          className="sticky top-0 z-30 backdrop-blur-sm border-b h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
-          style={{ paddingTop: 'env(safe-area-inset-top)', backgroundColor: 'var(--topbar-bg, hsl(var(--card)))', color: 'var(--topbar-text, hsl(var(--foreground)))' }}
+          className="sticky top-0 z-30 glass-bar h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
+          style={{ paddingTop: 'env(safe-area-inset-top)', backgroundColor: 'var(--topbar-bg, transparent)', color: 'var(--topbar-text, hsl(var(--foreground)))' }}
         >
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>

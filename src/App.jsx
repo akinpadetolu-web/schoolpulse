@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 
 import { SchoolAuthProvider } from '@/lib/SchoolAuthContext';
+import { SepInlineLoader } from '@/components/common/SepLoader';
 import FeatureGuard from '@/components/school/FeatureGuard';
 
 import InstallPrompt from '@/components/pwa/InstallPrompt';
@@ -169,11 +170,7 @@ const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
 const ParentCalendar = lazy(() => import('./pages/parent/ParentCalendar'));
 
 function PageLoader() {
-  return (
-    <div className="flex items-center justify-center h-full w-full py-20">
-      <div className="w-8 h-8 border-4 border-slate-200 border-t-primary rounded-full animate-spin" />
-    </div>
-  );
+  return <SepInlineLoader />;
 }
 
 const AuthenticatedApp = () => {

@@ -42,6 +42,11 @@ module.exports = {
           ring: 'hsl(var(--sidebar-ring))',
         },
       },
+      boxShadow: {
+        glass: '0 8px 30px rgba(2, 6, 23, 0.45)',
+        'glass-lg': '0 24px 60px rgba(2, 6, 23, 0.55)',
+        glow: '0 6px 24px rgba(56, 189, 248, 0.25)',
+      },
       keyframes: {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
         'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } },

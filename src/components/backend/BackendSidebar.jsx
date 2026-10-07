@@ -60,8 +60,8 @@ export default function BackendSidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} />}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {isOpen && <div className="fixed inset-0 z-40 md:hidden bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />}
+      <aside className={`fixed top-0 left-0 h-full w-64 glass-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
@@ -89,8 +89,8 @@ export default function BackendSidebar({ isOpen, onClose }) {
                     onClick={onClose}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.path)
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                        ? 'bg-white/[0.12] text-white shadow-glass ring-1 ring-inset ring-sky-400/30'
+                        : 'text-sidebar-foreground/70 hover:bg-white/[0.07] hover:text-sidebar-foreground'
                     }`}
                   >
                     <item.icon className="w-4 h-4 shrink-0" />

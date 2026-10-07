@@ -59,8 +59,8 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
                     onClick={onItemClick}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] ${
                       isActive(item.path)
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                        ? 'bg-white/[0.12] text-white shadow-glass ring-1 ring-inset ring-sky-400/30'
+                        : 'text-sidebar-foreground/70 hover:bg-white/[0.07] hover:text-sidebar-foreground'
                     }`}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />

@@ -4,79 +4,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   SEP — School Educational Pulse
+   Premium glassmorphism design system.
+   Deep navy shell, translucent glass surfaces, soft blue/cyan accents.
+   ========================================================================== */
+
 @layer base {
   :root {
     --font-inter: 'Inter', sans-serif;
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 225 73% 57%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 225 73% 57%;
-    --chart-1: 225 73% 57%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.625rem;
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 225 73% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 15%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 225 73% 57%;
-  }
 
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 225 73% 57%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 14%;
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    --card: 222 40% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 89% 60%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 96%;
-    --muted: 222 47% 14%;
-    --muted-foreground: 215 16% 57%;
-    --accent: 222 47% 14%;
-    --accent-foreground: 210 40% 96%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 225 73% 57%;
-    --chart-1: 225 73% 57%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 222 47% 6%;
+    --muted: 217 33% 16%;
+    --muted-foreground: 215 25% 72%;
+    --accent: 217 33% 20%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 30% 26%;
+    --input: 216 30% 26%;
+    --ring: 199 89% 60%;
+    --chart-1: 199 89% 60%;
+    --chart-2: 160 70% 50%;
+    --chart-3: 38 92% 62%;
+    --chart-4: 265 80% 70%;
+    --chart-5: 340 80% 66%;
+    --radius: 0.9rem;
+    --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 225 73% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 11%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 47% 14%;
-    --sidebar-ring: 225 73% 57%;
+    --sidebar-primary: 199 89% 60%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 217 33% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 216 30% 24%;
+    --sidebar-ring: 199 89% 60%;
+
+    /* Glass surface tokens — components read these so the light sign-in
+       portal can swap them for solid surfaces without touching markup. */
+    --surface-bg: rgba(255, 255, 255, 0.06);
+    --surface-border: rgba(255, 255, 255, 0.12);
+    --surface-strong-bg: rgba(255, 255, 255, 0.1);
+    --surface-strong-border: rgba(255, 255, 255, 0.16);
+    --surface-menu-bg: rgba(15, 23, 42, 0.9);
+    --surface-hover: rgba(255, 255, 255, 0.1);
   }
 
+  /* The shell is always the navy glass theme — dark mode simply matches it. */
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    --card: 222 40% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 44% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 89% 60%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 16%;
+    --muted-foreground: 215 25% 72%;
+    --accent: 217 33% 20%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 30% 26%;
+    --input: 216 30% 26%;
+    --ring: 199 89% 60%;
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 199 89% 60%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 217 33% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 216 30% 24%;
+    --sidebar-ring: 199 89% 60%;
+  }
+
+  /* Sign-in portal keeps its consistent light branding. */
   .force-light {
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
@@ -97,6 +110,13 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 225 73% 57%;
+    background-image: none;
+    --surface-bg: #ffffff;
+    --surface-border: hsl(214 32% 91%);
+    --surface-strong-bg: #ffffff;
+    --surface-strong-border: hsl(214 32% 91%);
+    --surface-menu-bg: #ffffff;
+    --surface-hover: hsl(210 40% 96%);
   }
 }
 
@@ -104,8 +124,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground font-inter;
+    background-image:
+      radial-gradient(900px 620px at 10% -12%, rgba(56, 189, 248, 0.13), transparent 62%),
+      radial-gradient(820px 520px at 102% -4%, rgba(59, 130, 246, 0.12), transparent 58%),
+      radial-gradient(760px 700px at 50% 118%, rgba(14, 165, 233, 0.09), transparent 62%);
+    background-attachment: fixed;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -160,5 +186,127 @@
   #root {
     height: 100%;
     overflow: hidden;
+  }
+
+  ::selection {
+    background: rgba(56, 189, 248, 0.3);
+  }
+}
+
+@layer components {
+  /* ---- Glass surfaces ------------------------------------------------- */
+  .glass {
+    background-color: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  .glass-strong {
+    background-color: var(--surface-strong-bg);
+    border: 1px solid var(--surface-strong-border);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+  }
+
+  .glass-sidebar {
+    background-color: var(--surface-bg);
+    border-right: 1px solid var(--surface-border);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+  }
+
+  .glass-bar {
+    background-color: var(--surface-bg);
+    border-bottom: 1px solid var(--surface-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* ---- Skeleton shimmer ---------------------------------------------- */
+  .sep-skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+  }
+
+  .sep-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.09) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: sep-shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* ---- Splash / aurora ------------------------------------------------ */
+  .sep-aurora {
+    background-image: radial-gradient(620px 420px at 50% 32%, rgba(56, 189, 248, 0.16), transparent 70%);
+    animation: sep-aurora 3.4s ease-in-out infinite;
+  }
+
+  .sep-loading-bar {
+    animation: sep-bar 1.3s ease-in-out infinite;
+  }
+}
+
+/* Scrollbars ------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+  background-clip: content-box;
+}
+
+/* Keyframes -------------------------------------------------------------- */
+@keyframes sep-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sep-aurora {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes sep-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sep-skeleton::after,
+  .sep-aurora,
+  .sep-loading-bar {
+    animation: none;
   }
 }

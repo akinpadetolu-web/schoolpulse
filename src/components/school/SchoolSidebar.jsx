@@ -260,11 +260,11 @@ export default function SchoolSidebar({ isOpen, onClose }) {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 z-40 md:hidden bg-slate-950/60 backdrop-blur-sm"
           onClick={onClose}
         />
       )}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 h-full w-64 glass-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />

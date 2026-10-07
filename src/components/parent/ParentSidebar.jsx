@@ -83,12 +83,12 @@ export default function ParentSidebar({ isOpen, onClose }) {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 z-40 md:hidden bg-slate-950/60 backdrop-blur-sm"
           onClick={onClose}
         />
       )}
       <aside className={cn(
-        "fixed top-0 left-0 h-full w-64 bg-sidebar text-sidebar-foreground flex flex-col z-50",
+        "fixed top-0 left-0 h-full w-64 glass-sidebar text-sidebar-foreground flex flex-col z-50",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "md:relative md:translate-x-0 md:z-auto md:flex-shrink-0"
