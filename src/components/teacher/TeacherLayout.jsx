@@ -52,7 +52,7 @@ export default function TeacherLayout() {
   if (!user || user.role !== "teacher") return null;
 
   return (
-    <div className="flex flex-col md:flex-row bg-background" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="flex flex-col md:flex-row" data-glass="strong" style={{ height: '100dvh', overflow: 'hidden' }}>
       <MemoTeacherSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header

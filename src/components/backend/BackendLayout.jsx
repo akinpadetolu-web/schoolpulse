@@ -50,7 +50,7 @@ export default function BackendLayout() {
   })();
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row">
+    <div className="h-screen overflow-hidden flex flex-col md:flex-row" data-glass="soft">
       <BackendSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="glass-bar h-14 flex items-center justify-between px-4 md:px-8 shrink-0 z-20">

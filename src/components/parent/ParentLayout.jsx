@@ -48,7 +48,7 @@ export default function ParentLayout() {
   if (!user || user.role !== "parent") return null;
 
   return (
-    <div className="flex flex-col md:flex-row bg-background" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="flex flex-col md:flex-row" data-glass="medium" style={{ height: '100dvh', overflow: 'hidden' }}>
       <ParentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header

@@ -10,14 +10,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3),0_1px_2px_rgba(15,23,42,0.18),0_4px_12px_-4px_rgba(37,99,235,0.5)] hover:bg-primary/90 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35),0_2px_4px_rgba(15,23,42,0.2),0_8px_20px_-6px_rgba(37,99,235,0.55)]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.28),0_1px_2px_rgba(15,23,42,0.18)] hover:bg-destructive/90",
         outline:
-          "border border-input bg-card text-foreground hover:bg-slate-100 hover:text-foreground",
+          "border border-white/60 bg-card/75 backdrop-blur-sm text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85),0_1px_2px_rgba(15,23,42,0.06)] hover:bg-slate-100 hover:text-foreground",
         secondary:
-          "border border-input bg-slate-100 text-slate-700 hover:bg-slate-200",
-        ghost: "hover:bg-slate-100 hover:text-foreground",
+          "border border-white/60 bg-slate-100/80 backdrop-blur-sm text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),0_1px_2px_rgba(15,23,42,0.05)] hover:bg-slate-200",
+        ghost: "hover:bg-slate-100/70 hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

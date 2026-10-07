@@ -43,8 +43,10 @@ module.exports = {
         },
       },
       boxShadow: {
-        glass: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -14px rgba(15, 23, 42, 0.14)',
-        'glass-lg': '0 12px 40px -16px rgba(15, 23, 42, 0.24)',
+        glass: '0 0 0 1px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 8px 26px -14px rgba(15, 23, 42, 0.2)',
+        'glass-lg': '0 0 0 1px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 16px 44px -18px rgba(15, 23, 42, 0.28)',
+        'glass-inset': 'inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(15, 23, 42, 0.05)',
+        'glass-raised': '0 0 0 1px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 18px -10px rgba(15, 23, 42, 0.22)',
         glow: '0 6px 18px -8px rgba(37, 99, 235, 0.45)',
       },
       keyframes: {

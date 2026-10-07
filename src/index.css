@@ -56,6 +56,16 @@
     --surface-strong-border: hsl(214 32% 91%);
     --surface-menu-bg: #ffffff;
     --surface-hover: hsl(210 40% 96%);
+
+    /* Glass-morphism controls. These tune translucency, blur, contour and
+       lift only — never the colour itself. Overridden per page via the
+       data-glass attribute on the shell root. */
+    --glass-blur: 16px;
+    --glass-saturate: 160%;
+    --glass-alpha: 0.64;
+    --glass-lift: 10px;
+    --glass-sheen: 0.72;
+    --glass-ring: 0.06;
   }
 }
 
@@ -66,6 +76,13 @@
 
   body {
     @apply bg-background text-foreground font-inter;
+    /* Ambient depth behind the glass — drawn from the existing primary hue
+       at very low opacity so the palette is untouched. */
+    background-image:
+      radial-gradient(1200px 720px at 8% -12%, hsl(var(--primary) / 0.12), transparent 62%),
+      radial-gradient(900px 620px at 102% 0%, hsl(var(--primary) / 0.09), transparent 58%),
+      radial-gradient(820px 820px at 50% 128%, hsl(var(--primary) / 0.07), transparent 62%);
+    background-attachment: fixed;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -128,27 +145,92 @@
 }
 
 @layer components {
-  /* ---- Surfaces -------------------------------------------------------
-     Solid panels with a crisp hairline border. The class names are used
-     across the shell (sidebars, headers, cards) so they stay in place. */
-  .glass {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+  /* ---- Glass surfaces -------------------------------------------------
+     Colour-preserving glass. Each panel keeps its existing colour token —
+     it is only made translucent, then given contour (edge light), depth
+     (layered shadow) and a soft top sheen. Intensity comes from the
+     --glass-* variables set per page. */
+  .glass,
+  .glass-strong,
+  .glass-card {
+    background-color: hsl(var(--card) / var(--glass-alpha));
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, var(--glass-sheen)) 0%,
+      rgba(255, 255, 255, 0) 42%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, var(--glass-ring)),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(15, 23, 42, 0.04),
+      0 var(--glass-lift) calc(var(--glass-lift) * 2.6) calc(var(--glass-lift) * -1) rgba(15, 23, 42, 0.2),
+      0 2px 6px -2px rgba(15, 23, 42, 0.08);
   }
 
   .glass-strong {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+    --glass-alpha: 0.52;
+    --glass-sheen: 0.92;
   }
 
   .glass-sidebar {
-    background-color: hsl(var(--sidebar-background));
-    border-right: 1px solid hsl(var(--border));
+    background-color: hsl(var(--sidebar-background) / var(--glass-alpha));
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, calc(var(--glass-sheen) + 0.1)) 0%,
+      rgba(255, 255, 255, 0) 55%
+    );
+    border-right: 1px solid rgba(255, 255, 255, 0.5);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, var(--glass-ring)),
+      inset -1px 0 0 rgba(15, 23, 42, 0.04),
+      0 10px 30px -14px rgba(15, 23, 42, 0.22);
   }
 
   .glass-bar {
-    background-color: hsl(var(--card));
-    border-bottom: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card) / var(--glass-alpha));
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, calc(var(--glass-sheen) + 0.15)) 0%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, var(--glass-ring)),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 6px 20px -14px rgba(15, 23, 42, 0.28);
+  }
+
+  /* Per-page glass intensity. The shell root carries data-glass so the
+     whole portal shifts together, while the palette stays identical. */
+  [data-glass="soft"] {
+    --glass-blur: 10px;
+    --glass-alpha: 0.76;
+    --glass-lift: 6px;
+    --glass-sheen: 0.5;
+    --glass-ring: 0.05;
+  }
+
+  [data-glass="medium"] {
+    --glass-blur: 16px;
+    --glass-alpha: 0.64;
+    --glass-lift: 10px;
+    --glass-sheen: 0.72;
+    --glass-ring: 0.06;
+  }
+
+  [data-glass="strong"] {
+    --glass-blur: 26px;
+    --glass-alpha: 0.52;
+    --glass-lift: 14px;
+    --glass-sheen: 0.95;
+    --glass-ring: 0.08;
   }
 
   /* ---- Skeleton shimmer ---------------------------------------------- */
