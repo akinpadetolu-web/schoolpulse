@@ -13,7 +13,7 @@ export const DEFAULT_FILTERS = {
   studentGroup: 'all',
   gender: 'all',
   term: 'all',
-  academicYear: 'all',
+  sessionId: 'all',
   gradeRange: 'all',
   passFailStatus: 'all',
   attendanceRange: 'all',
@@ -36,7 +36,7 @@ const FILTER_LABELS = {
   assignmentStatus: { submitted: 'Submitted', not_submitted: 'Not Submitted', late: 'Late' },
 };
 
-function getActiveChips(filters, classes, subjects, teachers, academicTerms) {
+function getActiveChips(filters, classes, subjects, teachers, academicTerms, sessions) {
   const chips = [];
   const add = (key, label) => chips.push({ key, label });
 
@@ -45,7 +45,10 @@ function getActiveChips(filters, classes, subjects, teachers, academicTerms) {
     const termLabel = FILTER_LABELS.term[filters.term] || (academicTerms || []).find(t => t.id === filters.term)?.name || filters.term;
     add('term', termLabel);
   }
-  if (filters.academicYear !== 'all') add('academicYear', filters.academicYear);
+  if (filters.sessionId !== 'all') {
+    const ses = (sessions || []).find(s => s.id === filters.sessionId);
+    add('sessionId', ses?.name || ses?.academicYear || filters.sessionId);
+  }
   if (filters.classId !== 'all') {
     const cls = (classes || []).find(c => c.id === filters.classId);
     add('classId', cls?.className || filters.classId);
@@ -68,7 +71,7 @@ function getActiveChips(filters, classes, subjects, teachers, academicTerms) {
   return chips;
 }
 
-export default function DashboardFilters({ filters, setFilters, classes, subjects, teachers, academicTerms, onApply, onReset }) {
+export default function DashboardFilters({ filters, setFilters, classes, subjects, teachers, academicTerms, sessions, onApply, onReset }) {
   const [panelOpen, setPanelOpen] = useState(false);
   // Local draft state inside the panel — only committed on Apply
   const [draft, setDraft] = useState(filters);
@@ -87,8 +90,16 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
     return () => document.removeEventListener('mousedown', handleClick);
   }, [panelOpen]);
 
-  const activeChips = getActiveChips(filters, classes, subjects, teachers, academicTerms);
+  const activeChips = getActiveChips(filters, classes, subjects, teachers, academicTerms, sessions);
   const activeCount = activeChips.length;
+
+  // Terms follow the selected session, so the two dropdowns stay in step.
+  const visibleTerms = (academicTerms || []).filter(t => {
+    if (draft.sessionId === 'all') return true;
+    const ses = (sessions || []).find(s => s.id === draft.sessionId);
+    if (!ses) return true;
+    return t.sessionId === ses.id || (!t.sessionId && t.academicYear === ses.academicYear);
+  });
 
   function removeChip(key) {
     const next = { ...filters, [key]: DEFAULT_FILTERS[key] };
@@ -229,22 +240,22 @@ export default function DashboardFilters({ filters, setFilters, classes, subject
                     <SelectTrigger className={selCls}><SelectValue placeholder="Term" /></SelectTrigger>
                     <SelectContent className={cntCls}>
                       <SelectItem value="all">All Terms</SelectItem>
-                      <SelectItem value="first">First Term</SelectItem>
-                      <SelectItem value="second">Second Term</SelectItem>
-                      <SelectItem value="third">Third Term</SelectItem>
-                      {(academicTerms || []).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                      {visibleTerms.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-1">Academic Year</p>
-                  <Select value={draft.academicYear} onValueChange={v => updateDraft('academicYear', v)}>
-                    <SelectTrigger className={selCls}><SelectValue placeholder="Academic Year" /></SelectTrigger>
+                  <p className="text-[10px] text-muted-foreground mb-1">Session</p>
+                  <Select
+                    value={draft.sessionId}
+                    onValueChange={v => setDraft(d => ({ ...d, sessionId: v, term: 'all' }))}
+                  >
+                    <SelectTrigger className={selCls}><SelectValue placeholder="Session" /></SelectTrigger>
                     <SelectContent className={cntCls}>
-                      <SelectItem value="all">All Years</SelectItem>
-                      <SelectItem value="2025-2026">2025-2026</SelectItem>
-                      <SelectItem value="2024-2025">2024-2025</SelectItem>
-                      <SelectItem value="2023-2024">2023-2024</SelectItem>
+                      <SelectItem value="all">All Sessions</SelectItem>
+                      {(sessions || []).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name || s.academicYear}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -35,6 +35,19 @@ function getDateRange(f) {
   return null;
 }
 
+// The dashboard opens on whichever session/term covers today, falling back to the
+// ones flagged as current on the Sessions page.
+function resolveCurrentPeriod(sessions, terms) {
+  const today = new Date().toISOString().split('T')[0];
+  const covers = (r) => Boolean(r.startDate && r.endDate && r.startDate <= today && r.endDate >= today);
+  const session = sessions.find(covers) || sessions.find(s => s.isCurrent) || null;
+  const sessionTerms = session
+    ? terms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear))
+    : terms;
+  const term = sessionTerms.find(covers) || sessionTerms.find(t => t.isCurrent) || null;
+  return { ...DEFAULT_FILTERS, sessionId: session?.id || 'all', term: term?.id || 'all' };
+}
+
 const PASS_MARK = 40;
 function gradeScore(g) { return (g.score / (g.maxScore || 100)) * 100; }
 
@@ -52,33 +65,21 @@ function gradeRangeFilter(score) {
 
 function applyFiltersToData(raw, filters) {
   const dr = getDateRange(filters);
-
-  // Academic year → additional date range (Sept of start year → Aug of end year)
-  let yearDr = null;
-  if (filters.academicYear !== 'all') {
-    const m = filters.academicYear.match(/^(\d{4})-(\d{4})$/);
-    if (m) yearDr = { from: new Date(Number(m[1]), 8, 1), to: new Date(Number(m[2]), 7, 31, 23, 59, 59) };
-  }
   const inDate = (d) => {
-    if (!dr && !yearDr) return true;
+    if (!dr) return true;
     if (!d) return false;
     const t = new Date(d).getTime();
     if (Number.isNaN(t)) return false;
-    if (dr && (t < dr.from.getTime() || t > dr.to.getTime())) return false;
-    if (yearDr && (t < yearDr.from.getTime() || t > yearDr.to.getTime())) return false;
-    return true;
+    return t >= dr.from.getTime() && t <= dr.to.getTime();
   };
 
   // Grades only carry lastUpdatedAt once they've been edited — fall back to the
   // record timestamps so date filters don't discard untouched grades.
   const gradeDate = (g) => g.lastUpdatedAt || g.updated_date || g.created_date;
 
-  // The term picker offers the school's own term records (by id) plus the generic
-  // first/second/third shortcuts, while grades store the term as free text — so
-  // both sides are reduced to a comparable key ("First Term" / "1st Term" / "Term 1").
-  const termName = filters.term === 'all'
-    ? null
-    : ((raw.academicTerms || []).find(t => t.id === filters.term)?.name || filters.term);
+  // ── Session & term scope ──────────────────────────────────────────────────
+  // Grades are stamped with the term as free text, so sessions and terms are
+  // matched on a normalised key ("First Term" / "1st Term" / "Term 1" → "1").
   const termKey = (value) => {
     const t = (value || '').toLowerCase();
     if (/\b(first|1st)\b/.test(t) || /\bterm\s*1\b/.test(t)) return '1';
@@ -86,14 +87,30 @@ function applyFiltersToData(raw, filters) {
     if (/\b(third|3rd)\b/.test(t) || /\bterm\s*3\b/.test(t)) return '3';
     return t.replace(/[^a-z0-9]/g, '');
   };
-  const termKeyValue = termName ? termKey(termName) : null;
+  const allTerms = raw.academicTerms || [];
+
+  // A session covers the terms recorded under it (linked by sessionId, or by
+  // academic year for terms created before the link existed).
+  const session = filters.sessionId === 'all'
+    ? null
+    : (raw.sessions || []).find(s => s.id === filters.sessionId) || null;
+  const sessionTerms = session
+    ? allTerms.filter(t => t.sessionId === session.id || (!t.sessionId && t.academicYear === session.academicYear))
+    : [];
+  const sessionKeys = session && sessionTerms.length
+    ? new Set(sessionTerms.map(t => termKey(t.name)))
+    : null;
+
+  const selectedTerm = filters.term === 'all' ? null : allTerms.find(t => t.id === filters.term) || null;
+  const termKeyValue = selectedTerm ? termKey(selectedTerm.name) : null;
 
   let grades = raw.grades;
   if (filters.classId !== 'all') grades = grades.filter(g => g.classId === filters.classId);
   if (filters.subjectId !== 'all') grades = grades.filter(g => g.subjectId === filters.subjectId);
   if (filters.teacherId !== 'all') grades = grades.filter(g => g.teacherId === filters.teacherId);
+  if (sessionKeys) grades = grades.filter(g => sessionKeys.has(termKey(g.term)));
   if (termKeyValue) grades = grades.filter(g => termKey(g.term) === termKeyValue);
-  if (dr || yearDr) grades = grades.filter(g => inDate(gradeDate(g)));
+  if (dr) grades = grades.filter(g => inDate(gradeDate(g)));
 
   let students = raw.students;
   if (filters.classId !== 'all') students = students.filter(s => s.classId === filters.classId);
@@ -122,7 +139,7 @@ function applyFiltersToData(raw, filters) {
 
   let attendance = raw.attendance;
   if (filters.classId !== 'all') attendance = attendance.filter(a => a.classId === filters.classId);
-  if (dr || yearDr) attendance = attendance.filter(a => inDate(a.date));
+  if (dr) attendance = attendance.filter(a => inDate(a.date));
 
   // Attendance range filter (per-student attendance rate)
   if (filters.attendanceRange !== 'all') {
@@ -204,16 +221,18 @@ export default function AdminDashboard() {
 
   const [pendingFilters, setPendingFilters] = useState(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
+  // Current session/term — what the dashboard opens on and what Reset returns to.
+  const [baseFilters, setBaseFilters] = useState(DEFAULT_FILTERS);
 
   // Raw data
-  const [raw, setRaw] = useState({ students: [], grades: [], classes: [], subjects: [], teachers: [], attendance: [], assignments: [], submissions: [], staffAttendance: [], academicTerms: [], gradeCategories: [] });
+  const [raw, setRaw] = useState({ students: [], grades: [], classes: [], subjects: [], teachers: [], attendance: [], assignments: [], submissions: [], staffAttendance: [], academicTerms: [], gradeCategories: [], sessions: [] });
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     if (!schoolId) { setLoading(false); return; }
     async function load() {
-      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms, gradeCategories] = await Promise.all([
+      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms, gradeCategories, sessions] = await Promise.all([
         base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
         base44.entities.Grade.filter({ schoolId }),
         base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
@@ -225,8 +244,16 @@ export default function AdminDashboard() {
         base44.entities.StaffAttendance.filter({ schoolId }).catch(() => []),
         base44.entities.AcademicTerm.filter({ schoolId }).catch(() => []),
         base44.entities.GradeCategory.filter({ schoolId }).catch(() => []),
+        base44.entities.AcademicSession.filter({ schoolId }).catch(() => []),
       ]);
-      setRaw({ students: students || [], grades: grades || [], classes: classes || [], subjects: subjects || [], teachers: teachers || [], attendance: attendance || [], assignments: assignments || [], submissions: submissions || [], staffAttendance: staffAtt || [], academicTerms: terms || [], gradeCategories: gradeCategories || [] });
+      setRaw({ students: students || [], grades: grades || [], classes: classes || [], subjects: subjects || [], teachers: teachers || [], attendance: attendance || [], assignments: assignments || [], submissions: submissions || [], staffAttendance: staffAtt || [], academicTerms: terms || [], gradeCategories: gradeCategories || [], sessions: sessions || [] });
+
+      // Scope the dashboard to the session/term that covers today.
+      const base = resolveCurrentPeriod(sessions || [], terms || []);
+      setBaseFilters(base);
+      setPendingFilters(base);
+      setAppliedFilters(base);
+
       setLastUpdated(new Date());
       setLoading(false);
     }
@@ -243,7 +270,7 @@ export default function AdminDashboard() {
   function handleApply(overrideFilters) {
     setAppliedFilters(overrideFilters ? { ...overrideFilters } : { ...pendingFilters });
   }
-  function handleReset() { setPendingFilters(DEFAULT_FILTERS); setAppliedFilters(DEFAULT_FILTERS); }
+  function handleReset() { setPendingFilters(baseFilters); setAppliedFilters(baseFilters); }
 
   if (loading) return (
     <div className="min-h-full bg-background text-foreground p-6 flex items-center justify-center">
@@ -307,6 +334,7 @@ export default function AdminDashboard() {
         subjects={raw.subjects}
         teachers={raw.teachers}
         academicTerms={raw.academicTerms}
+        sessions={raw.sessions}
         onApply={handleApply}
         onReset={handleReset}
       />
