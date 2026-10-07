@@ -63,24 +63,52 @@ function applyFiltersToData(raw, filters) {
     if (!dr && !yearDr) return true;
     if (!d) return false;
     const t = new Date(d).getTime();
+    if (Number.isNaN(t)) return false;
     if (dr && (t < dr.from.getTime() || t > dr.to.getTime())) return false;
     if (yearDr && (t < yearDr.from.getTime() || t > yearDr.to.getTime())) return false;
     return true;
   };
 
+  // Grades only carry lastUpdatedAt once they've been edited — fall back to the
+  // record timestamps so date filters don't discard untouched grades.
+  const gradeDate = (g) => g.lastUpdatedAt || g.updated_date || g.created_date;
+
+  // The term picker offers the school's own term records (by id) plus the generic
+  // first/second/third shortcuts, while grades store the term as free text — so
+  // both sides are reduced to a comparable key ("First Term" / "1st Term" / "Term 1").
+  const termName = filters.term === 'all'
+    ? null
+    : ((raw.academicTerms || []).find(t => t.id === filters.term)?.name || filters.term);
+  const termKey = (value) => {
+    const t = (value || '').toLowerCase();
+    if (/\b(first|1st)\b/.test(t) || /\bterm\s*1\b/.test(t)) return '1';
+    if (/\b(second|2nd)\b/.test(t) || /\bterm\s*2\b/.test(t)) return '2';
+    if (/\b(third|3rd)\b/.test(t) || /\bterm\s*3\b/.test(t)) return '3';
+    return t.replace(/[^a-z0-9]/g, '');
+  };
+  const termKeyValue = termName ? termKey(termName) : null;
+
   let grades = raw.grades;
   if (filters.classId !== 'all') grades = grades.filter(g => g.classId === filters.classId);
   if (filters.subjectId !== 'all') grades = grades.filter(g => g.subjectId === filters.subjectId);
   if (filters.teacherId !== 'all') grades = grades.filter(g => g.teacherId === filters.teacherId);
-  if (filters.term !== 'all') grades = grades.filter(g => (g.term || '').toLowerCase().includes(filters.term));
-  if (dr || yearDr) grades = grades.filter(g => inDate(g.lastUpdatedAt));
-  if (filters.gradeRange !== 'all') grades = grades.filter(g => gradeRangeFilter(gradeScore(g))(filters.gradeRange));
-  if (filters.passFailStatus === 'passed') grades = grades.filter(g => gradeScore(g) >= PASS_MARK);
-  if (filters.passFailStatus === 'failed') grades = grades.filter(g => gradeScore(g) < PASS_MARK);
+  if (termKeyValue) grades = grades.filter(g => termKey(g.term) === termKeyValue);
+  if (dr || yearDr) grades = grades.filter(g => inDate(gradeDate(g)));
 
   let students = raw.students;
   if (filters.classId !== 'all') students = students.filter(s => s.classId === filters.classId);
   if (filters.gender !== 'all') students = students.filter(s => s.gender === filters.gender);
+  // Score-based filters narrow the student list (like studentGroup) rather than
+  // stripping grade rows, so a student's averages stay meaningful.
+  if (filters.gradeRange !== 'all') {
+    const ids = new Set(grades.filter(g => gradeRangeFilter(gradeScore(g))(filters.gradeRange)).map(g => g.studentId));
+    students = students.filter(s => ids.has(s.id));
+  }
+  if (filters.passFailStatus !== 'all') {
+    const passed = filters.passFailStatus === 'passed';
+    const ids = new Set(grades.filter(g => (gradeScore(g) >= PASS_MARK) === passed).map(g => g.studentId));
+    students = students.filter(s => ids.has(s.id));
+  }
   if (filters.studentGroup === 'top') {
     const topIds = new Set(grades.filter(g => gradeScore(g) >= 80).map(g => g.studentId));
     students = students.filter(s => topIds.has(s.id));
@@ -152,7 +180,10 @@ function applyFiltersToData(raw, filters) {
     if (termMap[filters.term]) assignments = assignments.filter(a => a.term?.toLowerCase().includes(filters.term));
   }
 
-  return { ...raw, grades, students, attendance, assignments };
+  let teachers = raw.teachers;
+  if (filters.teacherId !== 'all') teachers = teachers.filter(t => t.id === filters.teacherId);
+
+  return { ...raw, grades, students, teachers, attendance, assignments };
 }
 
 function useLocalPref(key, def) {
@@ -285,7 +316,6 @@ export default function AdminDashboard() {
         <StudentOverview
           students={filtered.students}
           grades={filtered.grades}
-          allGrades={raw.grades}
           classes={filtered.classes}
           subjects={filtered.subjects}
           attendance={filtered.attendance}

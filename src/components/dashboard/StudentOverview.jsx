@@ -18,10 +18,9 @@ const GRADE_DIST = [
   { label: 'F', range: [0, 40], color: '#ef4444' },
 ];
 
-export default function StudentOverview({ students, grades, allGrades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets, selectedSubjectId = 'all' }) {
-  // allGrades = unfiltered grades for accurate weighted score calculation
-  // grades = filtered grades for display/filtering context
-  const gradesForCalc = allGrades || grades;
+export default function StudentOverview({ students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories = [], visibleWidgets, selectedSubjectId = 'all' }) {
+  // Every metric is computed from the filtered grades, so the dashboard always
+  // reflects the filters that are currently applied.
 
   const data = useMemo(() => {
     // Build a weighted average per student by computing weighted score per subject then averaging
@@ -40,7 +39,7 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
 
     // Compute weighted avg per student using ALL grades (not filtered) so missing categories don't zero out scores
     Object.values(studentMap).forEach(st => {
-      const studentGrades = gradesForCalc.filter(g => g.studentId === st.id);
+      const studentGrades = grades.filter(g => g.studentId === st.id);
       const subjectIds = [...new Set(studentGrades.map(g => g.subjectId).filter(Boolean))];
       if (subjectIds.length === 0) { st.avg = 0; st.pass = false; return; }
       const classCats = gradeCategories.filter(c => !c.classId || c.classId === st.classId);
@@ -97,10 +96,10 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
     });
 
     // Per-subject top 10 (for "All Subjects" mode)
-    const allSubjectIds = [...new Set(gradesForCalc.map(g => g.subjectId).filter(Boolean))];
+    const allSubjectIds = [...new Set(grades.map(g => g.subjectId).filter(Boolean))];
     const subjectNameMap = {};
     allSubjectIds.forEach(subjectId => {
-      subjectNameMap[subjectId] = gradesForCalc.find(g => g.subjectId === subjectId)?.subjectName
+      subjectNameMap[subjectId] = grades.find(g => g.subjectId === subjectId)?.subjectName
         || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
     });
     const perSubjectTop10 = allSubjectIds.map(subjectId => {
@@ -119,15 +118,15 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
     const overallAvg = avg(scores);
 
     // Subject avg (weighted per student per subject, then averaged) — use all grades
-    const subjectIds = [...new Set(gradesForCalc.map(g => g.subjectId).filter(Boolean))];
+    const subjectIds = [...new Set(grades.map(g => g.subjectId).filter(Boolean))];
     const subjectAvgs = subjectIds.map(subjectId => {
-      const name = gradesForCalc.find(g => g.subjectId === subjectId)?.subjectName || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+      const name = grades.find(g => g.subjectId === subjectId)?.subjectName || subjects.find(s => s.id === subjectId)?.name || 'Unknown';
       const shortName = name.length > 10 ? name.slice(0, 10) : name;
-      const studentsWithSubject = [...new Set(gradesForCalc.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
+      const studentsWithSubject = [...new Set(grades.filter(g => g.subjectId === subjectId).map(g => g.studentId))];
       const subjectScores = studentsWithSubject.map(studentId => {
         const st = studentMap[studentId];
         const classCats = gradeCategories.filter(c => !c.classId || c.classId === st?.classId);
-        const subjGrades = gradesForCalc.filter(g => g.studentId === studentId && g.subjectId === subjectId);
+        const subjGrades = grades.filter(g => g.studentId === studentId && g.subjectId === subjectId);
         return getSubjectFinalGrade(subjGrades, classCats.filter(c => c.subjectId === subjectId)).overall ?? 0;
       }).filter(s => s > 0);
       return { name: shortName, score: avg(subjectScores), value: avg(subjectScores) };
@@ -192,7 +191,7 @@ export default function StudentOverview({ students, grades, allGrades, classes, 
       attRate, assignCompletion: Math.min(assignCompletion, 100),
       perSubjectTop10, allSubjectIds, subjectNameMap,
     };
-  }, [students, grades, gradesForCalc, classes, subjects, attendance, assignments, submissions, gradeCategories]);
+  }, [students, grades, classes, subjects, attendance, assignments, submissions, gradeCategories]);
 
   const KPI_CARDS = [
     { label: 'Total Students', value: students.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-100' },
