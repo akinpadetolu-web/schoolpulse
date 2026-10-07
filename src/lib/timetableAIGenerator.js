@@ -26,21 +26,31 @@ function breakForDay(b, day) {
     : { name: b.name, start: b.start, end: b.end };
 }
 
-// Build the set of distinct time periods the school actually uses, from its own
-// existing entries and break schedule (never a hard-coded list of periods).
+// Build the set of distinct teaching periods the school actually uses, from its
+// own existing entries (never a hard-coded list of periods). Break times are
+// rest periods, never teachable periods, so they are excluded here — they are
+// passed to the model separately and reserved so no subject lands on them.
 function deriveTimeSlots(entries, breakList) {
+  const breakRanges = [];
+  for (const b of breakList) {
+    if (b.start && b.end) breakRanges.push([toMin(b.start), toMin(b.end)]);
+    for (const o of Object.values(b.overrides || {})) {
+      if (o && o.start && o.end) breakRanges.push([toMin(o.start), toMin(o.end)]);
+    }
+  }
+  const overlapsBreak = (start, end) => {
+    const s = toMin(start);
+    const e = toMin(end);
+    return breakRanges.some(([bs, be]) => s < be && e > bs);
+  };
+
   const map = {};
   for (const e of entries || []) {
     if (e.startTime && e.endTime) map[`${e.startTime}-${e.endTime}`] = { start: e.startTime, end: e.endTime };
   }
-  for (const b of breakList) {
-    if (b.start && b.end) map[`${b.start}-${b.end}`] = { start: b.start, end: b.end };
-    for (const day of Object.keys(b.overrides || {})) {
-      const o = b.overrides[day];
-      if (o && o.start && o.end) map[`${o.start}-${o.end}`] = { start: o.start, end: o.end };
-    }
-  }
-  return Object.values(map).sort((a, b) => a.start.localeCompare(b.start));
+  return Object.values(map)
+    .filter(s => !overlapsBreak(s.start, s.end))
+    .sort((a, b) => a.start.localeCompare(b.start));
 }
 
 function snapToSlot(time, timeSlots) {
