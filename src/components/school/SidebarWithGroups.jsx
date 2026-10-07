@@ -44,7 +44,7 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
               <button
                 type="button"
                 onClick={() => toggle(idx)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase text-sidebar-foreground/50 hover:text-sidebar-foreground/70 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <span className="truncate">{group.label}</span>
                 <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -59,8 +59,8 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
                     onClick={onItemClick}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] ${
                       isActive(item.path)
-                        ? 'bg-white/[0.12] text-white shadow-glass ring-1 ring-inset ring-sky-400/30'
-                        : 'text-sidebar-foreground/70 hover:bg-white/[0.07] hover:text-sidebar-foreground'
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />

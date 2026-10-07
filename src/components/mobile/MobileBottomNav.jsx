@@ -63,7 +63,7 @@ export default function MobileBottomNav({ role }) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/[0.06] backdrop-blur-2xl border-t border-white/10 flex items-stretch"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex items-stretch"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         height: 'calc(3.5rem + env(safe-area-inset-bottom))'

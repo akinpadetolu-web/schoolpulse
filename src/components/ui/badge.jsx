@@ -9,12 +9,12 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-sky-400/25 bg-sky-400/15 text-sky-200 backdrop-blur-xl",
+          "border-blue-200 bg-blue-50 text-blue-700",
         secondary:
-          "border-white/12 bg-white/[0.08] text-foreground backdrop-blur-xl",
+          "border-slate-200 bg-slate-100 text-slate-700",
         destructive:
-          "border-rose-400/25 bg-rose-500/15 text-rose-200 backdrop-blur-xl",
-        outline: "border-white/15 text-foreground",
+          "border-red-200 bg-red-50 text-red-700",
+        outline: "border-slate-300 text-slate-700",
       },
     },
     defaultVariants: {

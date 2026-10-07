@@ -145,7 +145,7 @@ For each child, provide:
               <h4 className="font-semibold text-amber-800 text-sm mb-2">How to Support Your Child</h4>
               <ul className="space-y-1">
                 {insights.generalParentTips.map((tip, i) => (
-                  <li key={i} className="text-sm text-amber-700 flex items-start gap-2"><span>💛</span>{tip}</li>
+                  <li key={i} className="text-sm text-amber-700 flex items-start gap-2">{tip}</li>
                 ))}
               </ul>
             </div>
@@ -156,7 +156,7 @@ For each child, provide:
               <h4 className="font-semibold text-emerald-800 text-sm mb-2">Wellness & Stress Management</h4>
               <ul className="space-y-1">
                 {insights.wellnessTips.map((tip, i) => (
-                  <li key={i} className="text-sm text-emerald-700 flex items-start gap-2"><span>🌿</span>{tip}</li>
+                  <li key={i} className="text-sm text-emerald-700 flex items-start gap-2">{tip}</li>
                 ))}
               </ul>
             </div>

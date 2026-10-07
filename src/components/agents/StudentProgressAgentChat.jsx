@@ -9,7 +9,13 @@ import { cn } from '@/lib/utils';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 
 const AGENT_NAME = 'kairos';
-const DEFAULT_AVATAR = 'https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/a55e9e2fc_ChatGPT_Image_Jul_29__2026__11_57_14_PM-removebg-preview.webp';
+function AgentAvatar({ className }) {
+  return (
+    <span className={cn('flex-shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center', className)}>
+      <Sparkles className="w-1/2 h-1/2" />
+    </span>
+  );
+}
 
 const stripContext = (c) => { if (typeof c !== 'string' || !c.startsWith('[SCHOOL_CONTEXT:')) return c; return c.split('\n').slice(1).join('\n').trimStart(); };
 
@@ -38,7 +44,7 @@ function MessageBubble({ message, avatarUrl }) {
   const isUser = message.role === 'user';
   return (
     <div className={cn('flex gap-2.5', isUser ? 'justify-end' : 'justify-start')}>
-      {!isUser && <img src={avatarUrl} alt="Kairos" className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full object-cover" />}
+      {!isUser && <AgentAvatar className="mt-0.5 w-7 h-7" />}
       <div className={cn('max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm', isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
         {message.content && (isUser ? (
           <p className="whitespace-pre-wrap break-words">{stripContext(message.content)}</p>
@@ -53,7 +59,7 @@ function MessageBubble({ message, avatarUrl }) {
   );
 }
 
-export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, avatarUrl = DEFAULT_AVATAR }) {
+export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, avatarUrl }) {
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -159,7 +165,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
           >
             {/* Header */}
             <div className="flex items-center gap-3 p-3.5 border-b bg-primary/5">
-              <img src={avatarUrl} alt="Kairos" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <AgentAvatar className="w-10 h-10" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold leading-tight flex items-center gap-1.5">{title}</p>
                 {subtitle && <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>}
@@ -180,7 +186,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-8 text-center">
-                  <p className="font-medium text-foreground mb-1">Hi, I'm Kairos 👋</p>
+                  <p className="font-medium text-foreground mb-1">Hi, I'm Kairos</p>
                   {schoolUser ? (
                     <>Ask me about a student's grades, performance trends, strengths, or areas to improve.</>
                   ) : (
@@ -192,7 +198,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
               )}
               {sending && (
                 <div className="flex gap-2.5 justify-start">
-                  <img src={avatarUrl} alt="Kairos" className="w-7 h-7 rounded-full object-cover" />
+                  <AgentAvatar className="w-7 h-7" />
                   <div className="bg-muted rounded-2xl px-3.5 py-2.5 text-sm text-muted-foreground flex items-center">
                     <Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing…
                   </div>
@@ -220,7 +226,7 @@ export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, a
         className="fixed z-50 right-3 sm:right-6 bottom-20 sm:bottom-6 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all pl-2 pr-3 sm:pr-4 h-14"
       >
         <span className="relative">
-          <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+          <AgentAvatar className="w-10 h-10" />
           {showBadge && (
             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-primary" />
           )}

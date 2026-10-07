@@ -176,7 +176,6 @@ function PageLoader() {
 const AuthenticatedApp = () => {
   return (
     <>
-      <DarkModeDetector />
       <PWAInitializer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -343,17 +342,6 @@ const AuthenticatedApp = () => {
     </>
   );
 };
-
-function DarkModeDetector() {
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = (e) => document.documentElement.classList.toggle('dark', e.matches);
-    apply(mq);
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, []);
-  return null;
-}
 
 function PWAInitializer() {
   useEffect(() => {

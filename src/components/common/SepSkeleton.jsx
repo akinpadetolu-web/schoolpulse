@@ -40,13 +40,13 @@ export function SkeletonChart({ className }) {
 export function SkeletonTable({ rows = 6, columns = 4, className }) {
   return (
     <div className={cn('glass rounded-2xl overflow-hidden', className)}>
-      <div className="flex items-center gap-4 px-5 py-4 border-b border-white/10">
+      <div className="flex items-center gap-4 px-5 py-4 border-b border-border">
         {Array.from({ length: columns }).map((_, i) => (
           <SepBlock key={i} className="h-3 flex-1" />
         ))}
       </div>
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="flex items-center gap-4 px-5 py-4 border-b border-white/5 last:border-0">
+        <div key={r} className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-0">
           <SepBlock className="h-8 w-8 rounded-full shrink-0" />
           {Array.from({ length: columns - 1 }).map((_, c) => (
             <SepBlock key={c} className="h-3 flex-1" />

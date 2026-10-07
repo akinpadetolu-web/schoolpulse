@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit, Copy, Trash2, Eye, Search, Monitor, Smartphone, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Copy, Trash2, Eye, Search, Monitor, Smartphone, Pencil, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import EmailEditorModal from './EmailEditorModal';
@@ -177,7 +177,7 @@ export default function TemplateManager({ schoolUser, onBack, onUseTemplate }) {
                   <CardContent className="p-0">
                     <div className={`h-28 bg-gradient-to-br ${defMatch?.gradient || 'from-slate-500 to-slate-700'} flex items-center justify-center relative cursor-pointer`}
                       onClick={() => setPreviewItem({ blocks: t.blocks, name: t.name, gradient: defMatch?.gradient })}>
-                      <span className="text-4xl">{defMatch?.emoji || '📧'}</span>
+                      <Mail className="w-9 h-9 text-white" />
                       <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
                         <span className="text-white text-xs font-semibold bg-black/40 px-2 py-1 rounded">Preview</span>
                       </div>

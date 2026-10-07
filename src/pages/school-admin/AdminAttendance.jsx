@@ -291,7 +291,7 @@ export default function AdminAttendance() {
               {belowThreshold.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <AlertTriangle className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                  <p>No students below threshold. 🎉</p>
+                  <p>No students below threshold.</p>
                 </div>
               ) : (
                 <div className="space-y-2">

@@ -121,7 +121,7 @@ export default function AdminExamTimetable() {
           base44.entities.Notification.create({
             schoolId,
             type: 'announcement',
-            title: '📅 Exam Timetable Published!',
+            title: 'Exam Timetable Published!',
             message: `Your exam timetable for "${examTimetable.sessionName}" is now available. Click here to view your exam schedule.`,
             targetRole: 'student',
             targetClassIds: [],
@@ -130,7 +130,7 @@ export default function AdminExamTimetable() {
           base44.entities.Notification.create({
             schoolId,
             type: 'announcement',
-            title: '📅 Exam Timetable Published!',
+            title: 'Exam Timetable Published!',
             message: `The exam timetable for "${examTimetable.sessionName}" is now live. View the full schedule and your invigilation duties.`,
             targetRole: 'teacher',
             targetClassIds: [],
@@ -139,7 +139,7 @@ export default function AdminExamTimetable() {
           base44.entities.Notification.create({
             schoolId,
             type: 'announcement',
-            title: '📅 Exam Timetable Published!',
+            title: 'Exam Timetable Published!',
             message: `Your child's exam timetable for "${examTimetable.sessionName}" is now available. Click here to view the schedule.`,
             targetRole: 'parent',
             targetClassIds: [],
@@ -149,7 +149,7 @@ export default function AdminExamTimetable() {
       } catch (e) {
         // Notifications are best-effort — don't block publish
       }
-      toast.success('✅ Timetable published and now visible to all users!');
+      toast.success('Timetable published and now visible to all users!');
     }
   }
 
@@ -163,7 +163,7 @@ export default function AdminExamTimetable() {
     const newVisible = !examTimetable.isVisible;
     await base44.entities.ExamTimetable.update(examTimetable.id, { isVisible: newVisible });
     setExamTimetable(prev => ({ ...prev, isVisible: newVisible }));
-    toast.success(newVisible ? '✅ Exam Timetable is now VISIBLE to all users' : '🔒 Exam Timetable hidden from users');
+    toast.success(newVisible ? 'Exam Timetable is now VISIBLE to all users' : 'Exam Timetable hidden from users');
   }
 
   async function toggleAI(field) {
@@ -379,13 +379,13 @@ export default function AdminExamTimetable() {
                       {examTimetable.status}
                     </Badge>
                     {examTimetable.isVisible && examTimetable.status === 'published' && (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">🟢 LIVE — Visible to all users</Badge>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">LIVE — Visible to all users</Badge>
                     )}
                     {examTimetable.status === 'published' && !examTimetable.isVisible && (
-                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">🟡 Published but Hidden</Badge>
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">Published but Hidden</Badge>
                     )}
                     {examTimetable.status !== 'published' && (
-                      <Badge className="bg-slate-100 text-slate-600 border-slate-200">🔒 Draft — Not visible to users</Badge>
+                      <Badge className="bg-slate-100 text-slate-600 border-slate-200">Draft — Not visible to users</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">

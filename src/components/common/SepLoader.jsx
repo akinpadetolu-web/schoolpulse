@@ -11,8 +11,8 @@ export function SepInlineLoader() {
     <div className="flex items-center justify-center h-full w-full py-20">
       <div className="glass rounded-2xl px-6 py-5 flex items-center gap-3">
         <img src={SEP_LOGO} alt="SEP" className="w-7 h-7 rounded-lg object-cover" />
-        <div className="h-1 w-24 rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-sky-400 to-blue-500 sep-loading-bar" />
+        <div className="h-1 w-24 rounded-full bg-slate-200 overflow-hidden">
+          <div className="h-full w-1/2 rounded-full bg-primary sep-loading-bar" />
         </div>
       </div>
     </div>
@@ -24,13 +24,13 @@ export default function SepLoader() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
       <div className="absolute inset-0 sep-aurora" />
       <div className="relative glass-strong rounded-3xl px-10 py-8 flex flex-col items-center gap-4 shadow-glass">
-        <img src={SEP_LOGO} alt="SEP" className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/15" />
+        <img src={SEP_LOGO} alt="SEP" className="w-14 h-14 rounded-2xl object-cover ring-1 ring-slate-200" />
         <div className="text-center">
           <p className="text-sm font-semibold tracking-[0.28em] text-foreground">SEP</p>
           <p className="text-xs text-muted-foreground mt-1">School Educational Pulse</p>
         </div>
-        <div className="h-1 w-32 rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-sky-400 to-blue-500 sep-loading-bar" />
+        <div className="h-1 w-32 rounded-full bg-slate-200 overflow-hidden">
+          <div className="h-full w-1/2 rounded-full bg-primary sep-loading-bar" />
         </div>
       </div>
     </div>

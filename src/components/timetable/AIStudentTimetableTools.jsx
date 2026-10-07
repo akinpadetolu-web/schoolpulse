@@ -385,7 +385,7 @@ Apply ONLY the requested changes. Keep unchanged days identical. Return the full
       {savedPlan && (
         <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700">
           <Save className="w-3.5 h-3.5 shrink-0" />
-          <span>📅 Saved on {savedPlan.created_date ? format(new Date(savedPlan.created_date), 'MMM d, yyyy \'at\' h:mm a') : '—'} · {savedPlan.sessionLabel}</span>
+          <span>Saved on {savedPlan.created_date ? format(new Date(savedPlan.created_date), 'MMM d, yyyy \'at\' h:mm a') : '—'} · {savedPlan.sessionLabel}</span>
           <span className="ml-auto flex items-center gap-1 text-emerald-600">
             {savingProgress ? <><Loader2 className="w-3 h-3 animate-spin" />Saving…</> : <><Clock className="w-3 h-3" />Auto-saved</>}
           </span>
@@ -432,7 +432,7 @@ Apply ONLY the requested changes. Keep unchanged days identical. Return the full
                       <Badge variant={item.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">{item.priority}</Badge>
                       <span className="text-xs text-muted-foreground">{item.hours}h</span>
                     </div>
-                    {item.topic && <p className="text-xs font-medium text-primary mt-0.5">📖 {item.topic}</p>}
+                    {item.topic && <p className="text-xs font-medium text-primary mt-0.5">{item.topic}</p>}
                     <p className={`text-sm mt-0.5 ${done ? 'line-through text-muted-foreground' : ''}`}>{item.task}</p>
                     {item.lessonPlanRef && <p className="text-xs text-muted-foreground mt-0.5 italic">{item.lessonPlanRef}</p>}
                   </div>
@@ -448,7 +448,7 @@ Apply ONLY the requested changes. Keep unchanged days identical. Return the full
               <ul className="space-y-1">
                 {plan.dataSources.map((src, i) => (
                   <li key={i} className="text-xs text-slate-600 flex items-start gap-2">
-                    <span>📚</span>
+                    
                     <span><strong>{src.subject}</strong> — {src.teacherName}'s lesson plans · {src.topicsCount} topics · {src.dateRange}</span>
                   </li>
                 ))}
@@ -662,7 +662,7 @@ For each subject with lesson plans, generate tips that:
       <li className={`rounded-lg p-2 text-sm flex items-start gap-2 group ${hl ? 'bg-yellow-50 border border-yellow-200' : 'hover:bg-muted/30'}`}>
         <div className="flex-1">
           <span>{tip}</span>
-          {note && <p className="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1 mt-1 italic">📝 {note}</p>}
+          {note && <p className="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1 mt-1 italic">{note}</p>}
           {isEditing && (
             <div className="flex gap-2 mt-2">
               <input autoFocus className="flex-1 text-xs border rounded px-2 py-1" value={noteInput}
@@ -710,7 +710,7 @@ For each subject with lesson plans, generate tips that:
       {savedTips && (
         <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700">
           <Save className="w-3.5 h-3.5 shrink-0" />
-          <span>💡 Saved on {savedTips.created_date ? format(new Date(savedTips.created_date), 'MMM d, yyyy \'at\' h:mm a') : '—'} · {savedTips.sessionLabel}</span>
+          <span>Saved on {savedTips.created_date ? format(new Date(savedTips.created_date), 'MMM d, yyyy \'at\' h:mm a') : '—'} · {savedTips.sessionLabel}</span>
           <span className="ml-auto flex items-center gap-1 text-emerald-600"><Clock className="w-3 h-3" />Auto-saved</span>
         </div>
       )}
@@ -727,7 +727,7 @@ For each subject with lesson plans, generate tips that:
           {/* Excluded subjects notice */}
           {tipsData.subjectsExcluded?.length > 0 && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-              ⚠️ Tips not available for: <strong>{tipsData.subjectsExcluded.join(', ')}</strong> — ask your teacher to upload lesson plans for these subjects.
+              Tips not available for: <strong>{tipsData.subjectsExcluded.join(', ')}</strong> — ask your teacher to upload lesson plans for these subjects.
             </div>
           )}
 
@@ -807,7 +807,7 @@ For each subject with lesson plans, generate tips that:
               <h4 className="font-semibold text-emerald-800 text-sm mb-2">Wellness During Exam Period</h4>
               <ul className="space-y-1">
                 {tipsData.generalWellnessTips.map((tip, i) => (
-                  <li key={i} className="text-sm text-emerald-700 flex items-start gap-2"><span>🌿</span>{tip}</li>
+                  <li key={i} className="text-sm text-emerald-700 flex items-start gap-2">{tip}</li>
                 ))}
               </ul>
             </div>

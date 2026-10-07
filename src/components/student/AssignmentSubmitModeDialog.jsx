@@ -71,8 +71,8 @@ export default function AssignmentSubmitModeDialog({ open, onClose, assignment, 
 
         <Tabs value={mode} onValueChange={setMode} defaultValue="text">
           <TabsList className="w-full">
-            <TabsTrigger value="text" className="flex-1">📝 Text Mode</TabsTrigger>
-            <TabsTrigger value="artboard" className="flex-1">✏️ Draw/Artboard</TabsTrigger>
+            <TabsTrigger value="text" className="flex-1">Text Mode</TabsTrigger>
+            <TabsTrigger value="artboard" className="flex-1">Draw/Artboard</TabsTrigger>
           </TabsList>
 
           <TabsContent value="text" className="space-y-4 mt-4">
