@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, Search, X, Check } from 'lucide-react';
 import PasswordInput from '@/components/ui/password-input';
+import BrandMark from '@/components/common/BrandMark';
 
 export default function SchoolPortal() {
   const navigate = useNavigate();
@@ -262,8 +263,8 @@ export default function SchoolPortal() {
     <div className="force-light h-screen overflow-y-auto flex flex-col items-center bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md flex-shrink-0 my-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 shadow-sm overflow-hidden">
-            <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SchoolEduPulse" className="w-20 h-20 object-cover" />
+          <div className="flex justify-center mb-4">
+            <BrandMark size="xl" />
           </div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">SchoolEduPulse</h1>
           <p className="text-muted-foreground mt-1">School Management System</p>

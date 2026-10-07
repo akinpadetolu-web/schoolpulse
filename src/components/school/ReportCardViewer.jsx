@@ -85,8 +85,8 @@ export default function ReportCardViewer({ reportCard, template }) {
                 reportCard.promotionRecommendation === 'repeat' ? 'bg-red-100 text-red-700' :
                 'bg-amber-100 text-amber-700'
               }>
-                {reportCard.promotionRecommendation === 'promote' ? '✓ Promoted' :
-                 reportCard.promotionRecommendation === 'repeat' ? '✗ Repeat Year' : '⚠ Under Review'}
+                {reportCard.promotionRecommendation === 'promote' ? 'Promoted' :
+                 reportCard.promotionRecommendation === 'repeat' ? 'Repeat Year' : 'Under Review'}
               </Badge>
             </div>
           )}

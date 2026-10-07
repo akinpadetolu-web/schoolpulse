@@ -44,7 +44,7 @@ function detectConflicts(teacherId, entryId, currentEntry, allEntries, teachers,
     const assignedThere = (other.invigilators || []).some(inv => inv.teacherId === teacherId) ||
       (other.invigilatorId === teacherId && !other.invigilators?.length);
     if (overlap && assignedThere) {
-      warnings.push({ type: 'error', msg: `⚠️ ${tName} is already assigned to ${other.subjectName} (${(other.classNames || []).join(', ')}) at ${other.startTime} on this date.` });
+      warnings.push({ type: 'error', msg: `${tName} is already assigned to ${other.subjectName} (${(other.classNames || []).join(', ')}) at ${other.startTime} on this date.` });
     }
   }
 
@@ -53,7 +53,7 @@ function detectConflicts(teacherId, entryId, currentEntry, allEntries, teachers,
   const teachesThisSubject = (teacher?.assignedSubjects || []).includes(entrySubjId) || (teacher?.teachingAssignments || []).some(ta => ta.subjectId === entrySubjId);
   if (teachesThisSubject) {
     const subj = subjects.find(s => s.id === entrySubjId);
-    warnings.push({ type: 'info', msg: `ℹ️ ${tName} teaches ${subj?.name || 'this subject'} and is assigned to invigilate it. Please confirm this is intentional.` });
+    warnings.push({ type: 'info', msg: `${tName} teaches ${subj?.name || 'this subject'} and is assigned to invigilate it. Please confirm this is intentional.` });
   }
 
   return warnings;
@@ -208,7 +208,7 @@ Return array of up to 2 suggestions.`,
               <div className="mt-1">
                 <button type="button" onClick={() => updateInv(idx, 'confirmed', !inv.confirmed)}
                   className={`px-2 py-1 rounded text-xs border ${inv.confirmed ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
-                  {inv.confirmed ? '✓ Confirmed' : '⏳ Pending'}
+                  {inv.confirmed ? 'Confirmed' : 'Pending'}
                 </button>
               </div>
             </div>

@@ -143,9 +143,9 @@ export default function StudyPlanCustomizer({ entries = [], prefs, onChange }) {
                         <p className="font-medium text-sm">{entry.subjectName}</p>
                         <div className="flex flex-wrap gap-2">
                           {[
-                            { key: 'extraFocus', label: '⭐ Extra Focus', color: 'bg-amber-100 text-amber-700 border-amber-300' },
-                            { key: 'difficult', label: '😓 I find this difficult', color: 'bg-red-100 text-red-700 border-red-300' },
-                            { key: 'confident', label: '✅ I am confident', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+                            { key: 'extraFocus', label: 'Extra Focus', color: 'bg-amber-100 text-amber-700 border-amber-300' },
+                            { key: 'difficult', label: 'I find this difficult', color: 'bg-red-100 text-red-700 border-red-300' },
+                            { key: 'confident', label: 'I am confident', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
                           ].map(tog => (
                             <button key={tog.key} type="button"
                               onClick={() => setSubjectPref(entry.subjectId, tog.key, !sp[tog.key])}

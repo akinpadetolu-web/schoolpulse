@@ -5,6 +5,7 @@ import { LayoutDashboard, Calendar, FileText, BookOpen, ClipboardList, Megaphone
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SidebarNavGroups } from '@/components/school/SidebarWithGroups';
+import BrandMark from '@/components/common/BrandMark';
 import UserAvatar from '@/components/common/UserAvatar';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 
@@ -89,8 +90,8 @@ export default function StudentSidebar({ isOpen, onClose }) {
       )}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
-            <div><span className="font-bold text-sm">SchoolEduPulse</span><p className="text-xs text-sidebar-foreground/60">{user?.schoolName}</p></div>
+            <BrandMark size="sm" />
+            <div><span className="font-bold text-sm">SchoolEduPulse</span><p className="text-xs text-sidebar-foreground/80">{user?.schoolName}</p></div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose} aria-label="Close sidebar"><X className="w-5 h-5" aria-hidden="true" /></Button>
         </div>
@@ -106,10 +107,10 @@ export default function StudentSidebar({ isOpen, onClose }) {
             <UserAvatar user={user} size="md" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.fullName}</p>
-              <p className="text-xs text-sidebar-foreground/60">{user?.className || ""}</p>
+              <p className="text-xs text-sidebar-foreground/80">{user?.className || ""}</p>
             </div>
           </div>
-          <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out</button>
+          <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/90 hover:bg-sidebar-accent w-full"><LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out</button>
         </div>
       </aside>
     </>

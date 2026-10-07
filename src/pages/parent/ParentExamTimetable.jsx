@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Loader2, Calendar, Lightbulb, Clock, MapPin, Heart, User, MessageSquare, Send } from 'lucide-react';
+import { Loader2, Calendar, Lightbulb, Clock, MapPin, Heart, User, MessageSquare, Send, X } from 'lucide-react';
 import AIParentInsights from '@/components/timetable/AIParentInsights';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -215,7 +215,7 @@ export default function ParentExamTimetable() {
                         <p className="text-sm">{p.text}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{p.timestamp ? format(new Date(p.timestamp), 'MMM d, yyyy h:mm a') : ''}</p>
                       </div>
-                      <button onClick={() => removeParentPrompt(parentPrompts.length - 1 - i)} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
+                      <button onClick={() => removeParentPrompt(parentPrompts.length - 1 - i)} className="text-muted-foreground hover:text-destructive text-xs"><X className="w-3.5 h-3.5" aria-hidden="true" /></button>
                     </div>
                   ))}
                 </div>

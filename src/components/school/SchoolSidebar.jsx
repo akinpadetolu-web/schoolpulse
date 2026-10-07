@@ -9,6 +9,7 @@ import {
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
+import BrandMark from '@/components/common/BrandMark';
 import UserAvatar from '@/components/common/UserAvatar';
 import { getFeatures } from '@/lib/featureToggleManager';
 
@@ -267,10 +268,10 @@ export default function SchoolSidebar({ isOpen, onClose }) {
       <aside className={`fixed top-0 left-0 h-full w-64 glass-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
-            <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
+            <BrandMark size="sm" />
             <div>
               <span className="font-bold text-sm">SchoolEduPulse</span>
-              <p className="text-xs text-sidebar-foreground/60">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
+              <p className="text-xs text-sidebar-foreground/80">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>
@@ -280,7 +281,7 @@ export default function SchoolSidebar({ isOpen, onClose }) {
 
         <div className="flex-1 overflow-y-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {loading && user?.role !== 'hr_staff' ? (
-            <div className="p-4 text-xs text-sidebar-foreground/60">Loading menu...</div>
+            <div className="p-4 text-xs text-sidebar-foreground/80">Loading menu...</div>
           ) : (
             <SidebarNavGroups 
               groups={filteredNavGroups}
@@ -295,10 +296,10 @@ export default function SchoolSidebar({ isOpen, onClose }) {
             <UserAvatar user={user} size="md" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.fullName || "Admin"}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email || ""}</p>
+              <p className="text-xs text-sidebar-foreground/80 truncate">{user?.email || ""}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent w-full transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/90 hover:bg-sidebar-accent w-full transition-colors">
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
         </div>

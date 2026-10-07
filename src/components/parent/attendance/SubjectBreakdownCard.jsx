@@ -74,7 +74,7 @@ export default function SubjectBreakdownCard({ subjectName, teacherName, records
         {/* Status label */}
         {pct !== null && (
           <p className={`text-xs font-medium ${colors.text} mb-3`}>
-            {pct >= 75 ? '✓ Good attendance' : pct >= 50 ? '⚠ At risk — attendance low' : '✗ Critical — immediate attention needed'}
+            {pct >= 75 ? 'Good attendance' : pct >= 50 ? 'At risk — attendance low' : 'Critical — immediate attention needed'}
           </p>
         )}
 

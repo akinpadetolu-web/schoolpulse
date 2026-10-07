@@ -280,7 +280,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
           >
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-sm">📚 Subjects to be Examined</span>
+              <span className="font-semibold text-sm">Subjects to be Examined</span>
               <Badge variant="secondary" className="text-xs">{classes.length} classes · {totalSlotsNeeded} exam slots</Badge>
             </div>
             {subjectOverviewOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -319,7 +319,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
                       <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
                         <span className="font-medium text-sm">{cls.className}</span>
                         <Badge variant={subjs.length === 0 ? 'destructive' : 'secondary'} className="text-xs">
-                          {subjs.length === 0 ? '⚠️ No subjects' : `${activeCount}/${subjs.length} subjects`}
+                          {subjs.length === 0 ? 'No subjects' : `${activeCount}/${subjs.length} subjects`}
                         </Badge>
                       </div>
                       {subjs.length === 0 ? (
@@ -338,7 +338,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
                                   : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                               }`}
                             >
-                              {isExcluded(cls.id, s.id) ? '✗' : '✓'} {s.name}
+                              {s.name}
                             </button>
                           ))}
                         </div>
@@ -443,7 +443,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
       {/* Generate Button */}
       <Button onClick={generate} disabled={loading || totalSlotsNeeded === 0} size="lg" className="w-full gap-2 text-base h-12">
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-        {loading ? 'Generating AI Timetable…' : `✨ Generate Timetable with AI (${totalSlotsNeeded} exam slots)`}
+        {loading ? 'Generating AI Timetable…' : `Generate Timetable with AI (${totalSlotsNeeded} exam slots)`}
       </Button>
 
       {/* Result Preview */}
@@ -477,7 +477,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
             </div>
           ) : result.timetable?.length > 0 && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
-              ✅ <strong>All subjects accounted for.</strong> {result.timetable.length} exam slots generated.
+              <strong>All subjects accounted for.</strong> {result.timetable.length} exam slots generated.
             </div>
           )}
 
@@ -518,7 +518,7 @@ Return ONLY the new exam slots as JSON (same format). Do not repeat existing slo
                                 {teachers.map(t => (
                                   <SelectItem key={t.id} value={t.id}>
                                     <span className={hasConflict(i, t.id) ? 'text-red-600' : ''}>
-                                      {t.fullName} ({dutyCount[t.id] || 0} duties){hasConflict(i, t.id) && ' ⚠️'}
+                                      {t.fullName} ({dutyCount[t.id] || 0} duties){hasConflict(i, t.id) && ' — conflict'}
                                     </span>
                                   </SelectItem>
                                 ))}

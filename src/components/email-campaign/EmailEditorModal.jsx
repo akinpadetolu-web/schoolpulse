@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, Monitor, Smartphone, Save, Undo2, Redo2, RotateCcw, ChevronUp, ChevronDown, Copy, Trash2, Pencil } from 'lucide-react';
+import {
+  ArrowLeft, Plus, Monitor, Smartphone, Save, Undo2, Redo2, RotateCcw, ChevronUp, ChevronDown, Copy, Trash2, Pencil,
+  Type, Columns2, LayoutGrid, Table, Image, MousePointerClick, Minus, MoveVertical, Quote, PanelBottom, LayoutPanelTop, X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 const PERSONALIZATION_TAGS = ['{{first_name}}','{{last_name}}','{{full_name}}','{{student_name}}','{{class_name}}','{{school_name}}','{{date}}'];
@@ -18,17 +21,17 @@ const CATEGORY_OPTIONS = [
 ];
 
 const BLOCK_PALETTE = [
-  { type: 'header',   label: 'Header/Hero',    icon: '🟦', defaultContent: { text: 'Email Header', bgColor: '#1e40af', textColor: '#ffffff', align: 'center', fontSize: 28, subtext: '', subtextColor: '#c7d2fe', paddingV: 40 } },
-  { type: 'text',     label: 'Text Block',     icon: '📝', defaultContent: { text: '<p>Dear {{first_name}},</p><p>Your message here.</p>', bgColor: '#ffffff', textColor: '#1f2937', padding: 20 } },
-  { type: 'two_col',  label: '2 Columns',      icon: '⬜⬜', defaultContent: { left: '<p>Left content</p>', right: '<p>Right content</p>', bgColor: '#ffffff', leftBg: '#f9fafb', rightBg: '#f9fafb' } },
-  { type: 'cards',    label: 'Info Cards',     icon: '🃏', defaultContent: { cards: [{ icon: '📅', title: 'Date', text: 'Click to edit', bgColor: '#eff6ff', textColor: '#1e40af' }, { icon: '📚', title: 'Topic', text: 'Click to edit', bgColor: '#f0fdf4', textColor: '#166534' }, { icon: '🎯', title: 'Goal', text: 'Click to edit', bgColor: '#fef9c3', textColor: '#854d0e' }], bgColor: '#ffffff' } },
-  { type: 'table',    label: 'Data Table',     icon: '📊', defaultContent: { headers: ['Date','Subject','Time','Venue'], rows: [['Monday, Jun 10','Mathematics','09:00 AM','Hall A'],['Tuesday, Jun 11','English','11:00 AM','Hall B']], headerBg: '#1e40af', headerText: '#ffffff', rowBg: '#ffffff', altRowBg: '#f8fafc', borderColor: '#e2e8f0' } },
-  { type: 'image',    label: 'Image',          icon: '🖼', defaultContent: { src: '', alt: 'Image', width: '100%', align: 'center', bgColor: '#ffffff' } },
-  { type: 'button',   label: 'Button',         icon: '🔘', defaultContent: { text: 'Click Here', url: '#', bgColor: '#1e40af', textColor: '#ffffff', align: 'center', borderRadius: 6, fontSize: 15, paddingH: 28, paddingV: 12 } },
-  { type: 'divider',  label: 'Divider',        icon: '—',  defaultContent: { color: '#e5e7eb', thickness: 1, style: 'solid', marginH: 16 } },
-  { type: 'spacer',   label: 'Spacer',         icon: '↕',  defaultContent: { height: 20 } },
-  { type: 'quote',    label: 'Quote/Highlight',icon: '💬', defaultContent: { text: 'Inspirational quote or highlight text goes here.', author: '', bgColor: '#eff6ff', borderColor: '#3b82f6', textColor: '#1e40af', fontSize: 16 } },
-  { type: 'footer',   label: 'Footer',         icon: '📋', defaultContent: { text: '© {{school_name}} | All rights reserved', address: '', unsubText: 'Unsubscribe', unsubUrl: '#', bgColor: '#f9fafb', textColor: '#6b7280', align: 'center' } },
+  { type: 'header',   label: 'Header/Hero',    icon: LayoutPanelTop, defaultContent: { text: 'Email Header', bgColor: '#1e40af', textColor: '#ffffff', align: 'center', fontSize: 28, subtext: '', subtextColor: '#c7d2fe', paddingV: 40 } },
+  { type: 'text',     label: 'Text Block',     icon: Type, defaultContent: { text: '<p>Dear {{first_name}},</p><p>Your message here.</p>', bgColor: '#ffffff', textColor: '#1f2937', padding: 20 } },
+  { type: 'two_col',  label: '2 Columns',      icon: Columns2, defaultContent: { left: '<p>Left content</p>', right: '<p>Right content</p>', bgColor: '#ffffff', leftBg: '#f9fafb', rightBg: '#f9fafb' } },
+  { type: 'cards',    label: 'Info Cards',     icon: LayoutGrid, defaultContent: { cards: [{ icon: '', title: 'Date', text: 'Click to edit', bgColor: '#eff6ff', textColor: '#1e40af' }, { icon: '', title: 'Topic', text: 'Click to edit', bgColor: '#f0fdf4', textColor: '#166534' }, { icon: '', title: 'Goal', text: 'Click to edit', bgColor: '#fef9c3', textColor: '#854d0e' }], bgColor: '#ffffff' } },
+  { type: 'table',    label: 'Data Table',     icon: Table, defaultContent: { headers: ['Date','Subject','Time','Venue'], rows: [['Monday, Jun 10','Mathematics','09:00 AM','Hall A'],['Tuesday, Jun 11','English','11:00 AM','Hall B']], headerBg: '#1e40af', headerText: '#ffffff', rowBg: '#ffffff', altRowBg: '#f8fafc', borderColor: '#e2e8f0' } },
+  { type: 'image',    label: 'Image',          icon: Image, defaultContent: { src: '', alt: 'Image', width: '100%', align: 'center', bgColor: '#ffffff' } },
+  { type: 'button',   label: 'Button',         icon: MousePointerClick, defaultContent: { text: 'Click Here', url: '#', bgColor: '#1e40af', textColor: '#ffffff', align: 'center', borderRadius: 6, fontSize: 15, paddingH: 28, paddingV: 12 } },
+  { type: 'divider',  label: 'Divider',        icon: Minus,  defaultContent: { color: '#e5e7eb', thickness: 1, style: 'solid', marginH: 16 } },
+  { type: 'spacer',   label: 'Spacer',         icon: MoveVertical,  defaultContent: { height: 20 } },
+  { type: 'quote',    label: 'Quote/Highlight',icon: Quote, defaultContent: { text: 'Inspirational quote or highlight text goes here.', author: '', bgColor: '#eff6ff', borderColor: '#3b82f6', textColor: '#1e40af', fontSize: 16 } },
+  { type: 'footer',   label: 'Footer',         icon: PanelBottom, defaultContent: { text: '© {{school_name}} | All rights reserved', address: '', unsubText: 'Unsubscribe', unsubUrl: '#', bgColor: '#f9fafb', textColor: '#6b7280', align: 'center' } },
 ];
 
 // ─── Block Renderer ──────────────────────────────────────────────
@@ -114,7 +117,7 @@ function BlockRenderer({ block, selected, onSelect, onDelete, onMoveUp, onMoveDo
     <div style={{ backgroundColor: c.bgColor||'#ffffff', padding: 16, textAlign: c.align||'center' }}>
       {c.src
         ? <img src={c.src} alt={c.alt||'Image'} style={{ width: c.width||'100%', maxWidth: '100%', display: 'inline-block' }} />
-        : <div style={{ background: '#f1f5f9', borderRadius: 8, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, border: '2px dashed #e2e8f0' }}>🖼 Click to add image URL</div>
+        : <div style={{ background: '#f1f5f9', borderRadius: 8, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, border: '2px dashed #e2e8f0' }}>Click to add image URL</div>
       }
     </div>
   );
@@ -277,7 +280,7 @@ function BlockPropertyPanel({ block, onChange }) {
             <button onClick={() => { const cards=c.cards.filter((_,idx) => idx!==i); upd('cards', cards); }} className="text-xs text-red-500 hover:text-red-700">Remove card</button>
           </div>
         ))}
-        <button onClick={() => upd('cards', [...(c.cards||[]), { icon:'⭐', title:'New Card', text:'Description here', bgColor:'#f8fafc', textColor:'#1e40af' }])} className="w-full text-xs border border-dashed rounded-lg py-2 hover:bg-muted transition-colors">+ Add Card</button>
+        <button onClick={() => upd('cards', [...(c.cards||[]), { icon:'', title:'New Card', text:'Description here', bgColor:'#f8fafc', textColor:'#1e40af' }])} className="w-full text-xs border border-dashed rounded-lg py-2 hover:bg-muted transition-colors">+ Add Card</button>
       </>}
 
       {block.type === 'table' && <>
@@ -295,7 +298,7 @@ function BlockPropertyPanel({ block, onChange }) {
           {(c.rows||[]).map((row, ri) => (
             <div key={ri} className="flex gap-1 mb-1 items-center">
               <textarea value={row.join('|')} onChange={e => { const rows=[...c.rows]; rows[ri]=e.target.value.split('|'); upd('rows', rows); }} rows={1} className="flex-1 text-xs rounded border border-input bg-transparent px-2 py-1 font-mono resize-none" placeholder="Cell1|Cell2|Cell3" />
-              <button onClick={() => upd('rows', c.rows.filter((_,i) => i!==ri))} className="text-red-400 hover:text-red-600 text-xs px-1">✕</button>
+              <button onClick={() => upd('rows', c.rows.filter((_,i) => i!==ri))} className="text-red-400 hover:text-red-600 text-xs px-1"><X className="w-3.5 h-3.5" aria-hidden="true" /></button>
             </div>
           ))}
           <button onClick={() => upd('rows', [...(c.rows||[]), Array(c.headers?.length||3).fill('')])} className="text-xs text-primary hover:underline mt-1">+ Add Row</button>
@@ -542,7 +545,7 @@ export default function EmailEditorModal({ template, onSave, onCancel, mode = 't
             {BLOCK_PALETTE.map(b => (
               <button key={b.type} onClick={() => addBlock(b.type)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg bg-card border hover:border-primary hover:text-primary text-left transition-colors">
-                <span className="text-sm">{b.icon}</span>
+                <b.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span className="text-xs">{b.label}</span>
                 <Plus className="w-2.5 h-2.5 ml-auto opacity-40" />
               </button>
