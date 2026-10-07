@@ -16,6 +16,7 @@ import TimetableGenerator from '@/components/timetable/TimetableGenerator';
 import { AITimetableChatbot } from '@/components/timetable/AITimetableAssistant';
 import { resolveClashes, isBreak } from '@/lib/timetableClashResolver';
 import BreakSchedule from '@/components/timetable/BreakSchedule';
+import ZoomableTimetableGrid from '@/components/timetable/ZoomableTimetableGrid';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const CATEGORY_COLORS = [
@@ -547,7 +548,12 @@ export default function AdminTimetable() {
               <p className="text-sm">Use the AI Generator tab to auto-generate a timetable.</p>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <>
+              {/* Phones: the whole week at once, pinch to zoom */}
+              <div className="sm:hidden mb-3">
+                <ZoomableTimetableGrid entries={filteredEntries} breaks={breaks} />
+              </div>
+              <div className="hidden sm:grid gap-3">
               {groupedByDay.map(({ day, items }) => (
                 <Card key={day} className="border-0 shadow-sm">
                   <CardContent className="p-4">
@@ -600,7 +606,8 @@ export default function AdminTimetable() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </TabsContent>
 

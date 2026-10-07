@@ -1,63 +1,15 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Coffee } from 'lucide-react';
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const BREAK_NAMES = ['Short Break', 'Long Break'];
-const isBreakEntry = (e) => !!(e && (BREAK_NAMES.includes(e.subjectName) || (typeof e.subjectId === 'string' && e.subjectId.startsWith('BREAK_'))));
-
-function breakSlotsForDay(breaks, day) {
-  if (!Array.isArray(breaks)) return [];
-  return breaks
-    .filter(b => b && b.start && b.end)
-    .map(b => {
-      const o = b.overrides?.[day];
-      return (o && o.start && o.end) ? { name: b.name, start: o.start, end: o.end } : { name: b.name, start: b.start, end: b.end };
-    });
-}
+import ZoomableTimetableGrid from '@/components/timetable/ZoomableTimetableGrid';
+import { DAYS, isBreakEntry, mergeBreakRows, buildGrid } from '@/lib/timetableGrid';
 
 export default function GridTimetable({ entries, title = 'Weekly Timetable', breaks }) {
   // Merge real entries with virtual break rows (from the school's break schedule)
   // so blocked-out break times are always visible — even on manual or teacher
   // timetables that have no break rows of their own.
-  const mergedEntries = useMemo(() => {
-    const list = entries || [];
-    const virtual = [];
-    for (const day of DAYS) {
-      for (const b of breakSlotsForDay(breaks, day)) {
-        const hasReal = list.some(e => isBreakEntry(e) && e.dayOfWeek === day && e.subjectName === b.name);
-        if (!hasReal) {
-          virtual.push({ id: `vbreak-${day}-${b.name}`, isBreakRow: true, subjectName: b.name, dayOfWeek: day, startTime: b.start, endTime: b.end });
-        }
-      }
-    }
-    return [...list, ...virtual];
-  }, [entries, breaks]);
-
-  // Extract unique times and sort them
-  const sortedTimes = useMemo(() => {
-    const times = new Set();
-    mergedEntries.forEach(e => {
-      if (e.startTime) times.add(e.startTime);
-      if (e.endTime) times.add(e.endTime);
-    });
-    return Array.from(times).sort();
-  }, [mergedEntries]);
-
-  // Build a grid: rows = times, columns = days
-  const grid = useMemo(() => {
-    const timetable = {};
-    DAYS.forEach(day => {
-      timetable[day] = {};
-      sortedTimes.forEach(time => { timetable[day][time] = null; });
-    });
-    mergedEntries.forEach(entry => {
-      if (entry.dayOfWeek && entry.startTime && timetable[entry.dayOfWeek]) {
-        timetable[entry.dayOfWeek][entry.startTime] = entry;
-      }
-    });
-    return timetable;
-  }, [mergedEntries, sortedTimes]);
+  const mergedEntries = useMemo(() => mergeBreakRows(entries, breaks), [entries, breaks]);
+  const { times: sortedTimes, grid } = useMemo(() => buildGrid(mergedEntries), [mergedEntries]);
 
   if (mergedEntries.length === 0) {
     return (
@@ -89,8 +41,12 @@ export default function GridTimetable({ entries, title = 'Weekly Timetable', bre
             <span>Blocked-out times — no subjects are scheduled during breaks.</span>
           </div>
         )}
+        {/* Phones: the whole week at once, pinch to zoom */}
+        <div className="sm:hidden">
+          <ZoomableTimetableGrid entries={mergedEntries} breaks={breaks} />
+        </div>
         {/* Grid Container */}
-        <div className="overflow-x-auto">
+        <div className="hidden sm:block overflow-x-auto">
           <div className="min-w-full inline-grid gap-px bg-border dark:bg-slate-700 p-px rounded-lg" style={{ gridTemplateColumns: `80px repeat(5, 1fr)` }}>
             {/* Time Header */}
             <div className="bg-slate-50 dark:bg-slate-800 p-2 sm:p-3 text-xs sm:text-sm font-semibold text-foreground flex items-center justify-center border-b border-border dark:border-slate-700 min-h-10"></div>
