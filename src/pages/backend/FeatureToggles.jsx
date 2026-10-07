@@ -15,6 +15,7 @@ import { clearFeatureCache, getDefaultFeatures } from '@/lib/featureToggleManage
 import SidebarPreview from '@/components/backend/SidebarPreview';
 
 const ALL_FEATURES = [
+  { id: 'aiFeatures', label: 'AI Features', description: 'Master toggle for all AI features (Kairos assistant, AI planners, AI insights)' },
   { id: 'adminDashboard', label: 'Admin Dashboard', description: 'Access to admin dashboard' },
   { id: 'adminStudents', label: 'Manage Students', description: 'View and manage student records' },
   { id: 'adminTeachers', label: 'Manage Teachers', description: 'View and manage teacher records' },

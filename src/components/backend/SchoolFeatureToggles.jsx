@@ -138,7 +138,9 @@ export default function SchoolFeatureToggles({ school }) {
                     className="flex items-center gap-2 text-left flex-1 min-w-0"
                   >
                     {isCollapsed ? <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
-                    {GroupIcon && <GroupIcon className="w-4 h-4 text-primary shrink-0" />}
+                    {group.image
+                      ? <img src={group.image} alt="" className="w-5 h-5 rounded-full object-cover bg-primary/10 shrink-0" />
+                      : GroupIcon && <GroupIcon className="w-4 h-4 text-primary shrink-0" />}
                     <span className="font-semibold text-sm truncate">{group.label}</span>
                     <span className="text-xs text-muted-foreground ml-1">{groupEnabled}/{groupKeys.length}</span>
                   </button>
@@ -155,7 +157,7 @@ export default function SchoolFeatureToggles({ school }) {
                       <div className="flex items-center justify-between p-3 bg-primary/5">
                         <div>
                           <p className="font-semibold text-sm">Master toggle — {group.label}</p>
-                          <p className="text-xs text-muted-foreground">Enable or disable the entire module</p>
+                          <p className="text-xs text-muted-foreground">{group.masterDescription || 'Enable or disable the entire module'}</p>
                         </div>
                         <Switch
                           checked={features[group.masterId] || false}

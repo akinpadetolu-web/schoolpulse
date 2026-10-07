@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAIFeature } from '@/hooks/useAIFeature';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,13 @@ import { Wand2, Loader2, RefreshCw, CheckCircle2, AlertTriangle, MessageSquare, 
 import { toast } from 'sonner';
 
 // Floating chat button + panel for any user type
-export function AITimetableChatbot({ entries, userRole, userName, subjects, grades }) {
+export function AITimetableChatbot(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AITimetableChatbotImpl {...props} />;
+}
+
+function AITimetableChatbotImpl({ entries, userRole, userName, subjects, grades }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', text: getRoleGreeting(userRole, userName) }
@@ -109,7 +116,13 @@ Question: ${userMsg}`,
 }
 
 // ─── Admin: AI Generator Panel ────────────────────────────────────
-export function AIExamTimetableGenerator({ classes, subjects, onApply }) {
+export function AIExamTimetableGenerator(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIExamTimetableGeneratorImpl {...props} />;
+}
+
+function AIExamTimetableGeneratorImpl({ classes, subjects, onApply }) {
   const [form, setForm] = useState({
     examDays: 10,
     startDate: '',
@@ -253,7 +266,13 @@ Return a JSON timetable schedule.`,
 }
 
 // ─── Admin: AI Insights Tab ──────────────────────────────────────
-export function AITimetableInsights({ entries, subjects, teachers, classes }) {
+export function AITimetableInsights(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AITimetableInsightsImpl {...props} />;
+}
+
+function AITimetableInsightsImpl({ entries, subjects, teachers, classes }) {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -386,7 +405,13 @@ Provide:
 }
 
 // ─── Admin: Performance Predictions ─────────────────────────────
-export function AIPerformancePrediction({ entries, subjects, classes, grades }) {
+export function AIPerformancePrediction(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIPerformancePredictionImpl {...props} />;
+}
+
+function AIPerformancePredictionImpl({ entries, subjects, classes, grades }) {
   const [predictions, setPredictions] = useState(null);
   const [loading, setLoading] = useState(false);
 

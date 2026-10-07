@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAIFeature } from '@/hooks/useAIFeature';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,7 +102,13 @@ const DEFAULT_PREFS = {
   intensity: '', subjectPrefs: {}, activities: '', concerns: '', focusTopics: '', medicalConsiderations: ''
 };
 
-export function AIStudyPlanGenerator({ entries, grades, lessonPlans, studentId, schoolId, studentName, parentPrompts = [] }) {
+export function AIStudyPlanGenerator(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIStudyPlanGeneratorImpl {...props} />;
+}
+
+function AIStudyPlanGeneratorImpl({ entries, grades, lessonPlans, studentId, schoolId, studentName, parentPrompts = [] }) {
   const [hoursPerDay, setHoursPerDay] = useState('3');
   const [savedPlan, setSavedPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -518,7 +525,13 @@ Apply ONLY the requested changes. Keep unchanged days identical. Return the full
 }
 
 // ─── AI Exam Tips ─────────────────────────────────────────────────
-export function AIExamPreparationTips({ entries, grades, lessonPlans, studentId, schoolId, studentName }) {
+export function AIExamPreparationTips(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIExamPreparationTipsImpl {...props} />;
+}
+
+function AIExamPreparationTipsImpl({ entries, grades, lessonPlans, studentId, schoolId, studentName }) {
   const [savedTips, setSavedTips] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

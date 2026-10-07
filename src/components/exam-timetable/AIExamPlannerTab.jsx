@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useAIFeature } from '@/hooks/useAIFeature';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,13 @@ const STORAGE_KEY_PROMPT = 'adminExamPlannerPrompt';
 const STORAGE_KEY_TOGGLES = 'adminExamPlannerToggles';
 const STORAGE_KEY_HISTORY = 'adminExamPlannerHistory';
 
-export default function AIExamPlannerTab({ classes, subjects, teachers, examTimetable, onApply, schoolId }) {
+export default function AIExamPlannerTab(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIExamPlannerTabImpl {...props} />;
+}
+
+function AIExamPlannerTabImpl({ classes, subjects, teachers, examTimetable, onApply, schoolId }) {
 
   // ── Same logic as AdminTimetable.jsx: derive subjects per class synchronously ──
   const classSubjectMap = useMemo(() => {

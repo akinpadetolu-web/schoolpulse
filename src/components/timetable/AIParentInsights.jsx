@@ -1,11 +1,18 @@
 import { useState } from 'react';
+import { useAIFeature } from '@/hooks/useAIFeature';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Wand2, Loader2, TrendingUp, TrendingDown, AlertTriangle, Heart } from 'lucide-react';
 
-export default function AIParentInsights({ children, timetable, grades }) {
+export default function AIParentInsights(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <AIParentInsightsImpl {...props} />;
+}
+
+function AIParentInsightsImpl({ children, timetable, grades }) {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAIFeature } from '@/hooks/useAIFeature';
 import { useStudentInsights } from '@/hooks/useStudentInsights';
 import { Button } from '@/components/ui/button';
 import { History, ChevronUp } from 'lucide-react';
@@ -9,7 +10,13 @@ import InsightCard from './InsightCard';
  * all past insights from the term. Used on the student Grade Trends page and the
  * parent Grades page.
  */
-export default function StudentInsightBanner({ studentId, limit = 3, showSubject = true }) {
+export default function StudentInsightBanner(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <StudentInsightBannerImpl {...props} />;
+}
+
+function StudentInsightBannerImpl({ studentId, limit = 3, showSubject = true }) {
   const { insights, loading } = useStudentInsights(studentId);
   const [showAll, setShowAll] = useState(false);
 

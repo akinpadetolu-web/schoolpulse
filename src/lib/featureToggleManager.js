@@ -61,6 +61,7 @@ export async function getFeatures(schoolId, role, userId = null) {
 
 export function getDefaultFeatures(role) {
   const defaults = {
+    aiFeatures: true,
     adminDashboard: true,
     adminStudents: true,
     adminTeachers: true,

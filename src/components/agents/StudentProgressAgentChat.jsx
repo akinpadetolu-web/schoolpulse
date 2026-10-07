@@ -7,13 +7,17 @@ import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
+import { useAIFeature } from '@/hooks/useAIFeature';
+import { KAIROS_AVATAR } from '@/lib/kairos';
 
 const AGENT_NAME = 'kairos';
 function AgentAvatar({ className }) {
   return (
-    <span className={cn('flex-shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center', className)}>
-      <Sparkles className="w-1/2 h-1/2" />
-    </span>
+    <img
+      src={KAIROS_AVATAR}
+      alt="Kairos"
+      className={cn('flex-shrink-0 rounded-full object-cover bg-primary/10', className)}
+    />
   );
 }
 
@@ -59,7 +63,13 @@ function MessageBubble({ message, avatarUrl }) {
   );
 }
 
-export default function StudentProgressAgentChat({ title = 'Kairos', subtitle, avatarUrl }) {
+export default function StudentProgressAgentChat(props) {
+  const aiEnabled = useAIFeature();
+  if (!aiEnabled) return null;
+  return <StudentProgressAgentChatImpl {...props} />;
+}
+
+function StudentProgressAgentChatImpl({ title = 'Kairos', subtitle, avatarUrl }) {
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');

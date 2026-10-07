@@ -6,10 +6,20 @@
 import {
   GraduationCap, Users, ClipboardList, CalendarClock,
   HeartPulse, Building2, BookOpen, Boxes, Wallet,
-  Megaphone, Clock, Monitor, Settings,
+  Megaphone, Clock, Monitor, Settings, Sparkles,
 } from 'lucide-react';
+import { KAIROS_AVATAR } from '@/lib/kairos';
 
 export const FEATURE_TREE = [
+  {
+    id: 'ai',
+    label: 'AI Features',
+    icon: Sparkles,
+    image: KAIROS_AVATAR,
+    masterId: 'aiFeatures',
+    masterDescription: 'Turns every AI feature on or off for this school — the Kairos assistant, AI timetabling, AI exam planning, AI study plans and AI insights.',
+    features: [],
+  },
   {
     id: 'academic',
     label: 'Academic Management',
