@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, TrendingUp, Info } from 'lucide-react';
 import { getGradeLabel } from '@/lib/gradeMapper';
 import { getSubjectFinalGrade, formatBreakdown } from '@/lib/gradeWeightCalculator';
+import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
+import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 
 function pct(score, max) {
   if (!max) return 0;
@@ -20,18 +22,21 @@ export default function StudentGrades() {
   const [categories, setCategories] = useState([]);
   const [gradeLabels, setGradeLabels] = useState({});
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
 
   useEffect(() => {
     async function load() {
       try {
-        const [g, s, cats] = await Promise.all([
+        const [g, s, cats, period] = await Promise.all([
           base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId: user?.id }),
           base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
           base44.entities.GradeCategory.filter({ schoolId: user?.schoolId, classId: user?.classId }),
+          loadCurrentPeriod(user?.schoolId),
         ]);
         setGrades(g || []);
         setSubjects(s || []);
         setCategories(cats || []);
+        setPeriod(period);
       } catch {
         // keep existing data on transient failures so the section doesn't blank out
       }
@@ -48,25 +53,28 @@ export default function StudentGrades() {
     return () => { unsubGrade(); unsubQuiz(); };
   }, [user?.id, user?.schoolId]);
 
+  // Only the current session and term reach the student portal.
+  const visibleGrades = useMemo(() => grades.filter(g => period.inPeriod(gradeDate(g))), [grades, period]);
+
   useEffect(() => {
-    if (!user?.schoolId || !grades.length) return;
+    if (!user?.schoolId || !visibleGrades.length) return;
     const percentages = new Set();
-    grades.forEach(g => { if (g.maxScore > 0) percentages.add(Math.round((g.score / g.maxScore) * 100)); });
+    visibleGrades.forEach(g => { if (g.maxScore > 0) percentages.add(Math.round((g.score / g.maxScore) * 100)); });
     Promise.all([...percentages].map(async p => [p, await getGradeLabel(p, user.schoolId)]))
       .then(entries => setGradeLabels(Object.fromEntries(entries)));
-  }, [grades, user?.schoolId]);
+  }, [visibleGrades, user?.schoolId]);
 
   const getLabelForPct = (p) => gradeLabels[Math.round(p)] || { label: '…', color: 'text-muted-foreground' };
 
   // Group by subject name
   const groupedBySubject = useMemo(() => {
     const map = {};
-    grades.forEach(g => {
+    visibleGrades.forEach(g => {
       if (!map[g.subjectId]) map[g.subjectId] = { name: g.subjectName, subjectId: g.subjectId, grades: [] };
       map[g.subjectId].grades.push(g);
     });
     return Object.values(map);
-  }, [grades]);
+  }, [visibleGrades]);
 
   // Per-subject weighted scores
   const subjectResults = useMemo(() => {
@@ -89,10 +97,12 @@ export default function StudentGrades() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">My Grades</h1>
 
-      {grades.length === 0 ? (
+      <CurrentPeriodNotice period={period} />
+
+      {visibleGrades.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="py-12 text-center text-muted-foreground">
-            <p>No grades recorded yet. Check back soon!</p>
+            <p>No grades recorded yet for this term. Check back soon!</p>
           </CardContent>
         </Card>
       ) : (
@@ -102,7 +112,7 @@ export default function StudentGrades() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Total Grades</p>
-                <p className="text-3xl font-bold mt-1">{grades.length}</p>
+                <p className="text-3xl font-bold mt-1">{visibleGrades.length}</p>
               </CardContent>
             </Card>
             <Card className="border-0 shadow-sm">

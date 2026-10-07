@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Download, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
+import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
+import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 import StudentInsightBanner from '@/components/insights/StudentInsightBanner';
 
 function getColor(pct) {
@@ -25,6 +27,7 @@ export default function ParentGrades() {
   const [categories, setCategories] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
   const [downloadingId, setDownloadingId] = useState(null);
   const initializedRef = useRef(false);
 
@@ -49,8 +52,12 @@ export default function ParentGrades() {
           ]);
           setGrades(allGrades.flat().filter(Boolean));
           setExamResults(allExams.flat().filter(Boolean));
-          const cats = await base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []);
+          const [cats, period] = await Promise.all([
+            base44.entities.GradeCategory.filter({ schoolId: user?.schoolId }).catch(() => []),
+            loadCurrentPeriod(user?.schoolId),
+          ]);
           setCategories(cats || []);
+          setPeriod(period);
         }
       } catch { /* ignore */ }
       setLoading(false);
@@ -105,6 +112,8 @@ export default function ParentGrades() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Children's Grades</h1>
+
+      <CurrentPeriodNotice period={period} />
       
       {children.length > 1 && (
         <div className="space-y-2">
@@ -124,8 +133,8 @@ export default function ParentGrades() {
       )}
 
       {filteredChildren.map(child => {
-        const childGrades = grades.filter(g => g.studentId === child.id);
-        const childExams = examResults.filter(e => e.studentId === child.id);
+        const childGrades = grades.filter(g => g.studentId === child.id && period.inPeriod(gradeDate(g)));
+        const childExams = examResults.filter(e => e.studentId === child.id && period.inPeriod(e.examDate || e.created_date));
 
         // Group grades by subjectId
         const bySubject = {};

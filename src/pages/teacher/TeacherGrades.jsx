@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import TermAverages from '@/components/teacher/TermAverages';
 import MyStudentsSection from '@/components/teacher/MyStudentsSection';
 import BulkGradeEntryDialog from '@/components/teacher/BulkGradeEntryDialog';
+import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
+import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -60,6 +62,7 @@ export default function TeacherGrades() {
   const [editingGrade, setEditingGrade] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
 
   // Filters
   const [filterClass, setFilterClass] = useState("all");
@@ -102,12 +105,17 @@ export default function TeacherGrades() {
         (user?.teachingAssignments || []).map(a => a.subjectId).filter(Boolean)
       )];
 
-      const [allGrades, cls, studs, subjs] = await Promise.all([
+      const [allGradesRaw, cls, studs, subjs, period] = await Promise.all([
         base44.entities.Grade.filter({ schoolId: user?.schoolId }),
         base44.entities.SchoolClass.filter({ schoolId: user?.schoolId, isArchived: false }),
         base44.entities.SchoolUser.filter({ schoolId: user?.schoolId, role: "student", isArchived: false }),
         base44.entities.Subject.filter({ schoolId: user?.schoolId, isArchived: false }),
+        loadCurrentPeriod(user?.schoolId),
       ]);
+      setPeriod(period);
+
+      // Only the current session and term reach the teacher portal.
+      const allGrades = (allGradesRaw || []).filter(g => period.inPeriod(gradeDate(g)));
 
       // Limit to assigned classes/subjects if teacher has assignments
       const filteredCls = assignedClassIds.length
@@ -287,6 +295,10 @@ export default function TeacherGrades() {
           <Button variant="outline" onClick={() => setShowBulkDialog(true)}><Users className="w-4 h-4 mr-2" /> Bulk Entry</Button>
           <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Grade</Button>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <CurrentPeriodNotice period={period} />
       </div>
 
       <Tabs defaultValue="my-students">

@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ExamProgressReport from '@/components/parent/ExamProgressReport';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
+import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
+import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
@@ -63,6 +65,7 @@ export default function ParentDashboard() {
   const [showAddChild, setShowAddChild] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linking, setLinking] = useState(false);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
 
   // Auto-open the add child dialog if no children are linked yet (first login)
   // Reload data whenever user.linkedStudentIds changes
@@ -140,8 +143,13 @@ export default function ParentDashboard() {
       const promises = ids.map(studentId => 
         base44.entities.Grade.filter({ schoolId: user?.schoolId, studentId }).catch(() => [])
       );
-      const results = await Promise.all(promises);
-      const allGrades = results.flat().filter(Boolean);
+      const [results, period] = await Promise.all([
+        Promise.all(promises),
+        loadCurrentPeriod(user?.schoolId),
+      ]);
+      setPeriod(period);
+      // Only the current session and term reach the parent portal.
+      const allGrades = results.flat().filter(Boolean).filter(g => period.inPeriod(gradeDate(g)));
       setGrades(allGrades);
     } catch (error) {
       console.error('Failed to load grades:', error);
@@ -282,6 +290,8 @@ export default function ParentDashboard() {
           <UserPlus className="w-4 h-4 mr-2" /> Add Child
         </Button>
       </div>
+
+      <CurrentPeriodNotice period={period} />
 
       <div className="space-y-4">
          <h2 className="text-lg font-semibold px-3 sm:px-0">My Children</h2>

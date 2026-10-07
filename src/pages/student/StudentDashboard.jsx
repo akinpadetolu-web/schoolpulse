@@ -10,6 +10,8 @@ import TermProgressTab from '@/components/student/TermProgressTab';
 import GradeTrendChart from '@/components/student/GradeTrendChart';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
+import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
+import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
@@ -23,19 +25,23 @@ export default function StudentDashboard() {
   const [timetableCount, setTimetableCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [letterGrade, setLetterGrade] = useState(null);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    const [tt, asgn, grd, subs, cats] = await Promise.all([
+    const [tt, asgn, grd, subs, cats, period] = await Promise.all([
       base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
       base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),
+      loadCurrentPeriod(user.schoolId),
     ]);
     setTimetableCount((tt || []).length);
     setAssignments(asgn || []);
-    setGrades(grd || []);
+    // Only the current session and term reach the student portal.
+    setGrades((grd || []).filter(g => period.inPeriod(gradeDate(g))));
+    setPeriod(period);
     setSubmissions(subs || []);
     setGradeCategories(cats || []);
     setLoading(false);
@@ -109,6 +115,8 @@ export default function StudentDashboard() {
           <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-xs md:text-sm text-muted-foreground">{user?.className || user?.schoolName}</p>
         </div>
+
+        <CurrentPeriodNotice period={period} />
 
         {user?.hostelName && (
           <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2.5">
