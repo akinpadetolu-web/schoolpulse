@@ -53,13 +53,16 @@ export default function AdminSessions() {
 
   async function loadData() {
     setLoading(true);
-    const [sess, trms] = await Promise.all([
-      base44.entities.AcademicSession.filter({ schoolId: user.schoolId }),
-      base44.functions.invoke('manageAcademicTerm', { action: 'list', schoolId: user.schoolId }).then(r => r?.data?.terms || []),
-    ]);
-    setSessions(sess.sort((a, b) => b.academicYear?.localeCompare(a.academicYear)));
-    setTerms(trms.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)));
-    setLoading(false);
+    try {
+      const [sess, trms] = await Promise.all([
+        base44.entities.AcademicSession.filter({ schoolId: user.schoolId }),
+        base44.entities.AcademicTerm.filter({ schoolId: user.schoolId }),
+      ]);
+      setSessions(sess.sort((a, b) => b.academicYear?.localeCompare(a.academicYear)));
+      setTerms(trms.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)));
+    } finally {
+      setLoading(false);
+    }
   }
 
   function getTermsForSession(session) {
@@ -155,7 +158,7 @@ export default function AdminSessions() {
       // If marking as current, unset all other terms first
       if (termForm.isCurrent) {
         await Promise.all(terms.filter(t => t.isCurrent && t.id !== editingTerm?.id).map(t =>
-          base44.functions.invoke('manageAcademicTerm', { action: 'update', termId: t.id, payload: { isCurrent: false } })
+          base44.entities.AcademicTerm.update(t.id, { isCurrent: false })
         ));
       }
 
@@ -172,10 +175,10 @@ export default function AdminSessions() {
       };
 
       if (editingTerm) {
-        await base44.functions.invoke('manageAcademicTerm', { action: 'update', termId: editingTerm.id, payload });
+        await base44.entities.AcademicTerm.update(editingTerm.id, payload);
         toast.success('Term updated');
       } else {
-        await base44.functions.invoke('manageAcademicTerm', { action: 'create', payload });
+        await base44.entities.AcademicTerm.create(payload);
         toast.success('Term created');
       }
       setShowTermDialog(false);
@@ -188,7 +191,7 @@ export default function AdminSessions() {
 
   async function handleDeleteTerm(term) {
     if (!confirm(`Delete term "${term.name}"?`)) return;
-    await base44.functions.invoke('manageAcademicTerm', { action: 'delete', termId: term.id });
+    await base44.entities.AcademicTerm.delete(term.id);
     toast.success('Term deleted');
     loadData();
   }
@@ -196,7 +199,7 @@ export default function AdminSessions() {
   async function handleSetCurrentTerm(term) {
     // Unset all terms, set this one
     await Promise.all(terms.map(t =>
-      base44.functions.invoke('manageAcademicTerm', { action: 'update', termId: t.id, payload: { isCurrent: t.id === term.id } })
+      base44.entities.AcademicTerm.update(t.id, { isCurrent: t.id === term.id })
     ));
     toast.success(`"${term.name}" is now the current term`);
     loadData();

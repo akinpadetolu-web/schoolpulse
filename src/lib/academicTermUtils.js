@@ -1,13 +1,12 @@
 import { base44 } from '@/api/base44Client';
 
 /**
- * Get all academic terms for a school via backend function (bypasses RLS)
+ * Get all academic terms for a school
  */
 export async function getTerms(schoolId) {
   if (!schoolId) return [];
-  const res = await base44.functions.invoke('manageAcademicTerm', { action: 'list', schoolId });
-  const terms = res?.data?.terms || [];
-  return terms.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  const terms = await base44.entities.AcademicTerm.filter({ schoolId });
+  return (terms || []).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 }
 
 /**
