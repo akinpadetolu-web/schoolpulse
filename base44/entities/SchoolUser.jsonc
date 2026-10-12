@@ -365,6 +365,16 @@
         "weightedAverage"
       ],
       "description": "Term-specific weighted averages by subject"
+    },
+    "failedLoginAttempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Consecutive failed sign-in attempts. Reset on a successful sign-in."
+    },
+    "lockedUntil": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Sign-in is refused until this timestamp after repeated failed attempts."
     }
   },
   "required": [

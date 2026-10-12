@@ -11,6 +11,7 @@ import { Search, FileText, ImageIcon, Loader2, MessageSquare, Users, Download, S
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import JSZip from 'jszip';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 export default function TeacherSharedNotes() {
   const { schoolUser: user } = useSchoolAuth();
@@ -175,7 +176,7 @@ export default function TeacherSharedNotes() {
               ) : (
                 <div
                   className="prose prose-sm max-w-none text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: viewing.content || '<p class="text-muted-foreground italic">No content</p>' }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewing.content) || '<p class="text-muted-foreground italic">No content</p>' }}
                 />
               )}
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, ChevronRight, CheckCircle2, Clock, Star, FileText, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 export default function TeacherSubmissions() {
   const { schoolUser: user } = useSchoolAuth();
@@ -417,7 +418,7 @@ export default function TeacherSubmissions() {
           <DialogHeader><DialogTitle>Submission Content</DialogTitle></DialogHeader>
           {viewingContent?.content && (
             <div className="prose prose-sm max-w-none border rounded-lg p-4 bg-muted/20"
-              dangerouslySetInnerHTML={{ __html: viewingContent.content }} />
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewingContent.content) }} />
           )}
           {viewingContent?.fileUrl && (
             <a href={viewingContent.fileUrl} target="_blank" rel="noreferrer"

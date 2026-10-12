@@ -33,8 +33,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return Response.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (password.length < 8) {
+      return Response.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return Response.json({ error: "Password must include at least one letter and one number" }, { status: 400 });
     }
 
     const trimmedCodes = linkCodes.map((c) => c.trim()).filter(Boolean);

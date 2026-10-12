@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePassword, setCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
+import { setCurrentSuperAdmin, getCurrentSuperAdmin } from '@/lib/auth';
 import { ensureSuperAdminExists } from '@/lib/superAdminInit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,19 @@ export default function BackendLogin() {
 
     setLoading(true);
     try {
-      const users = await base44.entities.SchoolUser.filter({ email: email, role: "superAdmin" });
-      const user = (users || []).find(u => u.email === email && !u.isArchived);
+      // Verified server-side, with lockout after repeated failures.
+      const response = await base44.functions.invoke('schoolLogin', {
+        identifier: email,
+        password,
+        superAdmin: true,
+      });
 
-      if (!user) { setError("Invalid credentials"); setLoading(false); return; }
-      if (!comparePassword(password, user.passwordHash)) { setError("Invalid credentials"); setLoading(false); return; }
+      const user = response?.data?.user;
+      if (!user) {
+        setError(response?.data?.error || "Invalid credentials");
+        setLoading(false);
+        return;
+      }
 
       setCurrentSuperAdmin(user);
       navigate("/backend");

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { comparePassword } from '@/lib/auth';
+
 import { base44 as base44sdk } from '@/api/base44Client';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -176,17 +176,20 @@ export default function SchoolPortal() {
       const school = schools.find((s) => s.id === selectedSchool);
       if (!school) {setError("Invalid school selected");setLoading(false);return;}
 
-      const users = await base44.entities.SchoolUser.filter({ schoolId: school.id });
-      if (!users) {setError("Could not reach server. Please check your connection and try again.");setLoading(false);return;}
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Credentials are verified on the server; the browser never receives a
+      // password hash, and repeated failures lock the account.
+      const response = await base44sdk.functions.invoke('schoolLogin', {
+        schoolId: school.id,
+        identifier: username.trim(),
+        password,
+      });
 
-      const trimmedUsername = username.trim();
-      const user = (users || []).find((u) =>
-        (u.username?.trim() === trimmedUsername || u.email?.trim() === trimmedUsername) && !u.isArchived
-      );
-
-      if (!user) {setError("Invalid username or password");setLoading(false);return;}
-      if (!comparePassword(password, user.passwordHash)) {setError("Invalid username or password");setLoading(false);return;}
+      const user = response?.data?.user;
+      if (!user) {
+        setError(response?.data?.error || "Invalid username or password");
+        setLoading(false);
+        return;
+      }
 
       if (user.role === "admin" && isMobile) {
         setError("School Admin login is only available on laptop or desktop");
@@ -220,7 +223,8 @@ export default function SchoolPortal() {
     if (trimmedCodes.length === 0) return setSignupError("Please enter at least one student link code");
     if (!signupFullName.trim()) return setSignupError("Please enter your full name");
     if (!signupEmail.trim()) return setSignupError("Please enter your email address");
-    if (signupPassword.length < 6) return setSignupError("Password must be at least 6 characters");
+    if (signupPassword.length < 8) return setSignupError("Password must be at least 8 characters");
+    if (!/[A-Za-z]/.test(signupPassword) || !/[0-9]/.test(signupPassword)) return setSignupError("Password must include at least one letter and one number");
     if (signupPassword !== signupConfirm) return setSignupError("Passwords do not match");
 
     setSignupLoading(true);
@@ -509,7 +513,7 @@ export default function SchoolPortal() {
 
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
-                      <PasswordInput id="signup-password" name="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="At least 6 characters" />
+                      <PasswordInput id="signup-password" name="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="At least 8 characters" />
                     </div>
 
                     <div className="space-y-2">
