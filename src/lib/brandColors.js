@@ -24,6 +24,56 @@ function hslString(h, s, l) {
   return `${h} ${s}% ${l}%`;
 }
 
+/** Convert hex to "H S% L%" channels, for use inside hsl(var(--token)) */
+function hexToHslChannels(hex) {
+  const c = hexToHsl(hex);
+  return c ? hslString(c.h, c.s, c.l) : null;
+}
+
+const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+/**
+ * Build a Tailwind-style tint/shade ramp (50–950) from one brand colour.
+ * The chosen colour is anchored at the 500 step, so picking a mid-green
+ * "Success" colour produces a coherent green scale for every shade the app
+ * already uses (bg-emerald-100, text-emerald-700, …).
+ */
+function colorRamp(hex) {
+  const c = hexToHsl(hex);
+  if (!c) return null;
+  const { h, s, l } = c;
+  return {
+    50:  hslString(h, clamp(Math.round(s * 0.85), 0, 100), 96),
+    100: hslString(h, clamp(Math.round(s * 0.80), 0, 100), 91),
+    200: hslString(h, clamp(Math.round(s * 0.75), 0, 100), 82),
+    300: hslString(h, clamp(Math.round(s * 0.70), 0, 100), 72),
+    400: hslString(h, clamp(Math.round(s * 0.80), 0, 100), 61),
+    500: hslString(h, s, l),
+    600: hslString(h, clamp(Math.round(s * 1.05), 0, 100), clamp(l - 9, 6, 100)),
+    700: hslString(h, clamp(Math.round(s * 1.05), 0, 100), clamp(l - 17, 5, 100)),
+    800: hslString(h, clamp(Math.round(s * 1.05), 0, 100), clamp(l - 23, 4, 100)),
+    900: hslString(h, clamp(Math.round(s * 1.10), 0, 100), clamp(l - 28, 3, 100)),
+    950: hslString(h, clamp(Math.round(s * 1.10), 0, 100), clamp(l - 33, 3, 100)),
+  };
+}
+
+const RAMP_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
+/** Brand colour fields that drive a full status colour scale. */
+const STATUS_RAMPS = ['success', 'warning', 'danger'];
+
+/** Tokens written as HSL channel values and consumed via hsl(var(--token)). */
+const HSL_TOKENS = [
+  ['--link', 'linkColor'],
+  ['--badge', 'badgeColor'],
+  ['--btn-primary', 'primaryBtnColor'],
+  ['--btn-primary-foreground', 'primaryBtnTextColor'],
+  ['--btn-secondary', 'secondaryBtnColor'],
+  ['--btn-secondary-foreground', 'secondaryBtnTextColor'],
+  ['--table-header', 'tableHeaderBgColor'],
+  ['--table-header-foreground', 'tableHeaderTextColor'],
+];
+
 // Default hex values for every color token
 export const COLOR_DEFAULTS = {
   primaryColor:          '#4f6ef7',
@@ -176,6 +226,21 @@ export function applyBrandColors(colors = {}) {
     setProp('--destructive', hslString(danger.h, danger.s, danger.l));
   }
   setProp('--brand-danger', get('dangerColor'));
+
+  // ── STATUS SCALES (success / warning / danger) ─────────────────────────────
+  // The emerald / amber / red Tailwind scales are remapped to these variables
+  // in tailwind.config.js, so the Success, Warning and Danger picks recolour
+  // every status badge, grade pill and alert across the app.
+  STATUS_RAMPS.forEach(name => {
+    const ramp = colorRamp(get(`${name}Color`));
+    if (ramp) Object.entries(ramp).forEach(([step, v]) => setProp(`--${name}-${step}`, v));
+  });
+
+  // ── LINK / BADGE / BUTTONS / TABLES ────────────────────────────────────────
+  HSL_TOKENS.forEach(([prop, key]) => {
+    const v = hexToHslChannels(get(key));
+    if (v) setProp(prop, v);
+  });
 }
 
 /** Remove all brand color overrides, reverting to stylesheet defaults */
@@ -196,6 +261,8 @@ export function clearBrandColors() {
     '--btn-primary-bg', '--btn-primary-text', '--btn-secondary-bg', '--btn-secondary-text',
     '--table-header-bg', '--table-header-text',
     '--badge-color', '--brand-success', '--brand-warning', '--destructive', '--brand-danger',
+    ...STATUS_RAMPS.flatMap(n => RAMP_STEPS.map(s => `--${n}-${s}`)),
+    ...HSL_TOKENS.map(([prop]) => prop),
   ].forEach(p => root.style.removeProperty(p));
 }
 

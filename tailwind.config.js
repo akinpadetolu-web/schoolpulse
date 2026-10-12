@@ -1,4 +1,15 @@
 /** @type {import('tailwindcss').Config} */
+
+/**
+ * A Tailwind colour scale wired to one brand status ramp. brandColors.js writes
+ * the --success-* / --warning-* / --danger-* variables from the school's
+ * Success / Warning / Danger picks, so these scales follow them.
+ */
+const statusRamp = (name) =>
+  Object.fromEntries(
+    [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map(step => [step, `hsl(var(--${name}-${step}))`])
+  );
+
 module.exports = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
@@ -31,6 +42,15 @@ module.exports = {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: { '1': 'hsl(var(--chart-1))', '2': 'hsl(var(--chart-2))', '3': 'hsl(var(--chart-3))', '4': 'hsl(var(--chart-4))', '5': 'hsl(var(--chart-5))' },
+        link: 'hsl(var(--link))',
+        badge: 'hsl(var(--badge))',
+        tableHeader: { DEFAULT: 'hsl(var(--table-header))', foreground: 'hsl(var(--table-header-foreground))' },
+        buttonPrimary: { DEFAULT: 'hsl(var(--btn-primary))', foreground: 'hsl(var(--btn-primary-foreground))' },
+        buttonSecondary: { DEFAULT: 'hsl(var(--btn-secondary))', foreground: 'hsl(var(--btn-secondary-foreground))' },
+        // Status palettes follow the school's Success / Warning / Danger picks.
+        emerald: statusRamp('success'),
+        amber: statusRamp('warning'),
+        red: statusRamp('danger'),
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',

@@ -66,6 +66,53 @@
     --glass-lift: 10px;
     --glass-sheen: 0.72;
     --glass-ring: 0.06;
+
+    /* Brand-driven tokens. brandColors.js overwrites these from the school
+       record; the values below are the defaults used before a school loads. */
+    --link: 229 91% 64%;
+    --badge: 229 91% 64%;
+    --btn-primary: 229 91% 64%;
+    --btn-primary-foreground: 0 0% 100%;
+    --btn-secondary: 226 100% 97%;
+    --btn-secondary-foreground: 229 91% 64%;
+    --table-header: 210 40% 96%;
+    --table-header-foreground: 215 19% 35%;
+
+    --success-50: 142 60% 96%;
+    --success-100: 142 57% 91%;
+    --success-200: 142 53% 82%;
+    --success-300: 142 50% 72%;
+    --success-400: 142 57% 61%;
+    --success-500: 142 71% 45%;
+    --success-600: 142 75% 36%;
+    --success-700: 142 75% 28%;
+    --success-800: 142 75% 22%;
+    --success-900: 142 78% 17%;
+    --success-950: 142 78% 12%;
+
+    --warning-50: 38 78% 96%;
+    --warning-100: 38 74% 91%;
+    --warning-200: 38 69% 82%;
+    --warning-300: 38 64% 72%;
+    --warning-400: 38 74% 61%;
+    --warning-500: 38 92% 50%;
+    --warning-600: 38 97% 41%;
+    --warning-700: 38 97% 33%;
+    --warning-800: 38 97% 27%;
+    --warning-900: 38 100% 22%;
+    --warning-950: 38 100% 17%;
+
+    --danger-50: 0 71% 96%;
+    --danger-100: 0 67% 91%;
+    --danger-200: 0 63% 82%;
+    --danger-300: 0 59% 72%;
+    --danger-400: 0 67% 61%;
+    --danger-500: 0 84% 60%;
+    --danger-600: 0 88% 51%;
+    --danger-700: 0 88% 43%;
+    --danger-800: 0 88% 37%;
+    --danger-900: 0 92% 32%;
+    --danger-950: 0 92% 27%;
   }
 }
 
@@ -84,6 +131,12 @@
       radial-gradient(820px 820px at 50% 128%, hsl(var(--primary) / 0.07), transparent 62%);
     background-attachment: fixed;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Links without their own text colour follow the brand Link Color.
+     Tailwind text-* utilities always win over this. */
+  a {
+    color: hsl(var(--link));
   }
 
   button, a, [role="button"], nav a, nav button,
