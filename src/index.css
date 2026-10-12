@@ -238,20 +238,26 @@
     box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.3);
   }
 
+  /* The top navigation bar renders the exact colours picked in Brand Colours
+     (Top Bar Background / Top Bar Text) — no sheen gradient, no translucency
+     letting the page show through, so the choice is what you see. */
   .glass-bar {
-    background-color: hsl(var(--card) / var(--glass-alpha));
-    background-image: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, calc(var(--glass-sheen) + 0.15)) 0%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    box-shadow:
-      0 0 0 1px rgba(15, 23, 42, var(--glass-ring)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      0 6px 20px -14px rgba(15, 23, 42, 0.28);
+    background-color: var(--topbar-bg, hsl(var(--card)));
+    background-image: none;
+    color: var(--topbar-text, hsl(var(--foreground)));
+    border-bottom: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  }
+
+  /* Icon buttons and the user menu in the top bar follow the bar's own text
+     colour, including on hover, instead of the global ghost-button styling. */
+  .glass-bar button {
+    color: inherit;
+  }
+
+  .glass-bar button:hover {
+    background-color: color-mix(in srgb, currentColor 14%, transparent);
+    color: inherit;
   }
 
   /* Per-page glass intensity. The shell root carries data-glass so the

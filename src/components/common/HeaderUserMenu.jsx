@@ -37,7 +37,7 @@ export default function HeaderUserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="gap-2 px-2">
           <UserAvatar user={user} size="sm" />
-          <span className="hidden sm:inline text-sm font-medium text-foreground truncate max-w-[150px]">
+          <span className="hidden sm:inline text-sm font-medium truncate max-w-[150px]">
             {user?.fullName}
           </span>
         </Button>

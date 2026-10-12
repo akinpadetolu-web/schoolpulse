@@ -35,7 +35,7 @@ export default function SchoolLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 glass-bar h-14 flex items-center px-4 md:px-6 shrink-0 select-none"
-          style={{ paddingTop: 'env(safe-area-inset-top)', backgroundColor: 'var(--topbar-bg, transparent)', color: 'var(--topbar-text, hsl(var(--foreground)))' }}
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
@@ -47,7 +47,7 @@ export default function SchoolLayout() {
               </Button>
             )}
           </div>
-          <h2 className="text-sm font-medium text-muted-foreground md:block hidden">{user.schoolName || "School"} — Admin</h2>
+          <h2 className="text-sm font-medium md:block hidden">{user.schoolName || "School"} — Admin</h2>
         </header>
         <main className="flex-1 min-h-0 w-full" style={{ overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           <AnimatePresence mode="wait" initial={false}>

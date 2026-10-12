@@ -53,7 +53,7 @@ export default function StudentLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 glass-bar h-14 flex items-center justify-between px-4 md:px-6 shrink-0 select-none"
-          style={{ paddingTop: 'env(safe-area-inset-top)', backgroundColor: 'var(--topbar-bg, transparent)', color: 'var(--topbar-text, hsl(var(--foreground)))' }}
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
@@ -64,7 +64,7 @@ export default function StudentLayout() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             )}
-            <h2 className="text-sm font-medium text-muted-foreground md:block hidden">Student Portal</h2>
+            <h2 className="text-sm font-medium md:block hidden">Student Portal</h2>
           </div>
           <HeaderUserMenu />
         </header>
