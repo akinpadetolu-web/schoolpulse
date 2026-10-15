@@ -270,7 +270,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-full bg-background text-foreground p-4 md:p-6 rounded-xl space-y-4">
+    <div className="min-h-full bg-background text-foreground rounded-xl space-y-4">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
