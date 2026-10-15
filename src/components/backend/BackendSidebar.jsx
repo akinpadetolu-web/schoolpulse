@@ -61,7 +61,7 @@ export default function BackendSidebar({ isOpen, onClose }) {
   return (
     <>
       {isOpen && <div className="fixed inset-0 z-40 md:hidden bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />}
-      <aside className={`fixed top-0 left-0 h-full w-64 glass-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 h-full w-56 glass-sidebar text-sidebar-foreground z-50 flex flex-col transition-transform duration-300 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
