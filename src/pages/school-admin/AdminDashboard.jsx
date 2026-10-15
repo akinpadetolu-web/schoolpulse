@@ -207,20 +207,32 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!schoolId) { setLoading(false); return; }
+    // Fire the twelve reads in small sequential batches: requesting them all at
+    // once trips the app's rate limit. A call that still fails resolves to an
+    // empty list, so the dashboard renders what did load instead of erroring.
+    async function batchLoad(tasks, size = 3) {
+      const out = [];
+      for (let i = 0; i < tasks.length; i += size) {
+        const chunk = await Promise.all(tasks.slice(i, i + size).map(t => t().catch(() => [])));
+        out.push(...chunk);
+      }
+      return out;
+    }
+
     async function load() {
-      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms, gradeCategories, sessions] = await Promise.all([
-        base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
-        base44.entities.Grade.filter({ schoolId }),
-        base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
-        base44.entities.Subject.filter({ schoolId, isArchived: false }),
-        base44.entities.SchoolUser.filter({ schoolId, role: 'teacher', isArchived: false }),
-        base44.entities.Attendance.filter({ schoolId }),
-        base44.entities.Assignment.filter({ schoolId }),
-        base44.entities.Submission.filter({ schoolId }),
-        base44.entities.StaffAttendance.filter({ schoolId }).catch(() => []),
-        base44.entities.AcademicTerm.filter({ schoolId }).catch(() => []),
-        base44.entities.GradeCategory.filter({ schoolId }).catch(() => []),
-        base44.entities.AcademicSession.filter({ schoolId }).catch(() => []),
+      const [students, grades, classes, subjects, teachers, attendance, assignments, submissions, staffAtt, terms, gradeCategories, sessions] = await batchLoad([
+        () => base44.entities.SchoolUser.filter({ schoolId, role: 'student', isArchived: false }),
+        () => base44.entities.Grade.filter({ schoolId }),
+        () => base44.entities.SchoolClass.filter({ schoolId, isArchived: false }),
+        () => base44.entities.Subject.filter({ schoolId, isArchived: false }),
+        () => base44.entities.SchoolUser.filter({ schoolId, role: 'teacher', isArchived: false }),
+        () => base44.entities.Attendance.filter({ schoolId }),
+        () => base44.entities.Assignment.filter({ schoolId }),
+        () => base44.entities.Submission.filter({ schoolId }),
+        () => base44.entities.StaffAttendance.filter({ schoolId }),
+        () => base44.entities.AcademicTerm.filter({ schoolId }),
+        () => base44.entities.GradeCategory.filter({ schoolId }),
+        () => base44.entities.AcademicSession.filter({ schoolId }),
       ]);
       setRaw({ students: students || [], grades: grades || [], classes: classes || [], subjects: subjects || [], teachers: teachers || [], attendance: attendance || [], assignments: assignments || [], submissions: submissions || [], staffAttendance: staffAtt || [], academicTerms: terms || [], gradeCategories: gradeCategories || [], sessions: sessions || [] });
 
@@ -235,9 +247,9 @@ export default function AdminDashboard() {
     }
     load();
 
-    const u1 = base44.entities.Grade.subscribe(() => base44.entities.Grade.filter({ schoolId }).then(g => setRaw(r => ({ ...r, grades: g || [] }))));
-    const u2 = base44.entities.Attendance.subscribe(() => base44.entities.Attendance.filter({ schoolId }).then(a => setRaw(r => ({ ...r, attendance: a || [] }))));
-    const u3 = base44.entities.Submission.subscribe(() => base44.entities.Submission.filter({ schoolId }).then(s => setRaw(r => ({ ...r, submissions: s || [] }))));
+    const u1 = base44.entities.Grade.subscribe(() => base44.entities.Grade.filter({ schoolId }).then(g => setRaw(r => ({ ...r, grades: g || [] }))).catch(() => {}));
+    const u2 = base44.entities.Attendance.subscribe(() => base44.entities.Attendance.filter({ schoolId }).then(a => setRaw(r => ({ ...r, attendance: a || [] }))).catch(() => {}));
+    const u3 = base44.entities.Submission.subscribe(() => base44.entities.Submission.filter({ schoolId }).then(s => setRaw(r => ({ ...r, submissions: s || [] }))).catch(() => {}));
     return () => { u1(); u2(); u3(); };
   }, [schoolId]);
 
