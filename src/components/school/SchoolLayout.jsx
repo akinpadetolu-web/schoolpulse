@@ -13,6 +13,7 @@ export default function SchoolLayout() {
   const location = useLocation();
   const { schoolUser: user, isLoadingSchoolAuth } = useSchoolAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const isRootScreen = location.pathname === '/school-admin';
 
@@ -31,7 +32,12 @@ export default function SchoolLayout() {
 
   return (
     <div className="flex flex-col md:flex-row" data-glass="strong" style={{ height: '100dvh', overflow: 'hidden' }}>
-      <SchoolSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SchoolSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header
           className="sticky top-0 z-30 glass-bar h-14 flex items-center px-4 md:px-6 shrink-0 select-none"

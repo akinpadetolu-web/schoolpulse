@@ -7,7 +7,7 @@ import { ChevronDown } from 'lucide-react';
  * Groups are collapsible (dropdown style) to reduce long scrolling;
  * the group containing the active route auto-expands.
  */
-export function SidebarNavGroups({ groups, isActive, onItemClick }) {
+export function SidebarNavGroups({ groups, isActive, onItemClick, collapsed = false }) {
   const location = useLocation();
 
   const computeOpen = () => {
@@ -35,12 +35,12 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
   const toggle = (i) => setOpenGroups(prev => ({ ...prev, [i]: !prev[i] }));
 
   return (
-    <nav className="flex-1 overflow-y-auto -webkit-overflow-scrolling-touch py-4 px-3 space-y-2">
+    <nav className={`flex-1 overflow-y-auto -webkit-overflow-scrolling-touch py-4 space-y-2 ${collapsed ? 'px-2' : 'px-3'}`}>
       {groups.map((group, idx) => {
-        const isOpen = !!openGroups[idx];
+        const isOpen = collapsed || !!openGroups[idx];
         return (
           <div key={idx}>
-            {group.label && (
+            {group.label && !collapsed && (
               <button
                 type="button"
                 onClick={() => toggle(idx)}
@@ -57,18 +57,25 @@ export function SidebarNavGroups({ groups, isActive, onItemClick }) {
                     key={item.path}
                     to={item.path}
                     onClick={onItemClick}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] ${
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center rounded-lg text-xs font-medium transition-colors min-h-[44px] ${
+                      collapsed ? 'justify-center px-2' : 'gap-3 px-3 py-2.5'
+                    } ${
                       isActive(item.path)
                         ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }`}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                    {item.badge && (
-                      <span className="ml-auto text-xs bg-red-500 text-white rounded-full px-2 py-0.5 flex-shrink-0">
-                        {item.badge}
-                      </span>
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && (
+                          <span className="ml-auto text-xs bg-red-500 text-white rounded-full px-2 py-0.5 flex-shrink-0">
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
                     )}
                   </Link>
                 ))}

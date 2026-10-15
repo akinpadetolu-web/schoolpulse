@@ -4,8 +4,9 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
-  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield, Stethoscope, AlertTriangle, Syringe, Accessibility, ClipboardCheck
+  FileText, ClipboardList, Megaphone, LogOut, X, School, Tag, Zap, UserCog, UserCheck,   BarChart3, CalendarDays, TrendingUp, Award, PieChart, Briefcase, ArrowUpCircle, CheckSquare, Settings, Gauge, Clock, AlertCircle, MessageSquare, Mail, BookOpenCheck, DollarSign, Receipt, CreditCard, BarChart2, CalendarRange, Package, Heart, Home, Shield, Stethoscope, AlertTriangle, Syringe, Accessibility, ClipboardCheck, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useExamTimetable } from '@/lib/examTimetableContext';
 import { Button } from '@/components/ui/button';
 import { SidebarNavGroups } from './SidebarWithGroups';
@@ -142,10 +143,13 @@ const featureMap = {
   "/school-admin/staff-dashboard": "staffDashboard",
   };
 
-export default function SchoolSidebar({ isOpen, onClose }) {
+export default function SchoolSidebar({ isOpen, onClose, collapsed = false, onToggleCollapse }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { schoolUser: user, logout } = useSchoolAuth();
+  const isMobile = useIsMobile();
+  // Collapsing only applies to the docked desktop sidebar; the mobile drawer stays full width.
+  const isCollapsed = collapsed && !isMobile;
   const [features, setFeatures] = useState({});
   const [loading, setLoading] = useState(true);
   const { examTimetable } = useExamTimetable(user?.schoolId);
@@ -264,18 +268,30 @@ export default function SchoolSidebar({ isOpen, onClose }) {
           onClick={onClose}
         />
       )}
-      <aside className={`fixed top-0 left-0 h-full w-56 glass-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2.5">
-            <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover" />
-            <div>
+      <aside className={`fixed top-0 left-0 h-full w-56 glass-sidebar text-sidebar-foreground flex flex-col transition-[transform,width] duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${collapsed ? 'md:w-16' : 'md:w-56'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`flex border-b border-sidebar-border ${isCollapsed ? 'flex-col items-center gap-2 p-3' : 'items-center justify-between p-5'}`}>
+          <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0 ml-2.5">
               <span className="font-bold text-sm">SchoolEduPulse</span>
-              <p className="text-xs text-sidebar-foreground/60">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
             </div>
+          )}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex text-sidebar-foreground"
+              onClick={onToggleCollapse}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" className="md:hidden text-sidebar-foreground" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
@@ -286,20 +302,27 @@ export default function SchoolSidebar({ isOpen, onClose }) {
               groups={filteredNavGroups}
               isActive={isActive}
               onItemClick={onClose}
+              collapsed={isCollapsed}
             />
           )}
         </div>
 
         <div className="p-3 border-t border-sidebar-border shrink-0">
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
+          <div className={`flex items-center gap-3 py-2 mb-2 ${isCollapsed ? 'justify-center px-0' : 'px-3'}`}>
             <UserAvatar user={user} size="md" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.fullName || "Admin"}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email || ""}</p>
-            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.fullName || "Admin"}</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email || ""}</p>
+              </div>
+            )}
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors">
-            <LogOut className="w-4 h-4" /> Sign Out
+          <button
+            onClick={handleLogout}
+            title="Sign Out"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent w-full transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />{!isCollapsed && 'Sign Out'}
           </button>
         </div>
       </aside>
