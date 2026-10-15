@@ -269,11 +269,11 @@ export default function SchoolSidebar({ isOpen, onClose, collapsed = false, onTo
         />
       )}
       <aside className={`fixed top-0 left-0 h-full w-56 glass-sidebar text-sidebar-foreground flex flex-col transition-[transform,width] duration-300 ease-in-out z-50 md:relative md:translate-x-0 md:z-auto md:flex-shrink-0 ${collapsed ? 'md:w-16' : 'md:w-56'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className={`flex border-b border-sidebar-border ${isCollapsed ? 'flex-col items-center gap-2 p-3' : 'items-center justify-between p-5'}`}>
+        <div className={`flex border-b border-sidebar-border ${isCollapsed ? 'flex-col items-center gap-2 p-3' : 'items-center justify-between px-4 py-5'}`}>
           <img src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/c559f9818_file_0000000038e0720cb05425162da2ee4d.png" alt="SEP" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
           {!isCollapsed && (
-            <div className="flex-1 min-w-0 ml-2.5">
-              <span className="font-bold text-sm">SchoolEduPulse</span>
+            <div className="flex-1 min-w-0 ml-2">
+              <span className="font-bold text-sm whitespace-nowrap">SchoolEduPulse</span>
               <p className="text-xs text-sidebar-foreground/60 truncate">{user?.role === 'hr_staff' ? (user?.jobTitle || 'Staff') : (user?.schoolName || "Admin Panel")}</p>
             </div>
           )}
