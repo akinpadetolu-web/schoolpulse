@@ -136,7 +136,7 @@ export default function StudentSubjects() {
     }));
 
   return (
-    <div className="space-y-6 p-3 md:p-6">
+    <div className="space-y-6 p-3 md:p-0">
       <div>
         <h1 className="text-2xl font-bold">My Subjects</h1>
         <p className="text-sm text-muted-foreground mt-1">Academic history and grades for each subject in your class</p>

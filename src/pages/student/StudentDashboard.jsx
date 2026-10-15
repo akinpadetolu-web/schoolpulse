@@ -110,7 +110,7 @@ export default function StudentDashboard() {
   );
 
   return (
-    <div className="space-y-3 p-3 md:space-y-6 md:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
+    <div className="space-y-3 p-3 md:space-y-6 md:p-0 md:pb-0 pb-[calc(5rem+env(safe-area-inset-bottom))]">
         <div className="mt-1 md:mt-2">
           <h1 className="text-xl md:text-2xl font-bold">Welcome, {user?.fullName}</h1>
           <p className="text-xs md:text-sm text-muted-foreground">{user?.className || user?.schoolName}</p>

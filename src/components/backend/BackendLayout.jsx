@@ -61,7 +61,7 @@ export default function BackendLayout() {
             <h2 className="text-sm font-semibold text-foreground">{currentTitle}</h2>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-16 md:pb-6">
+        <main className="flex-1 overflow-y-auto px-4 md:px-12 py-6 pb-16 md:pb-6">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

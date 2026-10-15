@@ -78,7 +78,7 @@ export default function StudentLayout() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={(d) => ({ x: d >= 0 ? '-30%' : '30%', opacity: 0 })}
                 transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                className="p-4 md:p-6 w-full"
+                className="p-4 md:p-12 w-full"
                 style={{
                   touchAction: 'pan-y',
                   paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',

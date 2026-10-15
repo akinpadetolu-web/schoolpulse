@@ -99,7 +99,7 @@ export default function TeacherSharedNotes() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
+    <div className="p-4 md:p-0 space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Shared Notes</h1>

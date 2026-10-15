@@ -129,7 +129,7 @@ export default function StudentNotes() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-5 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6">
+    <div className="p-4 md:p-0 space-y-5 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">My Notes</h1>
         <div className="flex gap-2">
