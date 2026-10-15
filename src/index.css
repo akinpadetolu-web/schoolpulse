@@ -286,6 +286,35 @@
     --glass-ring: 0.08;
   }
 
+  /* ---- Page gutter ----------------------------------------------------
+     One gutter for every portal page. Device safe-area insets are folded in
+     with max()/calc() so a device inset can never cancel the gutter itself
+     (an inline env() of 0px used to wipe the padding out entirely). */
+  .sep-page-pad {
+    padding: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Portals with a fixed mobile bottom nav need extra clearance below. */
+  .sep-page-pad-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 768px) {
+    .sep-page-pad {
+      padding: 3rem;
+      padding-left: max(3rem, env(safe-area-inset-left));
+      padding-right: max(3rem, env(safe-area-inset-right));
+      padding-bottom: 3rem;
+    }
+
+    .sep-page-pad-nav {
+      padding-bottom: 3rem;
+    }
+  }
+
   /* ---- Skeleton shimmer ---------------------------------------------- */
   .sep-skeleton {
     position: relative;

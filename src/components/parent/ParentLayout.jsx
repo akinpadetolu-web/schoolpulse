@@ -78,13 +78,8 @@ export default function ParentLayout() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={(d) => ({ x: d >= 0 ? '-30%' : '30%', opacity: 0 })}
                 transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                className="p-4 md:p-12 w-full"
-                style={{
-                  touchAction: 'pan-y',
-                  paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',
-                  paddingLeft: 'env(safe-area-inset-left)',
-                  paddingRight: 'env(safe-area-inset-right)',
-                }}
+                className="sep-page-pad sep-page-pad-nav w-full"
+                style={{ touchAction: 'pan-y' }}
               >
                 <Outlet />
               </motion.div>

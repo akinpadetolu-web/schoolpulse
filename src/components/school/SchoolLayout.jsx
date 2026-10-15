@@ -57,13 +57,8 @@ export default function SchoolLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="p-4 md:p-12 w-full"
-              style={{
-                touchAction: 'pan-y',
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)',
-                paddingLeft: 'env(safe-area-inset-left)',
-                paddingRight: 'env(safe-area-inset-right)',
-              }}
+              className="sep-page-pad w-full"
+              style={{ touchAction: 'pan-y' }}
             >
               <Outlet />
             </motion.div>
