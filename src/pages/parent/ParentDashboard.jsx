@@ -19,15 +19,15 @@ import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
 
 function AttendanceBar({ present, absent, late, excused }) {
   const total = present + absent + late + excused;
-  if (total === 0) return <p className="text-xs text-slate-600">No attendance records</p>;
+  if (total === 0) return <p className="text-xs text-muted-foreground">No attendance records</p>;
   const rate = Math.round((present / total) * 100);
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
-        <span className="text-slate-700 font-medium">Attendance rate</span>
+        <span className="text-foreground font-medium">Attendance rate</span>
         <span className={`font-semibold ${rate >= 80 ? 'text-emerald-600' : rate >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{rate}%</span>
       </div>
-      <div className="w-full h-2 rounded-full bg-slate-300 overflow-hidden flex">
+      <div className="w-full h-2 rounded-full bg-muted overflow-hidden flex">
         <div className="h-full bg-emerald-500" style={{ width: `${(present / total) * 100}%` }} />
         <div className="h-full bg-amber-400" style={{ width: `${(late / total) * 100}%` }} />
         <div className="h-full bg-blue-400" style={{ width: `${(excused / total) * 100}%` }} />
@@ -40,7 +40,7 @@ function AttendanceBar({ present, absent, late, excused }) {
           { color: 'bg-blue-400', label: `${excused} Excused` },
           { color: 'bg-red-400', label: `${absent} Absent` },
         ].map(({ color, label }) => (
-          <span key={label} className="flex items-center gap-1 text-xs text-slate-700 font-medium">
+          <span key={label} className="flex items-center gap-1 text-xs text-foreground font-medium">
             <span className={`inline-block w-2.5 h-2.5 rounded-sm ${color}`} />{label}
           </span>
         ))}
@@ -294,9 +294,9 @@ export default function ParentDashboard() {
       <CurrentPeriodNotice period={period} />
 
       <div className="space-y-4">
-         <h2 className="text-lg font-semibold px-3 sm:px-0">My Children</h2>
+        <h2 className="text-lg font-semibold">My Children</h2>
         {children.length === 0 ? (
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardContent className="py-10 text-center text-muted-foreground flex flex-col items-center gap-3">
               <GraduationCap className="w-10 h-10 opacity-30" />
               <p>No linked children yet.</p>
@@ -308,8 +308,8 @@ export default function ParentDashboard() {
         ) : (
           <div className="space-y-6">
             {children.map((child, index) => {
-              const childColors = ['bg-blue-100 border-blue-300', 'bg-purple-100 border-purple-300', 'bg-green-100 border-green-300', 'bg-pink-100 border-pink-300'];
-              const childColor = childColors[index % childColors.length];
+              const childDots = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-pink-500'];
+              const childDot = childDots[index % childDots.length];
               const att = attendanceByStudent[child.id] || { present: 0, absent: 0, late: 0, excused: 0 };
               const childAssignments = assignments.filter(a => a.classId === child.classId);
               const childGrades = grades.filter(g => g.studentId === child.id);
@@ -333,32 +333,35 @@ export default function ParentDashboard() {
                 : (childExamResults.length > 0 ? Math.round(childExamResults.reduce((s, e) => s + ((e.score / (e.maxScore || 100)) * 100), 0) / childExamResults.length) : null);
               
               return (
-                <Card key={child.id} className={`border-2 shadow-sm ${childColor}`}>
+                <Card key={child.id}>
                   <CardHeader>
                     <div className="flex items-center gap-4">
                       <UserAvatar user={child} size="xl" className="shrink-0" />
-                      <div className="flex-1">
-                        <CardTitle className="text-lg text-slate-900">{child.fullName}</CardTitle>
-                        <p className="text-sm text-slate-700">{child.className || 'No class assigned'}</p>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <span className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${childDot}`} />
+                          <span className="truncate">{child.fullName}</span>
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground truncate">{child.className || 'No class assigned'}</p>
                       </div>
-                      {avgGrade && <Badge className="text-base px-3 py-1 bg-blue-600 text-white border-0">Avg: {avgGrade}%</Badge>}
+                      {avgGrade != null && <Badge variant="secondary" className="text-base px-3 py-1 shrink-0">Avg: {avgGrade}%</Badge>}
                     </div>
                   </CardHeader>
                   <CardContent>
                     {/* Grades Summary */}
                     {(subjectAverages.length > 0 || childExamResults.length > 0) && (
                       <div className="mb-4">
-                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Grade Summary</p>
+                        <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Grade Summary</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {subjectAverages.map(({ subject, avg }) => (
-                            <div key={subject} className="flex flex-col items-center justify-center bg-white rounded-lg border border-slate-300 px-3 py-2">
-                              <span className="text-xs font-medium truncate text-slate-700">{subject}</span>
+                            <div key={subject} className="flex flex-col items-center justify-center bg-card rounded-lg border border-border px-3 py-2">
+                              <span className="text-xs font-medium truncate text-foreground">{subject}</span>
                               <span className={`text-sm font-bold mt-1 ${avg >= 70 ? 'text-emerald-600' : avg >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{avg}%</span>
                             </div>
                           ))}
                           {childExamResults.length > 0 && subjectAverages.length === 0 && childExamResults.map(e => (
-                            <div key={e.id} className="flex flex-col items-center justify-center bg-white rounded-lg border border-slate-300 px-3 py-2">
-                              <span className="text-xs font-medium truncate text-slate-700">{e.subjectName}</span>
+                            <div key={e.id} className="flex flex-col items-center justify-center bg-card rounded-lg border border-border px-3 py-2">
+                              <span className="text-xs font-medium truncate text-foreground">{e.subjectName}</span>
                               <span className={`text-sm font-bold mt-1 ${((e.score / (e.maxScore || 100)) * 100) >= 70 ? 'text-emerald-600' : ((e.score / (e.maxScore || 100)) * 100) >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{Math.round((e.score / (e.maxScore || 100)) * 100)}%</span>
                             </div>
                           ))}
@@ -367,16 +370,16 @@ export default function ParentDashboard() {
                     )}
 
                     <Tabs defaultValue="attendance" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4 bg-slate-900">
-                         <TabsTrigger value="attendance" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Attendance</TabsTrigger>
-                         <TabsTrigger value="assignments" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Assignments</TabsTrigger>
-                         <TabsTrigger value="grades" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Grades</TabsTrigger>
-                         <TabsTrigger value="exams" className="text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Exams</TabsTrigger>
-                       </TabsList>
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
+                        <TabsTrigger value="assignments" className="text-xs">Assignments</TabsTrigger>
+                        <TabsTrigger value="grades" className="text-xs">Grades</TabsTrigger>
+                        <TabsTrigger value="exams" className="text-xs">Exams</TabsTrigger>
+                      </TabsList>
                       
                       <TabsContent value="attendance" className="space-y-3 mt-4">
                         {loadingAttendance ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-4 h-4 animate-spin" /> Loading attendance...
                           </div>
                         ) : (
@@ -386,22 +389,22 @@ export default function ParentDashboard() {
                       
                       <TabsContent value="assignments" className="space-y-3 mt-4">
                         {loadingAssignments ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-4 h-4 animate-spin" /> Loading assignments...
                           </div>
                         ) : childAssignments.length === 0 ? (
-                          <p className="text-sm text-slate-600">No assignments assigned</p>
+                          <p className="text-sm text-muted-foreground">No assignments assigned</p>
                         ) : (
                           <div className="space-y-2">
                            {childAssignments.slice(0, 5).map(a => {
                              const today = new Date().toISOString().slice(0, 10);
                              const isLate = a.dueDate && a.dueDate < today;
                              return (
-                               <div key={a.id} className={`flex items-start gap-2 p-2 bg-white rounded border ${isLate ? 'border-red-300 bg-red-50' : 'border-slate-300'}`}>
+                               <div key={a.id} className={`flex items-start gap-2 p-2 bg-card rounded border ${isLate ? 'border-red-300 bg-red-50' : 'border-border'}`}>
                                  <FileText className={`w-4 h-4 mt-0.5 shrink-0 ${isLate ? 'text-red-500' : 'text-blue-600'}`} />
                                  <div className="flex-1 min-w-0">
-                                   <p className="text-sm font-medium text-slate-700 truncate">{a.title}</p>
-                                   <p className={`text-xs ${isLate ? 'text-red-500' : 'text-slate-600'}`}>Due: {a.dueDate ? format(new Date(a.dueDate), 'MMM d') : 'No date'}</p>
+                                   <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
+                                   <p className={`text-xs ${isLate ? 'text-red-500' : 'text-muted-foreground'}`}>Due: {a.dueDate ? format(new Date(a.dueDate), 'MMM d') : 'No date'}</p>
                                  </div>
                                  {isLate && (
                                    <Badge className="text-xs bg-red-100 text-red-700 border border-red-300 flex items-center gap-1 shrink-0">
@@ -411,37 +414,37 @@ export default function ParentDashboard() {
                                </div>
                              );
                            })}
-                           {childAssignments.length > 5 && <p className="text-xs text-slate-600">+{childAssignments.length - 5} more</p>}
+                           {childAssignments.length > 5 && <p className="text-xs text-muted-foreground">+{childAssignments.length - 5} more</p>}
                           </div>
                         )}
                       </TabsContent>
                       
                       <TabsContent value="grades" className="space-y-3 mt-4">
                         {loadingGrades ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-4 h-4 animate-spin" /> Loading grades...
                           </div>
                         ) : childGrades.length === 0 ? (
-                          <p className="text-sm text-slate-600">No grades recorded</p>
+                          <p className="text-sm text-muted-foreground">No grades recorded</p>
                         ) : (
                           <div className="space-y-2">
                             {childGrades.slice(0, 5).map(g => (
-                              <div key={g.id} className="flex items-center justify-between p-2 bg-white rounded border border-slate-300">
+                              <div key={g.id} className="flex items-center justify-between p-2 bg-card rounded border border-border">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-700 truncate">{g.subjectName || 'Subject'}</p>
-                                  <p className="text-xs text-slate-600 capitalize">{g.assessmentType}</p>
+                                  <p className="text-sm font-medium text-foreground truncate">{g.subjectName || 'Subject'}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">{g.assessmentType}</p>
                                 </div>
-                                <Badge variant="secondary" className="text-slate-700">{g.score}/{g.maxScore}</Badge>
+                                <Badge variant="secondary" className="text-foreground">{g.score}/{g.maxScore}</Badge>
                               </div>
                             ))}
-                            {childGrades.length > 5 && <p className="text-xs text-slate-600">+{childGrades.length - 5} more</p>}
+                            {childGrades.length > 5 && <p className="text-xs text-muted-foreground">+{childGrades.length - 5} more</p>}
                           </div>
                         )}
                       </TabsContent>
 
                       <TabsContent value="exams" className="mt-4">
                         {loadingExams ? (
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-4 h-4 animate-spin" /> Loading exam results...
                           </div>
                         ) : (

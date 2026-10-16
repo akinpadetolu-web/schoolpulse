@@ -141,8 +141,8 @@ export default function StudentDashboard() {
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 auto-rows-fr">
-               <Card className="border-0 shadow-sm">
-                 <CardContent className="p-2 md:p-5 flex flex-col items-start justify-between h-full min-h-[100px] md:min-h-[160px]">
+               <Card>
+                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
                      <p className="text-xs md:text-sm text-muted-foreground">Overall Average</p>
                      {overallAvg != null ? (
@@ -156,45 +156,45 @@ export default function StudentDashboard() {
                       <p className="text-lg md:text-2xl font-bold mt-1 text-muted-foreground">N/A</p>
                       )}
                       </div>
-                      <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-1 md:mt-2">
+                      <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-1 md:mt-2">
                       <Award className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card>
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
                      <p className="text-xs md:text-sm text-muted-foreground">Completed</p>
                      <p className="text-lg md:text-3xl font-bold mt-1">{completedCount}</p>
                      <p className="text-xs text-muted-foreground">of {assignments.length}</p>
                    </div>
-                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-1 md:mt-2">
+                   <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-1 md:mt-2">
                      <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card>
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
                      <p className="text-xs md:text-sm text-muted-foreground">Pending</p>
                      <p className="text-lg md:text-3xl font-bold mt-1">{pendingCount}</p>
                      {overdueCount > 0 && <p className="text-xs text-red-500 font-medium">{overdueCount} overdue</p>}
                    </div>
-                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600 mt-1 md:mt-2">
+                   <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600 mt-1 md:mt-2">
                      <Clock className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card>
                 <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
                   <div className="w-full">
                      <p className="text-xs md:text-sm text-muted-foreground">Timetable Slots</p>
                      <p className="text-lg md:text-3xl font-bold mt-1">{timetableCount}</p>
                    </div>
-                   <div className="w-8 h-8 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-1 md:mt-2">
+                   <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-1 md:mt-2">
                      <Calendar className="w-4 md:w-5 h-4 md:h-5" />
                   </div>
                 </CardContent>
@@ -206,7 +206,7 @@ export default function StudentDashboard() {
              </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-              <Card className="border-0 shadow-sm lg:col-span-2">
+              <Card className="lg:col-span-2">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-primary" /> Performance by Subject
@@ -247,7 +247,7 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
+              <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" /> Upcoming Assignments

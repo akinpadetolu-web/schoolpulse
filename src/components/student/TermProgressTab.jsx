@@ -5,7 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Award } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Award, Calendar, BookOpen } from 'lucide-react';
 
 function getColor(avg) {
   if (avg >= 70) return '#22c55e';
@@ -84,7 +84,7 @@ export default function TermProgressTab({ user, grades }) {
 
   if (termSubjectGrades.length === 0) {
     return (
-      <Card className="border-0 shadow-sm">
+      <Card>
         <CardContent className="py-16 text-center text-muted-foreground">
           <Award className="w-12 h-12 mx-auto mb-3 opacity-20" />
           <p className="font-medium">No term performance data yet</p>
@@ -97,9 +97,10 @@ export default function TermProgressTab({ user, grades }) {
   return (
     <div className="space-y-6">
       {/* Header stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 auto-rows-fr">
+        <Card>
+          <CardContent className="p-4 flex flex-col items-start justify-between h-full min-h-[120px]">
+            <div className="w-full">
             <p className="text-xs text-muted-foreground">Latest Term Average</p>
             {latestTermData?.avg != null ? (
               <div className="flex items-baseline gap-2 mt-1">
@@ -119,25 +120,39 @@ export default function TermProgressTab({ user, grades }) {
                 <span>{overallTrend > 0 ? '+' : ''}{overallTrend}% from last term</span>
               </div>
             )}
+            </div>
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600 mt-2">
+              <TrendingUp className="w-4 md:w-5 h-4 md:h-5" />
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Terms Recorded</p>
-            <p className="text-2xl font-bold mt-1">{terms.length}</p>
+        <Card>
+          <CardContent className="p-4 flex flex-col items-start justify-between h-full min-h-[120px]">
+            <div className="w-full">
+              <p className="text-xs text-muted-foreground">Terms Recorded</p>
+              <p className="text-2xl font-bold mt-1">{terms.length}</p>
+            </div>
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600 mt-2">
+              <Calendar className="w-4 md:w-5 h-4 md:h-5" />
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-sm col-span-2 md:col-span-1">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Subjects Tracked</p>
-            <p className="text-2xl font-bold mt-1">{subjectTrendData.length}</p>
+        <Card className="col-span-2 md:col-span-1">
+          <CardContent className="p-4 flex flex-col items-start justify-between h-full min-h-[120px]">
+            <div className="w-full">
+              <p className="text-xs text-muted-foreground">Subjects Tracked</p>
+              <p className="text-2xl font-bold mt-1">{subjectTrendData.length}</p>
+            </div>
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 mt-2">
+              <BookOpen className="w-4 md:w-5 h-4 md:h-5" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Overall average per term line chart */}
       {termOverallData.length > 1 && (
-        <Card className="border-0 shadow-sm">
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Overall Average Per Term</CardTitle>
             <CardDescription>Your cumulative performance across all terms</CardDescription>
@@ -166,7 +181,7 @@ export default function TermProgressTab({ user, grades }) {
 
       {/* Latest term subject breakdown bar chart */}
       {latestTermData && (
-        <Card className="border-0 shadow-sm">
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Subject Performance — {latestTermData.term}</CardTitle>
             <CardDescription>Your grades by subject in the most recent term</CardDescription>
@@ -213,7 +228,7 @@ export default function TermProgressTab({ user, grades }) {
         <h2 className="text-base font-semibold mb-3">Subject Trends Across Terms</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {subjectTrendData.map(({ subject, termPoints, latestAvg, trend }) => (
-            <Card key={subject.id} className="border-0 shadow-sm">
+            <Card key={subject.id}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold">{subject.name}</CardTitle>
