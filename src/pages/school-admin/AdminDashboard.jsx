@@ -21,9 +21,10 @@ import {
 } from 'date-fns';
 
 // ── Academic calendar ───────────────────────────────────────────────────────
-// The Sessions page owns the academic calendar: a session or term scopes records
-// purely by its own start/end dates, so a period with no records returns no data
-// instead of falling back to the whole history.
+// The Sessions page owns the academic calendar. A record is placed in the session
+// it belongs to (see sessionFor), while the time-period and term filters scope by
+// the record's own date — so a period holding no records returns no data instead
+// of falling back to the whole history.
 
 function getDateRange(f, sessions, terms) {
   const now = new Date();
@@ -41,6 +42,21 @@ function getDateRange(f, sessions, terms) {
   if (f.timePeriod === 'this_session') return rangeOf(period.session);
   if (f.timePeriod === 'last_session') return rangeOf(period.prevSession);
   return null;
+}
+
+// Places a record's date in exactly one session: the session covering that date, or
+// — for work entered between two sessions (results keyed in after one closed, before
+// the next opened) — the session that had already started most recently. Every record
+// therefore lands in one session, so the per-year figures always add up to All Sessions.
+function sessionFor(sessions, date) {
+  const d = toDate(date);
+  const ordered = [...(sessions || [])].sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+  if (!d || !ordered.length) return null;
+  const covering = ordered.find(s => { const r = rangeOf(s); return r && d >= r.from && d <= r.to; });
+  if (covering) return covering;
+  let latest = null;
+  ordered.forEach(s => { const start = toDate(s.startDate); if (start && start <= d) latest = s; });
+  return latest || ordered[0];
 }
 
 // The dashboard always opens on the current session; Reset returns to it.
@@ -71,9 +87,9 @@ function applyFiltersToData(raw, filters) {
   const session = filters.sessionId === 'all' ? null : allSessions.find(s => s.id === filters.sessionId) || null;
   const selectedTerm = filters.term === 'all' ? null : allTerms.find(t => t.id === filters.term) || null;
 
-  // Every active period constrains the record date, so a session or term holding
-  // no records correctly returns no data rather than the whole history.
-  const ranges = [getDateRange(filters, allSessions, allTerms), rangeOf(session), rangeOf(selectedTerm)].filter(Boolean);
+  // The time-period and term filters constrain the record's own date; the academic
+  // year scopes by the session the record belongs to.
+  const ranges = [getDateRange(filters, allSessions, allTerms), rangeOf(selectedTerm)].filter(Boolean);
   const inDate = (d) => {
     if (!ranges.length) return true;
     if (!d) return false;
@@ -81,6 +97,7 @@ function applyFiltersToData(raw, filters) {
     if (!date) return false;
     return ranges.every(r => date >= r.from && date <= r.to);
   };
+  const inSession = (d) => !session || sessionFor(allSessions, d)?.id === session.id;
 
   // Grades only carry lastUpdatedAt once they've been edited — fall back to the
   // record timestamps so date filters don't discard untouched grades.
@@ -91,6 +108,7 @@ function applyFiltersToData(raw, filters) {
   if (filters.classId !== 'all') grades = grades.filter(g => g.classId === filters.classId);
   if (filters.subjectId !== 'all') grades = grades.filter(g => g.subjectId === filters.subjectId);
   if (filters.teacherId !== 'all') grades = grades.filter(g => g.teacherId === filters.teacherId);
+  if (session) grades = grades.filter(g => inSession(gradeDate(g)));
   if (ranges.length) grades = grades.filter(g => inDate(gradeDate(g)));
 
   // Assignments and their submissions follow the same period, so orphaned
@@ -98,6 +116,7 @@ function applyFiltersToData(raw, filters) {
   let assignments = raw.assignments;
   if (filters.classId !== 'all') assignments = assignments.filter(a => a.classId === filters.classId);
   if (filters.teacherId !== 'all') assignments = assignments.filter(a => a.teacherId === filters.teacherId);
+  if (session) assignments = assignments.filter(a => inSession(assignDate(a)));
   if (ranges.length) assignments = assignments.filter(a => inDate(assignDate(a)));
   const assignmentIds = new Set(assignments.map(a => a.id));
   const submissions = raw.submissions.filter(s => assignmentIds.has(s.assignmentId));
@@ -129,6 +148,7 @@ function applyFiltersToData(raw, filters) {
 
   let attendance = raw.attendance;
   if (filters.classId !== 'all') attendance = attendance.filter(a => a.classId === filters.classId);
+  if (session) attendance = attendance.filter(a => inSession(a.date));
   if (ranges.length) attendance = attendance.filter(a => inDate(a.date));
 
   // Attendance range filter (per-student attendance rate)
