@@ -3,10 +3,8 @@ import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle, Home, Bed } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
-import TermProgressTab from '@/components/student/TermProgressTab';
 import GradeTrendChart from '@/components/student/GradeTrendChart';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
@@ -133,13 +131,7 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        <Tabs defaultValue="overview">
-          <TabsList className="mb-2 md:mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="progress">My Progress</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
+        <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 auto-rows-fr">
                <Card>
                  <CardContent className="p-4 md:p-5 flex flex-col items-start justify-between h-full min-h-[160px]">
@@ -307,13 +299,7 @@ export default function StudentDashboard() {
             </div>
 
             <GradeTrendChart grades={grades} gradeCategories={gradeCategories} />
-
-            </TabsContent>
-
-          <TabsContent value="progress">
-            <TermProgressTab user={user} grades={grades} />
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
   );
 }

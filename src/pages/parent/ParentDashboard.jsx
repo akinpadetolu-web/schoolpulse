@@ -369,12 +369,12 @@ export default function ParentDashboard() {
                       </div>
                     )}
 
-                    <Tabs defaultValue="attendance" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
-                        <TabsTrigger value="assignments" className="text-xs">Assignments</TabsTrigger>
-                        <TabsTrigger value="grades" className="text-xs">Grades</TabsTrigger>
-                        <TabsTrigger value="exams" className="text-xs">Exams</TabsTrigger>
+                    <Tabs defaultValue="attendance" className="w-full min-w-0">
+                      <TabsList className="grid w-full grid-cols-4 gap-1 h-auto p-1">
+                        <TabsTrigger value="attendance" className="min-w-0 px-1 py-1.5 text-[11px] sm:text-xs">Attendance</TabsTrigger>
+                        <TabsTrigger value="assignments" className="min-w-0 px-1 py-1.5 text-[11px] sm:text-xs">Assignments</TabsTrigger>
+                        <TabsTrigger value="grades" className="min-w-0 px-1 py-1.5 text-[11px] sm:text-xs">Grades</TabsTrigger>
+                        <TabsTrigger value="exams" className="min-w-0 px-1 py-1.5 text-[11px] sm:text-xs">Exams</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="attendance" className="space-y-3 mt-4">
