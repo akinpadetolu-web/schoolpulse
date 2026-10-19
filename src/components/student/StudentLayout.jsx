@@ -41,7 +41,7 @@ export default function StudentLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isLoadingSchoolAuth && (!user || user.role !== "student")) navigate("/");
+    if (!isLoadingSchoolAuth && (!user || user.role !== "student")) navigate("/?next=" + encodeURIComponent(location.pathname));
   }, [user, isLoadingSchoolAuth, navigate]);
 
   if (isLoadingSchoolAuth) return <SepLoader />;

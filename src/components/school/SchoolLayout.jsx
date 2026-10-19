@@ -24,7 +24,7 @@ export default function SchoolLayout() {
   const isAllowedRole = user?.role === 'admin' || user?.role === 'hr_staff';
 
   useEffect(() => {
-    if (!isLoadingSchoolAuth && (!user || !isAllowedRole)) navigate("/");
+    if (!isLoadingSchoolAuth && (!user || !isAllowedRole)) navigate("/?next=" + encodeURIComponent(location.pathname));
   }, [user, isLoadingSchoolAuth, navigate, isAllowedRole]);
 
   if (isLoadingSchoolAuth) return <SepLoader />;

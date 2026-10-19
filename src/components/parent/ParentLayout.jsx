@@ -41,7 +41,7 @@ export default function ParentLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isLoadingSchoolAuth && (!user || user.role !== "parent")) navigate("/");
+    if (!isLoadingSchoolAuth && (!user || user.role !== "parent")) navigate("/?next=" + encodeURIComponent(location.pathname));
   }, [user, isLoadingSchoolAuth, navigate]);
 
   if (isLoadingSchoolAuth) return <SepLoader />;

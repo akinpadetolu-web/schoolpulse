@@ -13,6 +13,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Plus, Trash2, Search, X, Check } from 'lucide-react';
 import PasswordInput from '@/components/ui/password-input';
 
+function landingPathFor(role) {
+  if (role === "admin") return "/school-admin";
+  if (role === "teacher") return "/teacher";
+  if (role === "student") return "/student";
+  if (role === "parent") return "/parent";
+  if (role === "hr_staff") return "/school-admin/staff-dashboard";
+  return "/";
+}
+
+// The page a visitor was trying to reach before being sent to sign in.
+// Only in-app paths are accepted (never a protocol-relative or external URL).
+function requestedNextPath() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+// Return the user to the page they wanted, but only when it belongs to their role.
+function resolveLanding(role) {
+  const base = landingPathFor(role);
+  const next = requestedNextPath();
+  if (next && (next === base || next.startsWith(base + "/"))) return next;
+  return base;
+}
+
 export default function SchoolPortal() {
   const navigate = useNavigate();
   const { login, schoolUser, isLoadingSchoolAuth } = useSchoolAuth();
@@ -65,11 +90,7 @@ export default function SchoolPortal() {
   // Auto-redirect already logged-in users
   useEffect(() => {
     if (!isLoadingSchoolAuth && schoolUser) {
-      if (schoolUser.role === "admin") navigate("/school-admin");
-      else if (schoolUser.role === "teacher") navigate("/teacher");
-      else if (schoolUser.role === "student") navigate("/student");
-      else if (schoolUser.role === "parent") navigate("/parent");
-      else if (schoolUser.role === "hr_staff") navigate("/school-admin/staff-dashboard");
+      navigate(resolveLanding(schoolUser.role));
     }
   }, [isLoadingSchoolAuth, schoolUser, navigate]);
 
@@ -203,11 +224,7 @@ export default function SchoolPortal() {
 
       login(user);
 
-      if (user.role === "admin") navigate("/school-admin");else
-      if (user.role === "teacher") navigate("/teacher");else
-      if (user.role === "student") navigate("/student");else
-      if (user.role === "parent") navigate("/parent");else
-      if (user.role === "hr_staff") navigate("/school-admin/staff-dashboard");
+      navigate(resolveLanding(user.role));
     } catch (err) {
       console.error('Login error:', err);
       setError("Sign in failed. Please check your connection and try again.");

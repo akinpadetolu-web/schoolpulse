@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Upload, Save, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import { saveDraft, loadDraft, clearDraft } from '@/lib/formDrafts';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -33,13 +34,33 @@ export default function BulkGradeEntryDialog({ open, onOpenChange, classes, subj
   const [bulkMax, setBulkMax] = useState("100");
   const [scores, setScores] = useState({});
   const [saving, setSaving] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
-  // Reset state when dialog opens
+  // Unsaved-work protection: restore any draft scores left on this device
+  const draftKey = `bulkGrades:${user?.schoolId || ''}:${user?.id || ''}`;
+
   useEffect(() => {
-    if (open) {
-      setScores({});
+    if (!open) return;
+    const draft = loadDraft(draftKey);
+    if (draft?.data) {
+      const d = draft.data;
+      setBulkClass(d.bulkClass || "");
+      setBulkSubject(d.bulkSubject || "");
+      setBulkType(d.assessmentType || "exam");
+      setBulkTerm(d.term || "First Term");
+      setBulkMax(d.maxScore || "100");
+      setScores(d.scores || {});
+      setDraftRestored(true);
     }
-  }, [open]);
+  }, [open, draftKey]);
+
+  // Keep the draft current while scores are entered
+  useEffect(() => {
+    if (!open) return;
+    const hasScores = Object.values(scores).some(v => v !== "" && v !== null && v !== undefined);
+    if (!hasScores) { clearDraft(draftKey); return; }
+    saveDraft(draftKey, { bulkClass, bulkSubject, assessmentType: bulkType, term: bulkTerm, maxScore: bulkMax, scores });
+  }, [open, draftKey, bulkClass, bulkSubject, bulkType, bulkTerm, bulkMax, scores]);
 
   const classStudents = useMemo(() => {
     if (!bulkClass) return [];
@@ -106,6 +127,8 @@ export default function BulkGradeEntryDialog({ open, onOpenChange, classes, subj
     setSaving(true);
     try {
       await base44.entities.Grade.bulkCreate(records);
+      clearDraft(draftKey);
+      setDraftRestored(false);
       toast.success(`Saved ${records.length} grade${records.length !== 1 ? "s" : ""} for the class`);
       onOpenChange(false);
       setScores({});
@@ -116,11 +139,8 @@ export default function BulkGradeEntryDialog({ open, onOpenChange, classes, subj
     }
   }
 
-  // Close handler that resets state
+  // Close handler — entered scores are kept as a draft so they are not lost
   function handleOpenChange(v) {
-    if (!v) {
-      setScores({});
-    }
     onOpenChange(v);
   }
 
@@ -132,6 +152,12 @@ export default function BulkGradeEntryDialog({ open, onOpenChange, classes, subj
         <DialogHeader>
           <DialogTitle>Bulk Grade Entry</DialogTitle>
         </DialogHeader>
+
+        {draftRestored && (
+          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+            Unsaved scores were restored from this device.
+          </div>
+        )}
 
         <div className="space-y-4">
           {/* Selectors */}

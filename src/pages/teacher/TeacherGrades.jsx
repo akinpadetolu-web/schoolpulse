@@ -17,6 +17,8 @@ import MyStudentsSection from '@/components/teacher/MyStudentsSection';
 import BulkGradeEntryDialog from '@/components/teacher/BulkGradeEntryDialog';
 import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
 import CurrentPeriodNotice from '@/components/common/CurrentPeriodNotice';
+import DeleteGradeDialog from '@/components/teacher/DeleteGradeDialog';
+import { logGradeChange } from '@/lib/gradeChangeLog';
 
 const ASSESSMENT_TYPES = ["exam", "test", "quiz", "assignment", "classwork"];
 const TERMS = ["First Term", "Second Term", "Third Term"];
@@ -45,7 +47,7 @@ function gradeLabel(p) {
 const EMPTY_FORM = {
   classId: "", studentId: "", subjectId: "",
   assessmentType: "exam", score: "", maxScore: "100",
-  term: "First Term", comment: "",
+  term: "First Term", comment: "", reason: "",
 };
 
 export default function TeacherGrades() {
@@ -60,6 +62,8 @@ export default function TeacherGrades() {
   const [showDialog, setShowDialog] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
+  const [deletingGrade, setDeletingGrade] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [period, setPeriod] = useState(EMPTY_PERIOD);
@@ -188,6 +192,7 @@ export default function TeacherGrades() {
       maxScore: String(grade.maxScore ?? "100"),
       term: grade.term || "First Term",
       comment: grade.comment || "",
+      reason: "",
     });
     setShowDialog(true);
   }
@@ -198,6 +203,7 @@ export default function TeacherGrades() {
     const scoreNum = Number(form.score);
     const maxNum = Number(form.maxScore || 100);
     if (scoreNum > maxNum) return toast.error("Score cannot exceed max score");
+    if (editingGrade && !form.reason.trim()) return toast.error("Please give a reason for changing this grade");
 
     setSaving(true);
     const student = allStudents.find(s => s.id === form.studentId);
@@ -223,7 +229,21 @@ export default function TeacherGrades() {
     try {
       let gradeId;
       if (editingGrade) {
+        const before = {
+          score: editingGrade.score,
+          maxScore: editingGrade.maxScore,
+          term: editingGrade.term,
+          assessmentType: editingGrade.assessmentType,
+        };
         await base44.entities.Grade.update(editingGrade.id, payload);
+        await logGradeChange({
+          action: "edit",
+          grade: { ...editingGrade, ...payload },
+          before,
+          after: { score: scoreNum, maxScore: maxNum, term: form.term, assessmentType: form.assessmentType },
+          reason: form.reason.trim(),
+          user,
+        });
         gradeId = editingGrade.id;
         toast.success("Grade updated");
       } else {
@@ -254,14 +274,19 @@ export default function TeacherGrades() {
     }
   }
 
-  async function handleDelete(grade) {
-    if (!window.confirm(`Delete grade for ${grade.studentName}?`)) return;
+  async function handleDelete(reason) {
+    if (!deletingGrade) return;
+    setDeleting(true);
     try {
-      await base44.entities.Grade.delete(grade.id);
+      await logGradeChange({ action: "delete", grade: deletingGrade, before: deletingGrade, reason, user });
+      await base44.entities.Grade.delete(deletingGrade.id);
       toast.success("Grade deleted");
+      setDeletingGrade(null);
       loadData();
     } catch {
       toast.error("Failed to delete grade.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -423,7 +448,7 @@ export default function TeacherGrades() {
                             <button onClick={() => openEdit(g)} className="p-1.5 hover:bg-muted rounded-md">
                               <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                             </button>
-                            <button onClick={() => handleDelete(g)} className="p-1.5 hover:bg-destructive/10 rounded-md">
+                            <button onClick={() => setDeletingGrade(g)} className="p-1.5 hover:bg-destructive/10 rounded-md">
                               <Trash2 className="w-3.5 h-3.5 text-destructive" />
                             </button>
                           </div>
@@ -530,6 +555,18 @@ export default function TeacherGrades() {
               </div>
             )}
 
+            {editingGrade && (
+              <div className="space-y-2">
+                <Label>Reason for change *</Label>
+                <Input
+                  placeholder="e.g. Marking error corrected"
+                  value={form.reason}
+                  onChange={e => setForm({ ...form, reason: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Recorded in the grade change history.</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Comment</Label>
               <Input placeholder="Optional feedback..." value={form.comment} onChange={e => setForm({ ...form, comment: e.target.value })} />
@@ -551,6 +588,14 @@ export default function TeacherGrades() {
         subjects={allSubjects}
         students={allStudents}
         schoolUser={user}
+      />
+
+      <DeleteGradeDialog
+        grade={deletingGrade}
+        open={!!deletingGrade}
+        onOpenChange={v => { if (!v) setDeletingGrade(null); }}
+        onConfirm={handleDelete}
+        saving={deleting}
       />
     </div>
   );

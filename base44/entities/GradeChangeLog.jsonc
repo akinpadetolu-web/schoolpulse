@@ -1,0 +1,91 @@
+{
+  "name": "GradeChangeLog",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "gradeId": {
+      "type": "string"
+    },
+    "studentId": {
+      "type": "string"
+    },
+    "studentName": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
+    "assessmentType": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "edit",
+        "delete"
+      ],
+      "description": "Whether the teacher changed or removed the grade"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason supplied by the teacher for the correction"
+    },
+    "changedBy": {
+      "type": "string"
+    },
+    "changedByName": {
+      "type": "string"
+    },
+    "changedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previousScore": {
+      "type": "number"
+    },
+    "previousMaxScore": {
+      "type": "number"
+    },
+    "previousTerm": {
+      "type": "string"
+    },
+    "previousAssessmentType": {
+      "type": "string"
+    },
+    "newScore": {
+      "type": "number"
+    },
+    "newMaxScore": {
+      "type": "number"
+    },
+    "newTerm": {
+      "type": "string"
+    },
+    "newAssessmentType": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "gradeId",
+    "action",
+    "reason"
+  ]
+}

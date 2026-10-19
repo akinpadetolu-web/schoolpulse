@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
+import { saveDraft, loadDraft, clearDraft } from '@/lib/formDrafts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,7 +35,36 @@ export default function TeacherAttendance() {
   const [saving, setSaving] = useState(false);
   const [noteOpen, setNoteOpen] = useState(null); // studentId with open note field
 
+  // Unsaved-work protection
+  const draftKey = `attendance:${user?.schoolId || ''}:${user?.id || ''}`;
+  const restoredRef = useRef(null);
+  const [dirty, setDirty] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
   useEffect(() => { loadClasses(); }, []);
+
+  // Restore any unsaved attendance draft left on this device
+  useEffect(() => {
+    if (!user?.id) return;
+    const draft = loadDraft(draftKey);
+    if (draft?.data) {
+      const d = draft.data;
+      if (d.attendance) restoredRef.current = d.attendance;
+      if (d.selectedClassId) setSelectedClassId(d.selectedClassId);
+      if (d.selectedSubjectId) setSelectedSubjectId(d.selectedSubjectId);
+      if (d.selectedDate) setSelectedDate(d.selectedDate);
+      if (d.startTime) setStartTime(d.startTime);
+      if (d.endTime) setEndTime(d.endTime);
+      setDraftRestored(true);
+      setDirty(true);
+    }
+  }, [user?.id, draftKey]);
+
+  // Keep the draft current while there are unsaved changes
+  useEffect(() => {
+    if (!user?.id || !dirty || !selectedClassId) return;
+    saveDraft(draftKey, { selectedClassId, selectedSubjectId, selectedDate, startTime, endTime, attendance });
+  }, [draftKey, user?.id, dirty, selectedClassId, selectedSubjectId, selectedDate, startTime, endTime, attendance]);
 
   useEffect(() => {
     if (selectedClassId) loadStudentsAndAttendance();
@@ -68,18 +98,36 @@ export default function TeacherAttendance() {
     const map = {};
     (records || []).forEach(r => { map[r.studentId] = { status: r.status, note: r.note || '', minutesLate: r.minutesLate || '' }; });
     (studentList || []).forEach(s => { if (!map[s.id]) map[s.id] = { status: 'present', note: '', minutesLate: '' }; });
+    // Overlay unsaved draft values for students in this class
+    if (restoredRef.current) {
+      Object.entries(restoredRef.current).forEach(([sid, val]) => {
+        if (map[sid]) map[sid] = { ...map[sid], ...val };
+      });
+      restoredRef.current = null;
+    }
     setAttendance(map);
     setLoadingStudents(false);
   }
 
   function setStatus(studentId, status) {
+    setDirty(true);
     setAttendance(prev => ({ ...prev, [studentId]: { ...prev[studentId], status } }));
   }
   function setNote(studentId, note) {
+    setDirty(true);
     setAttendance(prev => ({ ...prev, [studentId]: { ...prev[studentId], note } }));
   }
   function setMinutesLate(studentId, minutesLate) {
+    setDirty(true);
     setAttendance(prev => ({ ...prev, [studentId]: { ...prev[studentId], minutesLate } }));
+  }
+
+  function discardDraft() {
+    clearDraft(draftKey);
+    restoredRef.current = null;
+    setDirty(false);
+    setDraftRestored(false);
+    if (selectedClassId) loadStudentsAndAttendance();
   }
 
   async function handleSave() {
@@ -122,6 +170,9 @@ export default function TeacherAttendance() {
     try {
       if (creates.length > 0) await Promise.all(creates.map(r => base44.entities.Attendance.create(r)));
       await Promise.all(updates);
+      clearDraft(draftKey);
+      setDirty(false);
+      setDraftRestored(false);
       toast.success(`Attendance saved for ${students.length} students${selectedSubject ? ` · ${selectedSubject.name}` : ''}`);
       await loadStudentsAndAttendance();
     } catch (err) {
@@ -143,6 +194,13 @@ export default function TeacherAttendance() {
     <div>
       <h1 className="text-2xl font-bold mb-1">Attendance</h1>
       <p className="text-muted-foreground mb-6">Mark per-subject attendance for your classes</p>
+
+      {draftRestored && dirty && (
+        <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+          <p className="text-sm font-medium">Unsaved attendance was restored from this device.</p>
+          <button onClick={discardDraft} className="text-sm font-semibold underline shrink-0">Discard draft</button>
+        </div>
+      )}
 
       {/* Controls */}
       <Card className="border-0 shadow-sm mb-6">

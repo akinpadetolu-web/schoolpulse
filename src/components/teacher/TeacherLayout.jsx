@@ -45,7 +45,7 @@ export default function TeacherLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isLoadingSchoolAuth && (!user || user.role !== "teacher")) navigate("/");
+    if (!isLoadingSchoolAuth && (!user || user.role !== "teacher")) navigate("/?next=" + encodeURIComponent(location.pathname));
   }, [user, isLoadingSchoolAuth, navigate]);
 
   if (isLoadingSchoolAuth) return <SepLoader />;
