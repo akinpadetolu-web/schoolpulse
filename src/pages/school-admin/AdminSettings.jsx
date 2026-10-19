@@ -10,6 +10,7 @@ import AcademicQuickLinks from '@/components/school/settings/AcademicQuickLinks'
 import BrandColorsSettings from '@/components/school/settings/BrandColorsSettings';
 import DepartmentsSettings from '@/components/school/settings/DepartmentsSettings';
 import PastSessionAccessSettings from '@/components/school/settings/PastSessionAccessSettings';
+import HelpSupportSettings from '@/components/school/settings/HelpSupportSettings';
 
 export default function AdminSettings() {
   const { schoolUser: user } = useSchoolAuth();
@@ -68,6 +69,9 @@ export default function AdminSettings() {
 
       {/* Communication Settings */}
       <CommunicationSettings school={school} onSaved={loadSchool} />
+
+      {/* Help & Support */}
+      <HelpSupportSettings />
 
       {/* Danger Zone */}
       <Card className="border-0 shadow-sm border border-red-100">
