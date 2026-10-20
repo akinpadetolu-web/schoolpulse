@@ -29,11 +29,23 @@ export default function ZoomableTimetableGrid({ entries, breaks }) {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const update = () => setFit(clamp(el.clientWidth / NATURAL_WIDTH, 0.3, 1));
-    update();
-    const ro = new ResizeObserver(update);
+    // Defer the measurement out of the observer callback so the resulting
+    // re-render can never re-enter the same notification loop, and only store
+    // the value when it actually moved.
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const next = clamp(el.clientWidth / NATURAL_WIDTH, 0.3, 1);
+      setFit(prev => (Math.abs(prev - next) < 0.005 ? prev : next));
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(measure); };
+    schedule();
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
   }, []);
 
   // Pinch to zoom — native listeners so we can stop the page's own zoom/scroll.
