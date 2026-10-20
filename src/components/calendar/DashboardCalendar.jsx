@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { format, eachDayOfInterval, startOfMonth, endOfMonth, isSameMonth, isToday, startOfDay, addMonths, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { releasedOnly } from '@/lib/assignmentRelease';
 
 export default function DashboardCalendar() {
   const { schoolUser: user } = useSchoolAuth();
@@ -22,7 +23,7 @@ export default function DashboardCalendar() {
       const promises = [base44.entities.SchoolEvent.filter({ schoolId: user?.schoolId })];
       // Load assignments for students and parents
       if ((user?.role === 'student' || user?.role === 'parent') && user?.classId) {
-        promises.push(base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }));
+        promises.push(base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }).then(releasedOnly));
       }
       const [allEvents, assignments] = await Promise.all(promises);
 

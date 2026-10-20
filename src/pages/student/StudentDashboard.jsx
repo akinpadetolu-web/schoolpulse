@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, ClipboardList, Loader2, TrendingUp, CheckCircle2, Clock, Award, AlertTriangle, Home, Bed } from 'lucide-react';
 import DashboardCalendar from '@/components/calendar/DashboardCalendar';
+import { releasedOnly } from '@/lib/assignmentRelease';
 import GradeTrendChart from '@/components/student/GradeTrendChart';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { getGradeLabel, getBarColor } from '@/lib/gradeMapper';
@@ -29,7 +30,7 @@ export default function StudentDashboard() {
     if (!user?.id) return;
     const [tt, asgn, grd, subs, cats, period] = await Promise.all([
       base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
-      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
+      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }).then(releasedOnly),
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),

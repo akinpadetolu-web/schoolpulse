@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, BookOpen, Download } from 'lucide-react';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TermPlansPortal from '@/components/lesson-plans/TermPlansPortal';
 
 export default function ParentLessonPlans() {
   const { schoolUser: user } = useSchoolAuth();
@@ -102,9 +104,20 @@ export default function ParentLessonPlans() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <Tabs defaultValue="term">
+        <TabsList className="mb-6">
+          <TabsTrigger value="term">Term Plans</TabsTrigger>
+          <TabsTrigger value="daily">Daily Plans</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="term">
+          <TermPlansPortal user={user} role="parent" />
+        </TabsContent>
+
+        <TabsContent value="daily" className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Lesson Plans</h1>
+          <h1 className="text-2xl font-bold">Daily Lesson Plans</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Approved lesson plans for your children</p>
         </div>
         <Select value={filter} onValueChange={setFilter}>
@@ -242,6 +255,8 @@ export default function ParentLessonPlans() {
           })}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

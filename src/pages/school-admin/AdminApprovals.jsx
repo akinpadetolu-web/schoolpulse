@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle2, XCircle, Clock, BookOpen, FileText, ChevronDown, ChevronUp, Target, Activity } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, BookOpen, FileText, ChevronDown, ChevronUp, Target, Activity, CalendarRange } from 'lucide-react';
 import { format } from 'date-fns';
+import TermPlanAdminTab from '@/components/lesson-plans/TermPlanAdminTab';
 
 export default function AdminApprovals() {
   const { schoolUser: user } = useSchoolAuth();
@@ -216,6 +217,9 @@ export default function AdminApprovals() {
             <FileText className="w-4 h-4" /> Materials
             {pendingMats > 0 && <Badge className="ml-1 bg-amber-100 text-amber-700 text-xs">{pendingMats}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="terms" className="flex items-center gap-1.5">
+            <CalendarRange className="w-4 h-4" /> Term Plans
+          </TabsTrigger>
         </TabsList>
 
         {/* Lesson Plans Tab */}
@@ -270,6 +274,11 @@ export default function AdminApprovals() {
               {filteredMats.map(mat => <MatCard key={mat.id} mat={mat} />)}
             </div>
           )}
+        </TabsContent>
+
+        {/* Term Lesson Plans Tab */}
+        <TabsContent value="terms" className="mt-4">
+          <TermPlanAdminTab />
         </TabsContent>
       </Tabs>
 

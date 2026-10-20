@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle2, FileText, TrendingUp, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { getGradeLabel } from '@/lib/gradeMapper';
+import { releasedOnly } from '@/lib/assignmentRelease';
 
 export default function StudentAssignmentSummary() {
   const { schoolUser: user } = useSchoolAuth();
@@ -18,7 +19,7 @@ export default function StudentAssignmentSummary() {
   const load = useCallback(async () => {
     if (!user?.classId || !user?.schoolId) return;
     const [assignmentsList, submissionsList, gradesList] = await Promise.all([
-      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }),
+      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }).then(releasedOnly),
       base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
       base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
     ]);

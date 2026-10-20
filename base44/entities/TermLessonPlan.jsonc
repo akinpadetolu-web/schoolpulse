@@ -1,0 +1,130 @@
+{
+  "name": "TermLessonPlan",
+  "type": "object",
+  "properties": {
+    "schoolId": {
+      "type": "string"
+    },
+    "schoolName": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "sessionName": {
+      "type": "string"
+    },
+    "academicYear": {
+      "type": "string"
+    },
+    "termId": {
+      "type": "string"
+    },
+    "termName": {
+      "type": "string",
+      "description": "Display name of the academic term this plan covers"
+    },
+    "classId": {
+      "type": "string"
+    },
+    "className": {
+      "type": "string"
+    },
+    "subjectId": {
+      "type": "string"
+    },
+    "subjectName": {
+      "type": "string"
+    },
+    "teacherId": {
+      "type": "string"
+    },
+    "teacherName": {
+      "type": "string"
+    },
+    "termStartDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "termEndDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "weeks": {
+      "type": "array",
+      "description": "One entry per teaching week, from the term start date to the term end date",
+      "items": {
+        "type": "object",
+        "properties": {
+          "weekNumber": {
+            "type": "number"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "topic": {
+            "type": "string",
+            "description": "Topic scheduled for this week"
+          },
+          "objectives": {
+            "type": "string",
+            "description": "What students should achieve this week"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "isMidterm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Marks this week as a midterm week"
+          },
+          "isExam": {
+            "type": "boolean",
+            "default": false,
+            "description": "Marks this week as an exam week"
+          },
+          "pdfFileUri": {
+            "type": "string",
+            "description": "Private storage URI of the PDF attached to this week's topic"
+          },
+          "pdfFileName": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approvedBy": {
+      "type": "string"
+    },
+    "approvedByName": {
+      "type": "string"
+    },
+    "approvalDate": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approvalNotes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schoolId",
+    "classId",
+    "subjectId",
+    "termId"
+  ]
+}

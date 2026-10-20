@@ -14,9 +14,11 @@ import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { createAssignmentNotification } from '@/lib/notificationService';
+import { isReleased } from '@/lib/assignmentRelease';
+import { toDate } from '@/lib/periodUtils';
 import { toast } from 'sonner';
 
-const EMPTY_FORM = { title: "", description: "", classIds: [], subjectId: "", dueDate: "", maxScore: 100 };
+const EMPTY_FORM = { title: "", description: "", classIds: [], subjectId: "", dueDate: "", releaseDate: "", maxScore: 100 };
 
 export default function TeacherAssignments() {
   const { schoolUser: user } = useSchoolAuth();
@@ -84,12 +86,16 @@ export default function TeacherAssignments() {
           title: form.title,
           description: form.description,
           dueDate: form.dueDate,
+          releaseDate: form.releaseDate || "",
           maxScore: Number(form.maxScore) || 100,
           isPublished: true,
           isArchived: false,
         };
         await base44.entities.Assignment.create(assignment);
-        await createAssignmentNotification(assignment, user);
+        // A scheduled assignment stays invisible until its release date, so it is not announced yet.
+        if (isReleased(assignment)) {
+          await createAssignmentNotification(assignment, user);
+        }
       }));
       toast.success(`Assignment created for ${form.classIds.length} class${form.classIds.length > 1 ? 'es' : ''}`);
       setForm(EMPTY_FORM);
@@ -107,6 +113,7 @@ export default function TeacherAssignments() {
       classIds: [assignment.classId],
       subjectId: assignment.subjectId || "",
       dueDate: assignment.dueDate || "",
+      releaseDate: assignment.releaseDate || "",
       maxScore: assignment.maxScore ?? 100,
     });
   }
@@ -127,6 +134,7 @@ export default function TeacherAssignments() {
         subjectId: form.subjectId,
         subjectName: subj?.name || editingAssignment.subjectName,
         dueDate: form.dueDate,
+        releaseDate: form.releaseDate || "",
         maxScore: Number(form.maxScore) || 100,
       });
       toast.success("Assignment updated");
@@ -168,8 +176,16 @@ export default function TeacherAssignments() {
                   <p className="font-semibold">{a.title}</p>
                   <p className="text-sm text-muted-foreground">{a.subjectName} • {a.className}</p>
                   {a.dueDate && <p className="text-xs text-muted-foreground mt-1">Due: {format(new Date(a.dueDate), 'MMM d, yyyy')}</p>}
+                  {a.releaseDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isReleased(a)
+                        ? `Released: ${format(toDate(a.releaseDate), 'MMM d, yyyy')}`
+                        : `Scheduled for release: ${format(toDate(a.releaseDate), 'MMM d, yyyy')}`}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {!isReleased(a) && <Badge variant="outline" className="text-xs">Scheduled</Badge>}
                   <Badge>{a.isPublished ? "Published" : "Draft"}</Badge>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
                     <Pencil className="w-4 h-4" />
@@ -275,6 +291,14 @@ function AssignmentForm({ form, setForm, classes, availableSubjects, toggleClass
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} /></div>
         <div className="space-y-2"><Label>Max Score</Label><Input type="number" value={form.maxScore} onChange={e => setForm({ ...form, maxScore: e.target.value })} /></div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Release to students on</Label>
+        <Input type="date" value={form.releaseDate || ""} onChange={e => setForm({ ...form, releaseDate: e.target.value })} />
+        <p className="text-xs text-muted-foreground">
+          Optional. Leave empty to make it visible immediately. Until this date the assignment stays hidden from students and parents.
+        </p>
       </div>
 
       <Button type="submit" className="w-full" disabled={saving}>

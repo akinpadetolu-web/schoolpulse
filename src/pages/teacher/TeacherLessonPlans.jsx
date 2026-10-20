@@ -9,10 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload, Clock, CheckCircle2, XCircle, Send } from 'lucide-react';
+import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload, Clock, CheckCircle2, XCircle, Send, CalendarRange } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TermPlansTeacherTab from '@/components/lesson-plans/TermPlansTeacherTab';
 
 const EMPTY_PLAN = {
   title: "", date: "", classIds: [], subjectId: "",
@@ -196,9 +198,24 @@ export default function TeacherLessonPlans() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <Tabs defaultValue="term">
+        <TabsList className="mb-6">
+          <TabsTrigger value="term" className="gap-1.5">
+            <CalendarRange className="w-4 h-4" /> Term Plans
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="gap-1.5">
+            <BookOpen className="w-4 h-4" /> Daily Plans
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="term">
+          <TermPlansTeacherTab />
+        </TabsContent>
+
+        <TabsContent value="daily" className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Lesson Plans</h1>
+          <h1 className="text-2xl font-bold">Daily Lesson Plans</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Plan daily objectives, activities and resources for each class</p>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> New Plan</Button>
@@ -504,6 +521,8 @@ export default function TeacherLessonPlans() {
           </form>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

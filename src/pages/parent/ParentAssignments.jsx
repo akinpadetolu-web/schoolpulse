@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { releasedOnly } from '@/lib/assignmentRelease';
 
 export default function ParentAssignments() {
   const { schoolUser: user } = useSchoolAuth();
@@ -29,7 +30,7 @@ export default function ParentAssignments() {
           const classIds = [...new Set(linked.map(s => s.classId).filter(Boolean))];
           if (classIds.length > 0) {
             const all = await base44.entities.Assignment.filter({ schoolId: user?.schoolId, isPublished: true });
-            const enriched = (all || []).map(a => {
+            const enriched = releasedOnly(all).map(a => {
               const child = linked.find(c => c.classId === a.classId);
               return { ...a, childName: child?.fullName || 'Unknown', childId: child?.id };
             });

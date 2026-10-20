@@ -12,6 +12,7 @@ import { GraduationCap, Loader2, UserPlus, TrendingUp, TrendingDown, AlertCircle
 import UserAvatar from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { releasedOnly } from '@/lib/assignmentRelease';
 import ExamProgressReport from '@/components/parent/ExamProgressReport';
 import { getSubjectFinalGrade } from '@/lib/gradeWeightCalculator';
 import { loadCurrentPeriod, gradeDate, EMPTY_PERIOD } from '@/lib/currentPeriod';
@@ -175,7 +176,7 @@ export default function ParentDashboard() {
         return;
       }
       const promises = classIds.map(classId => 
-        base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId }).catch(() => [])
+        base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId }).then(releasedOnly).catch(() => [])
       );
       const results = await Promise.all(promises);
       const allAssignments = results.flat().filter(Boolean);

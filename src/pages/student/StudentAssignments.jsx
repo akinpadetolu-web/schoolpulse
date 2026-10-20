@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import AssignmentSubmitDialog from '@/components/student/AssignmentSubmitDialog';
+import { releasedOnly } from '@/lib/assignmentRelease';
 
 export default function StudentAssignments() {
   const { schoolUser: user } = useSchoolAuth();
@@ -22,7 +23,7 @@ export default function StudentAssignments() {
       base44.entities.Assignment.filter({ schoolId: user?.schoolId, classId: user?.classId, isPublished: true }),
       base44.entities.Submission.filter({ schoolId: user?.schoolId, studentId: user?.id }),
     ]);
-    setAssignments(asgn || []);
+    setAssignments(releasedOnly(asgn));
     setSubmissions(subs || []);
     setLoading(false);
   }, [user?.id]);

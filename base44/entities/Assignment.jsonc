@@ -33,6 +33,11 @@
       "type": "string",
       "format": "date"
     },
+    "releaseDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the assignment becomes visible to students and parents. Empty means visible immediately."
+    },
     "maxScore": {
       "type": "number",
       "default": 100

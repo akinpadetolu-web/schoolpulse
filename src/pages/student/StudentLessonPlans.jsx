@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, BookOpen, Target, Activity, Package, ChevronDown, ChevronUp, Calendar, FileText, ExternalLink } from 'lucide-react';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TermPlansPortal from '@/components/lesson-plans/TermPlansPortal';
 
 export default function StudentLessonPlans() {
   const user = getCurrentUser();
@@ -63,9 +65,20 @@ export default function StudentLessonPlans() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <Tabs defaultValue="term">
+        <TabsList className="mb-6">
+          <TabsTrigger value="term">Term Plans</TabsTrigger>
+          <TabsTrigger value="daily">Daily Plans</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="term">
+          <TermPlansPortal user={user} role="student" />
+        </TabsContent>
+
+        <TabsContent value="daily" className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Lesson Plans</h1>
+          <h1 className="text-2xl font-bold">Daily Lesson Plans</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Upcoming lessons for {user?.className || "your class"}</p>
         </div>
         <Select value={filter} onValueChange={setFilter}>
@@ -208,6 +221,8 @@ export default function StudentLessonPlans() {
           })}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
