@@ -9,8 +9,9 @@ import { Loader2, CalendarRange, Send, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildWeeks, mergeWeeks, filledWeeks } from '@/lib/termPlanUtils';
 import TermPlanWeekEditor from './TermPlanWeekEditor';
+import ClassMultiSelect from './ClassMultiSelect';
 
-const EMPTY = { sessionId: '', termId: '', classId: '', subjectId: '', weeks: [] };
+const EMPTY = { sessionId: '', termId: '', classIds: [], subjectId: '', weeks: [] };
 
 export default function TermPlanForm({ open, onOpenChange, plan, user, sessions, terms, classes, subjects, onSaved }) {
   const [form, setForm] = useState(EMPTY);
@@ -25,7 +26,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
       setForm({
         sessionId: plan.sessionId || '',
         termId: plan.termId || '',
-        classId: plan.classId || '',
+        classIds: plan.classId ? [plan.classId] : [],
         subjectId: plan.subjectId || '',
         weeks: plan.weeks || [],
       });
@@ -36,12 +37,18 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
 
   const sessionTerms = terms.filter(t => !form.sessionId || t.sessionId === form.sessionId);
 
-  const subjectsForClass = form.classId
+  const subjectsForClass = form.classIds.length
     ? subjects.filter(s =>
-        (s.applicableClasses || []).includes(form.classId) ||
-        (user?.teachingAssignments || []).some(ta => ta.subjectId === s.id && ta.classId === form.classId)
+        form.classIds.some(classId =>
+          (s.applicableClasses || []).includes(classId) ||
+          (user?.teachingAssignments || []).some(ta => ta.subjectId === s.id && ta.classId === classId)
+        )
       )
     : subjects;
+
+  function selectClasses(classIds) {
+    setForm(f => ({ ...f, classIds, subjectId: '' }));
+  }
 
   function selectSession(sessionId) {
     setForm(f => ({ ...f, sessionId, termId: '', weeks: [] }));
@@ -78,8 +85,8 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
 
   async function handleSave(e) {
     e.preventDefault();
-    if (!form.sessionId || !form.termId || !form.classId || !form.subjectId) {
-      return toast.error('Select a session, term, class and subject');
+    if (!form.sessionId || !form.termId || form.classIds.length === 0 || !form.subjectId) {
+      return toast.error('Select a session, term, at least one class and a subject');
     }
     if (filledWeeks(form.weeks) === 0) {
       return toast.error('Add a topic to at least one week');
@@ -87,7 +94,6 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
 
     const term = terms.find(t => t.id === form.termId);
     const session = sessions.find(s => s.id === form.sessionId);
-    const cls = classes.find(c => c.id === form.classId);
     const subj = subjects.find(s => s.id === form.subjectId);
 
     setSaving(true);
@@ -100,8 +106,6 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
         academicYear: term?.academicYear || session?.academicYear || '',
         termId: form.termId,
         termName: term?.name || '',
-        classId: form.classId,
-        className: cls?.className || '',
         subjectId: form.subjectId,
         subjectName: subj?.name || '',
         teacherId: user.id,
@@ -114,6 +118,8 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
       if (plan) {
         await base44.entities.TermLessonPlan.update(plan.id, {
           ...payload,
+          classId: plan.classId,
+          className: plan.className || '',
           status: 'pending',
           approvedBy: '',
           approvedByName: '',
@@ -122,8 +128,18 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
         });
         toast.success('Term plan updated and resubmitted for approval');
       } else {
-        await base44.entities.TermLessonPlan.create({ ...payload, status: 'pending' });
-        toast.success('Term plan submitted for approval');
+        const records = form.classIds.map(classId => ({
+          ...payload,
+          classId,
+          className: classes.find(c => c.id === classId)?.className || '',
+          status: 'pending',
+        }));
+        await base44.entities.TermLessonPlan.bulkCreate(records);
+        toast.success(
+          records.length === 1
+            ? 'Term plan submitted for approval'
+            : `${records.length} term plans submitted for approval`
+        );
       }
       onOpenChange(false);
       onSaved();
@@ -168,13 +184,14 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
             </div>
 
             <div className="space-y-2">
-              <Label>Class *</Label>
-              <Select value={form.classId} onValueChange={v => setForm(f => ({ ...f, classId: v, subjectId: '' }))}>
-                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                <SelectContent>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label>{plan ? 'Class' : 'Classes *'}</Label>
+              {plan ? (
+                <div className="h-9 px-3 flex items-center rounded-xl border border-input bg-secondary/40 text-sm">
+                  {plan.className}
+                </div>
+              ) : (
+                <ClassMultiSelect options={classes} value={form.classIds} onChange={selectClasses} />
+              )}
             </div>
 
             <div className="space-y-2">
@@ -228,7 +245,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
 
           <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800 flex items-center gap-2">
             <Clock className="w-4 h-4 shrink-0" />
-            The whole term plan is submitted together. Once an admin approves it, students and parents see it by subject.
+            Each selected class gets its own copy of this plan, submitted together. Once an admin approves it, students and parents see it by subject.
           </div>
 
           <div className="flex gap-2 pt-1">

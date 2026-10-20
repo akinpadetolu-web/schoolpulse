@@ -95,7 +95,7 @@ export default function TermPlansTeacherTab() {
             <CalendarRange className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
             <p className="text-muted-foreground">No term plans yet.</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Pick a session, term, class and subject to schedule every week up to the end of the term.
+              Pick a session, term, one or more classes and a subject to schedule every week up to the end of the term.
             </p>
           </CardContent>
         </Card>
