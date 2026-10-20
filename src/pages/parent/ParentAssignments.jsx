@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { releasedOnly } from '@/lib/assignmentRelease';
+import AssignmentAttachment from '@/components/assignments/AssignmentAttachment';
 
 export default function ParentAssignments() {
   const { schoolUser: user } = useSchoolAuth();
@@ -81,6 +82,11 @@ export default function ParentAssignments() {
                     <p className="text-sm text-muted-foreground">{a.subjectName} • {a.className}</p>
                     {children.length > 1 && <p className="text-xs text-primary font-medium mt-1">{a.childName}</p>}
                     {a.dueDate && <p className="text-xs text-muted-foreground mt-1">Due: {format(new Date(a.dueDate), 'MMM d, yyyy')}</p>}
+                    {a.attachmentFileUri && (
+                      <div className="mt-2">
+                        <AssignmentAttachment fileUri={a.attachmentFileUri} fileName={a.attachmentFileName} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

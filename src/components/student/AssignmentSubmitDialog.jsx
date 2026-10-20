@@ -13,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import posthog from '@/lib/posthog';
+import AssignmentAttachment from '@/components/assignments/AssignmentAttachment';
 
 // ── Toolbar button ──────────────────────────────────────────────────────────
 function ToolbarBtn({ icon: Icon, title, onClick, active }) {
@@ -244,6 +245,11 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
             <p className="font-medium mb-1 text-xs uppercase tracking-wide text-muted-foreground">Instructions</p>
             <p>{assignment.description}</p>
           </div>
+        )}
+
+        {/* Attachment supplied by the teacher */}
+        {assignment.attachmentFileUri && (
+          <AssignmentAttachment fileUri={assignment.attachmentFileUri} fileName={assignment.attachmentFileName} />
         )}
 
         {/* Existing submission banner */}

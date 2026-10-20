@@ -17,8 +17,13 @@ import { createAssignmentNotification } from '@/lib/notificationService';
 import { isReleased } from '@/lib/assignmentRelease';
 import { toDate } from '@/lib/periodUtils';
 import { toast } from 'sonner';
+import AttachmentPicker from '@/components/assignments/AttachmentPicker';
+import AssignmentAttachment from '@/components/assignments/AssignmentAttachment';
 
-const EMPTY_FORM = { title: "", description: "", classIds: [], subjectId: "", dueDate: "", releaseDate: "", maxScore: 100 };
+const EMPTY_FORM = {
+  title: "", description: "", classIds: [], subjectId: "", dueDate: "", releaseDate: "", maxScore: 100,
+  attachmentFileUri: "", attachmentFileName: "", attachmentMimeType: "",
+};
 
 export default function TeacherAssignments() {
   const { schoolUser: user } = useSchoolAuth();
@@ -88,6 +93,9 @@ export default function TeacherAssignments() {
           dueDate: form.dueDate,
           releaseDate: form.releaseDate || "",
           maxScore: Number(form.maxScore) || 100,
+          attachmentFileUri: form.attachmentFileUri || "",
+          attachmentFileName: form.attachmentFileName || "",
+          attachmentMimeType: form.attachmentMimeType || "",
           isPublished: true,
           isArchived: false,
         };
@@ -115,6 +123,9 @@ export default function TeacherAssignments() {
       dueDate: assignment.dueDate || "",
       releaseDate: assignment.releaseDate || "",
       maxScore: assignment.maxScore ?? 100,
+      attachmentFileUri: assignment.attachmentFileUri || "",
+      attachmentFileName: assignment.attachmentFileName || "",
+      attachmentMimeType: assignment.attachmentMimeType || "",
     });
   }
 
@@ -136,6 +147,9 @@ export default function TeacherAssignments() {
         dueDate: form.dueDate,
         releaseDate: form.releaseDate || "",
         maxScore: Number(form.maxScore) || 100,
+        attachmentFileUri: form.attachmentFileUri || "",
+        attachmentFileName: form.attachmentFileName || "",
+        attachmentMimeType: form.attachmentMimeType || "",
       });
       toast.success("Assignment updated");
       closeEdit();
@@ -183,6 +197,11 @@ export default function TeacherAssignments() {
                         : `Scheduled for release: ${format(toDate(a.releaseDate), 'MMM d, yyyy')}`}
                     </p>
                   )}
+                  {a.attachmentFileUri && (
+                    <div className="mt-2">
+                      <AssignmentAttachment fileUri={a.attachmentFileUri} fileName={a.attachmentFileName} />
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {!isReleased(a) && <Badge variant="outline" className="text-xs">Scheduled</Badge>}
@@ -202,7 +221,7 @@ export default function TeacherAssignments() {
 
       {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={v => { setShowCreate(v); if (!v) setForm(EMPTY_FORM); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Create Assignment</DialogTitle></DialogHeader>
           <AssignmentForm
             form={form}
@@ -219,7 +238,7 @@ export default function TeacherAssignments() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingAssignment} onOpenChange={v => { if (!v) closeEdit(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Assignment</DialogTitle></DialogHeader>
           <AssignmentForm
             form={form}
@@ -300,6 +319,17 @@ function AssignmentForm({ form, setForm, classes, availableSubjects, toggleClass
           Optional. Leave empty to make it visible immediately. Until this date the assignment stays hidden from students and parents.
         </p>
       </div>
+
+      <AttachmentPicker
+        value={form}
+        disabled={saving}
+        onChange={attachment => setForm(prev => ({
+          ...prev,
+          attachmentFileUri: attachment?.attachmentFileUri || "",
+          attachmentFileName: attachment?.attachmentFileName || "",
+          attachmentMimeType: attachment?.attachmentMimeType || "",
+        }))}
+      />
 
       <Button type="submit" className="w-full" disabled={saving}>
         {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

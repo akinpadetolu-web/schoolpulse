@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import AssignmentSubmitDialog from '@/components/student/AssignmentSubmitDialog';
+import AssignmentAttachment from '@/components/assignments/AssignmentAttachment';
 import { releasedOnly } from '@/lib/assignmentRelease';
 
 export default function StudentAssignments() {
@@ -73,6 +74,11 @@ export default function StudentAssignments() {
                         {a.dueDate && <span>Due: {format(new Date(a.dueDate), 'MMM d, yyyy')}</span>}
                         <span>Max: {a.maxScore || 100} pts</span>
                       </div>
+                      {a.attachmentFileUri && (
+                        <div className="mt-2">
+                          <AssignmentAttachment fileUri={a.attachmentFileUri} fileName={a.attachmentFileName} />
+                        </div>
+                      )}
                     </div>
                     <Button variant="ghost" size="icon" className="shrink-0">
                       <ChevronRight className="w-5 h-5" />

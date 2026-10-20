@@ -42,6 +42,18 @@
       "type": "number",
       "default": 100
     },
+    "attachmentFileUri": {
+      "type": "string",
+      "description": "Private storage URI of the document or image attached to this assignment. Only set after the file has passed content validation."
+    },
+    "attachmentFileName": {
+      "type": "string",
+      "description": "Original name of the attached document or image"
+    },
+    "attachmentMimeType": {
+      "type": "string",
+      "description": "Browser-reported MIME type of the attachment"
+    },
     "term": {
       "type": "string",
       "description": "Academic term this assignment belongs to (e.g. Term 1, Midterm 2026)"
