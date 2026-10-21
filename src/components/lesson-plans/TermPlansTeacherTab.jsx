@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus, Loader2, CalendarRange, Pencil, Trash2, Send, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Clock,
+  CheckCircle2, XCircle, Clock, Save,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { filledWeeks } from '@/lib/termPlanUtils';
@@ -15,6 +15,7 @@ import TermPlanForm from './TermPlanForm';
 import TermPlanWeeks from './TermPlanWeeks';
 
 function StatusBadge({ status }) {
+  if (status === 'draft') return <Badge className="text-xs bg-slate-100 text-slate-700 border-0"><Save className="w-3 h-3 mr-1" />Draft</Badge>;
   if (status === 'approved') return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Approved</Badge>;
   if (status === 'rejected') return <Badge className="text-xs bg-red-100 text-red-700 border-0"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
   return <Badge className="text-xs bg-amber-100 text-amber-700 border-0"><Clock className="w-3 h-3 mr-1" />Pending Approval</Badge>;

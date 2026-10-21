@@ -28,7 +28,8 @@ export default function TermPlanAdminTab() {
   const load = useCallback(async () => {
     if (!user?.schoolId) return;
     const data = await base44.entities.TermLessonPlan.filter({ schoolId: user.schoolId });
-    setPlans((data || []).sort((a, b) => (b.created_date || '').localeCompare(a.created_date || '')));
+    // Drafts are the teacher's unfinished work — they are never sent for approval.
+    setPlans((data || []).filter(p => p.status !== 'draft').sort((a, b) => (b.created_date || '').localeCompare(a.created_date || '')));
     setLoading(false);
   }, [user?.schoolId]);
 

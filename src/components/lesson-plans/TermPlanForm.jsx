@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CalendarRange, Send, Clock } from 'lucide-react';
+import { Loader2, CalendarRange, Send, Clock, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { buildWeeks, mergeWeeks, filledWeeks } from '@/lib/termPlanUtils';
 import TermPlanWeekEditor from './TermPlanWeekEditor';
@@ -83,12 +83,11 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
     }
   }
 
-  async function handleSave(e) {
-    e.preventDefault();
+  async function submit(asDraft) {
     if (!form.sessionId || !form.termId || form.classIds.length === 0 || !form.subjectId) {
       return toast.error('Select a session, term, at least one class and a subject');
     }
-    if (filledWeeks(form.weeks) === 0) {
+    if (!asDraft && filledWeeks(form.weeks) === 0) {
       return toast.error('Add a topic to at least one week');
     }
 
@@ -115,30 +114,35 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
         weeks: form.weeks,
       };
 
+      const status = asDraft ? 'draft' : 'pending';
+
       if (plan) {
         await base44.entities.TermLessonPlan.update(plan.id, {
           ...payload,
           classId: plan.classId,
           className: plan.className || '',
-          status: 'pending',
+          status,
           approvedBy: '',
           approvedByName: '',
           approvalDate: '',
           approvalNotes: '',
         });
-        toast.success('Term plan updated and resubmitted for approval');
+        toast.success(
+          asDraft ? 'Draft saved — you can finish it later' : 'Term plan updated and resubmitted for approval'
+        );
       } else {
         const records = form.classIds.map(classId => ({
           ...payload,
           classId,
           className: classes.find(c => c.id === classId)?.className || '',
-          status: 'pending',
+          status,
         }));
         await base44.entities.TermLessonPlan.bulkCreate(records);
+        const many = records.length > 1;
         toast.success(
-          records.length === 1
-            ? 'Term plan submitted for approval'
-            : `${records.length} term plans submitted for approval`
+          asDraft
+            ? (many ? `${records.length} drafts saved — you can finish them later` : 'Draft saved — you can finish it later')
+            : (many ? `${records.length} term plans submitted for approval` : 'Term plan submitted for approval')
         );
       }
       onOpenChange(false);
@@ -151,6 +155,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
   }
 
   const selectedTerm = terms.find(t => t.id === form.termId);
+  const canDraft = !plan || plan.status === 'draft' || plan.status === 'rejected';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,7 +164,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
           <DialogTitle>{plan ? 'Edit Term Lesson Plan' : 'New Term Lesson Plan'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSave} className="space-y-5">
+        <form onSubmit={e => { e.preventDefault(); submit(false); }} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Academic Session *</Label>
@@ -249,7 +254,12 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
           </div>
 
           <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            {canDraft && (
+              <Button type="button" variant="secondary" className="flex-1" disabled={saving} onClick={() => submit(true)}>
+                <Save className="w-4 h-4 mr-2" /> Save &amp; Continue Later
+              </Button>
+            )}
             <Button type="submit" className="flex-1" disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
               {plan ? 'Update & Resubmit' : 'Submit for Approval'}

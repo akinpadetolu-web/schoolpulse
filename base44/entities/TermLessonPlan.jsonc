@@ -101,6 +101,7 @@
     "status": {
       "type": "string",
       "enum": [
+        "draft",
         "pending",
         "approved",
         "rejected"

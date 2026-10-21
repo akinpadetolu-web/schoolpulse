@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload, Clock, CheckCircle2, XCircle, Send, CalendarRange } from 'lucide-react';
+import { Plus, Loader2, BookOpen, Target, Activity, Package, Pencil, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, FileText, X, Upload, Clock, CheckCircle2, XCircle, Send, CalendarRange, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -78,8 +78,7 @@ export default function TeacherLessonPlans() {
     setShowDialog(true);
   }
 
-  async function handleSave(e) {
-    e.preventDefault();
+  async function handleSave(asDraft) {
     if (!form.title || !form.date || !form.classIds.length || !form.subjectId) {
       return toast.error("Title, date, at least one class, and subject are required");
     }
@@ -110,17 +109,18 @@ export default function TeacherLessonPlans() {
         homework: form.homework, notes: form.notes,
         pdfFileUrl: form.pdfFileUrl || "",
       };
+      const status = asDraft ? "draft" : "pending";
       if (editingPlan) {
         await base44.entities.LessonPlan.update(editingPlan.id, {
           ...payload,
-          status: "pending",
+          status,
           isPublished: false,
           approvedBy: "", approvalDate: "", approvalNotes: "",
         });
-        toast.success("Plan updated — resubmitted for approval");
+        toast.success(asDraft ? "Draft saved — you can finish it later" : "Plan updated — resubmitted for approval");
       } else {
-        await base44.entities.LessonPlan.create({ ...payload, status: "pending", isPublished: false });
-        toast.success("Lesson plan submitted for approval successfully");
+        await base44.entities.LessonPlan.create({ ...payload, status, isPublished: false });
+        toast.success(asDraft ? "Draft saved — you can finish it later" : "Lesson plan submitted for approval successfully");
       }
       setShowDialog(false);
       loadData();
@@ -190,6 +190,8 @@ export default function TeacherLessonPlans() {
     ? subjects.filter(s => form.classIds.some(cid => (s.applicableClasses || []).includes(cid)))
     : subjects;
 
+  const canDraft = !editingPlan || editingPlan.status === "draft" || editingPlan.status === "rejected";
+
   const filteredPlans = filterClassId === "all" ? plans : plans.filter(p =>
     p.classId === filterClassId || (p.classIds || []).includes(filterClassId)
   );
@@ -258,6 +260,8 @@ export default function TeacherLessonPlans() {
                           <Badge className="text-xs bg-blue-100 text-blue-700"><CheckCircle2 className="w-3 h-3 mr-1" />Approved</Badge>
                         ) : plan.status === "rejected" ? (
                           <Badge className="text-xs bg-red-100 text-red-700"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>
+                        ) : plan.status === "draft" ? (
+                          <Badge className="text-xs bg-slate-100 text-slate-700"><Save className="w-3 h-3 mr-1" />Draft</Badge>
                         ) : (
                           <Badge className="text-xs bg-amber-100 text-amber-700"><Clock className="w-3 h-3 mr-1" />Pending Approval</Badge>
                         )}
@@ -373,7 +377,7 @@ export default function TeacherLessonPlans() {
           <DialogHeader>
             <DialogTitle>{editingPlan ? "Edit Lesson Plan" : "New Lesson Plan"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-5">
+          <form onSubmit={e => { e.preventDefault(); handleSave(false); }} className="space-y-5">
             {/* Basic info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2 sm:col-span-2"><Label>Title *</Label><Input placeholder="e.g. Introduction to Photosynthesis" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required /></div>
@@ -512,7 +516,12 @@ export default function TeacherLessonPlans() {
             </div>
 
             <div className="flex gap-2 pt-1">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+              {canDraft && (
+                <Button type="button" variant="secondary" className="flex-1" disabled={saving} onClick={() => handleSave(true)}>
+                  <Save className="w-4 h-4 mr-2" /> Save &amp; Continue Later
+                </Button>
+              )}
               <Button type="submit" className="flex-1" disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 {editingPlan ? "Update & Resubmit" : "Submit for Approval"}

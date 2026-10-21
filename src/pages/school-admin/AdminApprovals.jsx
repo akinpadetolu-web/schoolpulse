@@ -30,7 +30,8 @@ export default function AdminApprovals() {
         base44.entities.LessonPlan.filter({ schoolId: user?.schoolId }),
         base44.entities.LessonMaterial.filter({ schoolId: user?.schoolId }),
       ]);
-      setLessonPlans((plans || []).sort((a, b) => (b.created_date || "").localeCompare(a.created_date || "")));
+      // Drafts are the teacher's unfinished work — they are never sent for approval.
+      setLessonPlans((plans || []).filter(p => p.status !== 'draft').sort((a, b) => (b.created_date || "").localeCompare(a.created_date || "")));
       setMaterials((mats || []).sort((a, b) => (b.created_date || "").localeCompare(a.created_date || "")));
       setLoading(false);
     }
