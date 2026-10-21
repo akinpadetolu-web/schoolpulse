@@ -30,6 +30,20 @@
     "className": {
       "type": "string"
     },
+    "classIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "All classes a saved draft covers. Used while the plan is still a single draft; each class gets its own plan once submitted."
+    },
+    "classNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of the classes a saved draft covers"
+    },
     "subjectId": {
       "type": "string"
     },

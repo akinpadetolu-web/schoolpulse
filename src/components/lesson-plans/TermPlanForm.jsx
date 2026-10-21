@@ -26,7 +26,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
       setForm({
         sessionId: plan.sessionId || '',
         termId: plan.termId || '',
-        classIds: plan.classId ? [plan.classId] : [],
+        classIds: plan.classIds?.length ? plan.classIds : (plan.classId ? [plan.classId] : []),
         subjectId: plan.subjectId || '',
         weeks: plan.weeks || [],
       });
@@ -115,12 +115,24 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
       };
 
       const status = asDraft ? 'draft' : 'pending';
+      const names = form.classIds.map(id => classes.find(c => c.id === id)?.className || '');
+      const joinedNames = names.filter(Boolean).join(', ');
+      const multiClass = form.classIds.length > 1;
 
-      if (plan) {
+      if (plan && multiClass && !asDraft) {
+        // A single multi-class draft splits into one plan per class on submit.
+        await base44.entities.TermLessonPlan.bulkCreate(
+          form.classIds.map((classId, i) => ({ ...payload, classId, className: names[i], status }))
+        );
+        await base44.entities.TermLessonPlan.delete(plan.id);
+        toast.success(`${form.classIds.length} term plans submitted for approval`);
+      } else if (plan) {
         await base44.entities.TermLessonPlan.update(plan.id, {
           ...payload,
-          classId: plan.classId,
-          className: plan.className || '',
+          classId: form.classIds[0] || plan.classId,
+          className: multiClass ? (joinedNames || plan.className || '') : (names[0] || plan.className || ''),
+          classIds: form.classIds,
+          classNames: names,
           status,
           approvedBy: '',
           approvedByName: '',
@@ -130,6 +142,17 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
         toast.success(
           asDraft ? 'Draft saved — you can finish it later' : 'Term plan updated and resubmitted for approval'
         );
+      } else if (asDraft && multiClass) {
+        // Multiple classes stay as one draft until the teacher submits it.
+        await base44.entities.TermLessonPlan.create({
+          ...payload,
+          classId: form.classIds[0],
+          className: joinedNames,
+          classIds: form.classIds,
+          classNames: names,
+          status,
+        });
+        toast.success('Draft saved — you can finish it later');
       } else {
         const records = form.classIds.map(classId => ({
           ...payload,
@@ -189,10 +212,10 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
             </div>
 
             <div className="space-y-2">
-              <Label>{plan ? 'Class' : 'Classes *'}</Label>
+              <Label>{!plan || form.classIds.length > 1 ? 'Classes *' : 'Class'}</Label>
               {plan ? (
                 <div className="h-9 px-3 flex items-center rounded-xl border border-input bg-secondary/40 text-sm">
-                  {plan.className}
+                  {form.classIds.map(id => classes.find(c => c.id === id)?.className).filter(Boolean).join(', ') || plan.className}
                 </div>
               ) : (
                 <ClassMultiSelect options={classes} value={form.classIds} onChange={selectClasses} />
@@ -250,7 +273,7 @@ export default function TermPlanForm({ open, onOpenChange, plan, user, sessions,
 
           <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800 flex items-center gap-2">
             <Clock className="w-4 h-4 shrink-0" />
-            Each selected class gets its own copy of this plan, submitted together. Once an admin approves it, students and parents see it by subject.
+            Multiple classes are saved as one draft you can finish later — when you submit for approval, each selected class gets its own copy. Once approved, students and parents see it by subject.
           </div>
 
           <div className="flex gap-2 pt-1">
