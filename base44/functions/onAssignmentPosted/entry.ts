@@ -45,8 +45,11 @@ Deno.serve(async (req) => {
       try {
         await base44.integrations.Core.SendEmail({
           to: email,
-          subject: `New Assignment: ${title}`,
-          body: `A new assignment "${title}" has been posted.${dueDate ? `\n\nDue Date: ${dueDate}` : ''}\n\nCheck your portal for details.`,
+          template_name: 'NewAssignment',
+          variables: {
+            assignment_title: title,
+            due_date: dueDate || 'No due date set',
+          },
         });
       } catch (err) {
         console.error(`Failed to send notification to ${email}:`, err);

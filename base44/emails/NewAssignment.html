@@ -1,0 +1,54 @@
+<mjml>
+  <mj-head>
+    <mj-title>New Assignment: {{assignment_title}}</mj-title>
+    <mj-preview>{{assignment_title}} is now available. Due {{due_date}}</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Inter, Helvetica, Arial, sans-serif" />
+      <mj-text color="#0f1729" font-size="15px" line-height="1.6" padding="0" />
+      <mj-button background-color="#2463eb" color="#ffffff" border-radius="20px" font-size="15px" font-weight="700" inner-padding="14px 28px" align="left" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f8fafc">
+    <mj-section background-color="#2463eb" padding="22px 32px">
+      <mj-group>
+        <mj-column width="54px" vertical-align="middle">
+          <mj-image src="https://media.base44.com/images/public/69cf2d8364666b7e0d95357a/51a9d85b4_file_0000000038e0720cb05425162da2ee4d.png" alt="SchoolPulse" width="40px" padding="0" />
+        </mj-column>
+        <mj-column vertical-align="middle">
+          <mj-text color="#ffffff" font-size="18px" font-weight="700" padding="0 0 0 6px">SchoolPulse</mj-text>
+        </mj-column>
+      </mj-group>
+    </mj-section>
+
+    <mj-section background-color="#f8fafc" padding="38px 32px 0">
+      <mj-column>
+        <mj-text font-size="26px" font-weight="700" line-height="1.25">New assignment posted</mj-text>
+        <mj-text padding="10px 0 0">A new assignment has been added to your class. Review the details below and make sure it is submitted before the due date.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f8fafc" padding="26px 32px 0">
+      <mj-column background-color="#f1f5f9" border-radius="20px" padding="26px">
+        <mj-text font-size="12px" font-weight="700" color="#2463eb" letter-spacing="1px" padding="0">ASSIGNMENT</mj-text>
+        <mj-text font-size="18px" font-weight="700" line-height="1.4" padding="8px 0 0">{{assignment_title}}</mj-text>
+        <mj-divider border-color="#e5e7eb" padding="18px 0" />
+        <mj-text font-size="14px" padding="0">Due date: <span style="font-weight:700">{{due_date}}</span></mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f8fafc" padding="26px 32px 40px">
+      <mj-column>
+        <mj-button href="https://login.schooledupulse.com/student/assignments">Open Student Dashboard</mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f1f5f9" border-top="1px solid #e5e7eb" padding="30px 32px">
+      <mj-column>
+        <mj-text font-size="14px" font-weight="700" padding="0">SchoolPulse</mj-text>
+        <mj-text font-size="13px" padding="8px 0 0">School Educational Pulse, your school community in one place.</mj-text>
+        <mj-text font-size="13px" padding="14px 0 0">Open your student dashboard any time: <a href="https://login.schooledupulse.com/student/assignments" style="color:#2463eb; text-decoration:none; font-weight:600">login.schooledupulse.com</a></mj-text>
+        <mj-text font-size="12px" padding="16px 0 0">You are receiving this email because you are registered with SchoolPulse.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
