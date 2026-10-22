@@ -42,6 +42,7 @@ export const FEATURE_TREE = [
       { id: 'adminSessions', label: 'Academic Sessions', description: 'Manage academic sessions' },
       { id: 'gradingSystem', label: 'Grading System', description: 'Configure grading scales and rules' },
       { id: 'promotion', label: 'Promotion', description: 'Manage student promotion rules and runs' },
+      { id: 'adminApprovals', label: 'Lesson Plan Approvals', description: 'Approve lesson plans, term plans and materials' },
     ],
   },
   {
@@ -178,7 +179,6 @@ export const FEATURE_TREE = [
       { id: 'announcements', label: 'Announcements', description: 'View and create announcements' },
       { id: 'messages', label: 'Messaging', description: 'Send and receive messages' },
       { id: 'adminEmailCampaign', label: 'Email Campaign', description: 'Send email campaigns' },
-      { id: 'adminApprovals', label: 'Approvals', description: 'Approve content and requests' },
     ],
   },
   {

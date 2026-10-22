@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,22 +10,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TermPlansPortal from '@/components/lesson-plans/TermPlansPortal';
 
 export default function StudentLessonPlans() {
-  const user = getCurrentUser();
+  const { schoolUser: user } = useSchoolAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [filter, setFilter] = useState("upcoming");
 
   useEffect(() => {
+    if (!user?.schoolId) return;
     async function load() {
-      const data = await base44.entities.LessonPlan.filter({
-        schoolId: user?.schoolId,
-        classId: user?.classId,
-        isPublished: true,
-        status: 'approved',
-      });
-      setPlans((data || []).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
-      setLoading(false);
+      try {
+        const data = await base44.entities.LessonPlan.filter({
+          schoolId: user.schoolId,
+          classId: user.classId,
+          isPublished: true,
+          status: 'approved',
+        });
+        setPlans((data || []).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
+      } catch (err) {
+        console.error('Failed to load lesson plans:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
 

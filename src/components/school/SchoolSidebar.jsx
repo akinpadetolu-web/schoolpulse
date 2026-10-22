@@ -37,6 +37,7 @@ const baseAdminNavGroups = [
       { label: "Examinations", path: "/school-admin/school-report", icon: PieChart },
       { label: "Report Cards", path: "/school-admin/report-cards", icon: FileText },
       { label: "RC Templates", path: "/school-admin/report-card-templates", icon: ClipboardList },
+      { label: "Lesson Plan Approvals", path: "/school-admin/approvals", icon: CheckSquare },
     ]
   },
   {
@@ -54,7 +55,6 @@ const baseAdminNavGroups = [
       { label: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
       { label: "Messages", path: "/school-admin/messages", icon: MessageSquare },
       { label: "Email Campaign", path: "/school-admin/email-campaign", icon: Mail },
-      { label: "Notifications", path: "/school-admin/approvals", icon: CheckSquare },
     ]
   },
   {

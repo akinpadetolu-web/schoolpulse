@@ -204,7 +204,7 @@ export default function AdminApprovals() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Content Approvals</h1>
+        <h1 className="text-2xl font-bold mb-1">Lesson Plan Approvals</h1>
         <p className="text-muted-foreground text-sm">Review and approve lesson plans and materials before they become visible to students</p>
       </div>
 

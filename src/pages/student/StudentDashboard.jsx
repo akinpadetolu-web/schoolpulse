@@ -27,23 +27,28 @@ export default function StudentDashboard() {
   const [period, setPeriod] = useState(EMPTY_PERIOD);
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
-    const [tt, asgn, grd, subs, cats, period] = await Promise.all([
-      base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
-      base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }).then(releasedOnly),
-      base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
-      base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
-      base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),
-      loadCurrentPeriod(user.schoolId),
-    ]);
-    setTimetableCount((tt || []).length);
-    setAssignments(asgn || []);
-    // Only the current session and term reach the student portal.
-    setGrades((grd || []).filter(g => period.inPeriod(gradeDate(g))));
-    setPeriod(period);
-    setSubmissions(subs || []);
-    setGradeCategories(cats || []);
-    setLoading(false);
+    if (!user?.id) { setLoading(false); return; }
+    try {
+      const [tt, asgn, grd, subs, cats, period] = await Promise.all([
+        base44.entities.TimetableEntry.filter({ schoolId: user.schoolId, classId: user.classId }),
+        base44.entities.Assignment.filter({ schoolId: user.schoolId, classId: user.classId, isPublished: true }).then(releasedOnly),
+        base44.entities.Grade.filter({ schoolId: user.schoolId, studentId: user.id }),
+        base44.entities.Submission.filter({ schoolId: user.schoolId, studentId: user.id }),
+        base44.entities.GradeCategory.filter({ schoolId: user.schoolId, classId: user.classId }),
+        loadCurrentPeriod(user.schoolId),
+      ]);
+      setTimetableCount((tt || []).length);
+      setAssignments(asgn || []);
+      // Only the current session and term reach the student portal.
+      setGrades((grd || []).filter(g => period.inPeriod(gradeDate(g))));
+      setPeriod(period);
+      setSubmissions(subs || []);
+      setGradeCategories(cats || []);
+    } catch (err) {
+      console.error('Failed to load student dashboard:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
