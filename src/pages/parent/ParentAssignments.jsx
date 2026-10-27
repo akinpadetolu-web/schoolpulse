@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Loader2, AlertCircle, CheckCircle2, CalendarClock } from 'lucide-react';
+import { format, startOfDay } from 'date-fns';
 import { releasedOnly } from '@/lib/assignmentRelease';
+import { toDate } from '@/lib/periodUtils';
 import AssignmentAttachment from '@/components/assignments/AssignmentAttachment';
 
 export default function ParentAssignments() {
   const { schoolUser: user } = useSchoolAuth();
   const [children, setChildren] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +39,12 @@ export default function ParentAssignments() {
               return { ...a, childName: child?.fullName || 'Unknown', childId: child?.id };
             });
             setAssignments(enriched.filter(a => classIds.includes(a.classId)));
+
+            const subs = await base44.entities.Submission.filter({
+              schoolId: user?.schoolId,
+              studentId: { $in: linked.map(s => s.id) },
+            });
+            setSubmissions(subs || []);
           }
         }
       } catch { /* ignore */ }
@@ -47,6 +56,8 @@ export default function ParentAssignments() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   const filtered = assignments.filter(a => !selectedChildId || a.childId === selectedChildId);
+  const submittedKeys = new Set(submissions.map(s => `${s.assignmentId}:${s.studentId}`));
+  const today = startOfDay(new Date());
 
   return (
     <div className="space-y-6">
@@ -55,12 +66,15 @@ export default function ParentAssignments() {
       {children.length > 1 && (
         <div className="space-y-2">
           <label className="text-sm font-medium">Filter by child</label>
-          <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+          <Select
+            value={selectedChildId || 'all'}
+            onValueChange={v => setSelectedChildId(v === 'all' ? '' : v)}
+          >
             <SelectTrigger className="w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>All Children</SelectItem>
+              <SelectItem value="all">All Children</SelectItem>
               {children.map(child => (
                 <SelectItem key={child.id} value={child.id}>{child.fullName}</SelectItem>
               ))}
@@ -73,25 +87,48 @@ export default function ParentAssignments() {
         <p className="text-center text-muted-foreground py-8">No assignments available.</p>
       ) : (
         <div className="grid gap-3">
-          {filtered.map(a => (
-            <Card key={a.id} className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="font-semibold">{a.title}</p>
-                    <p className="text-sm text-muted-foreground">{a.subjectName} • {a.className}</p>
-                    {children.length > 1 && <p className="text-xs text-primary font-medium mt-1">{a.childName}</p>}
-                    {a.dueDate && <p className="text-xs text-muted-foreground mt-1">Due: {format(new Date(a.dueDate), 'MMM d, yyyy')}</p>}
-                    {a.attachmentFileUri && (
-                      <div className="mt-2">
-                        <AssignmentAttachment fileUri={a.attachmentFileUri} fileName={a.attachmentFileName} />
+          {filtered.map(a => {
+            const due = toDate(a.dueDate);
+            const submitted = submittedKeys.has(`${a.id}:${a.childId}`);
+            const isLate = Boolean(due) && due < today && !submitted;
+            const isDueToday = Boolean(due) && due.getTime() === today.getTime();
+            return (
+              <Card key={a.id} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold">{a.title}</p>
+                        {isLate && (
+                          <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> Missing
+                          </Badge>
+                        )}
+                        {!isLate && submitted && (
+                          <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Submitted
+                          </Badge>
+                        )}
                       </div>
-                    )}
+                      <p className="text-sm text-muted-foreground">{a.subjectName} • {a.className}</p>
+                      {children.length > 1 && <p className="text-xs text-primary font-medium mt-1">{a.childName}</p>}
+                      <p className={`text-xs mt-1 flex items-center gap-1 ${isLate ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                        <CalendarClock className="w-3 h-3" />
+                        {due
+                          ? `Due: ${format(due, 'MMM d, yyyy')}${isDueToday ? ' (today)' : ''}`
+                          : 'No due date set'}
+                      </p>
+                      {a.attachmentFileUri && (
+                        <div className="mt-2">
+                          <AssignmentAttachment fileUri={a.attachmentFileUri} fileName={a.attachmentFileName} />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
