@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useSchoolAuth } from '@/lib/SchoolAuthContext';
 import { base44 } from '@/api/base44Client';
-import { hashPassword, generateTemporaryPassword } from '@/lib/auth';
-import { logAudit } from '@/lib/auditLogger';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Loader2, ChevronDown, ChevronRight, Upload, Layers, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Loader2, ChevronDown, ChevronRight, Upload, Layers, CheckCircle2, KeyRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import CreateUserDialog from '@/components/backend/CreateUserDialog';
 import StudentProfileDialog from '@/components/school/StudentProfileDialog';
 import StudentGridCard from '@/components/school/StudentGridCard';
+import StudentPasswordResetDialog from '@/components/school/StudentPasswordResetDialog';
 import { STREAM_OPTIONS, STREAM_LABELS, STREAM_COLORS, isStreamableClass, getStudentStream, getStudentSubjects } from '@/lib/streamUtils';
 
 // Admin Students Page
@@ -30,6 +29,7 @@ export default function AdminStudents() {
   const [expandedClasses, setExpandedClasses] = useState(new Set());
   const [showCreate, setShowCreate] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [resetStudent, setResetStudent] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -48,13 +48,6 @@ export default function AdminStudents() {
   }
 
   const school = { id: user?.schoolId, schoolName: user?.schoolName };
-
-  async function handleReset(u) {
-    const pwd = generateTemporaryPassword();
-    await base44.entities.SchoolUser.update(u.id, { passwordHash: hashPassword(pwd), mustChangePassword: true });
-    await logAudit({ schoolId: user.schoolId, schoolName: user.schoolName, action: "password_reset", entityType: "SchoolUser", entityId: u.id, performedBy: user.id, performedByName: user.fullName, details: `Reset for "${u.fullName}"` });
-    toast.success(`Temporary password for ${u.fullName}: ${pwd}`, { duration: 15000 });
-  }
 
   async function handleArchive(u) { await base44.entities.SchoolUser.update(u.id, { isArchived: true }); loadData(); }
   async function handleRestore(u) { await base44.entities.SchoolUser.update(u.id, { isArchived: false }); loadData(); }
@@ -260,6 +253,9 @@ export default function AdminStudents() {
                             <div className="hidden sm:block text-xs text-muted-foreground flex-shrink-0 w-20 text-right">
                               {studentSubjects.length} subject{studentSubjects.length !== 1 ? 's' : ''}
                             </div>
+                            <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8" title="Reset password" onClick={() => setResetStudent(student)}>
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="flex-shrink-0 h-8 w-8" onClick={() => setEditingStudent(student)}>
                               <ChevronRight className="w-4 h-4" />
                             </Button>
@@ -277,7 +273,7 @@ export default function AdminStudents() {
                         student={student}
                         onView={setEditingStudent}
                         onEdit={setEditingStudent}
-                        onReset={handleReset}
+                        onReset={setResetStudent}
                       />
                     ))}
                   </div>
@@ -304,6 +300,15 @@ export default function AdminStudents() {
           classes={classes}
           schoolId={user?.schoolId}
           onSaved={loadData}
+        />
+      )}
+      {resetStudent && (
+        <StudentPasswordResetDialog
+          open={!!resetStudent}
+          onOpenChange={v => { if (!v) setResetStudent(null); }}
+          student={resetStudent}
+          admin={user}
+          schoolId={user?.schoolId}
         />
       )}
     </div>

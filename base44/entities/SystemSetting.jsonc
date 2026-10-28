@@ -1,0 +1,63 @@
+{
+  "name": "SystemSetting",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Setting identifier, e.g. passwordRevealPin"
+    },
+    "pinHash": {
+      "type": "string",
+      "description": "Salted SHA-256 hash of the security PIN. The PIN itself is never stored."
+    },
+    "pinSalt": {
+      "type": "string",
+      "description": "Random salt used when hashing the security PIN"
+    },
+    "failedPinAttempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Consecutive incorrect PIN attempts"
+    },
+    "pinLockedUntil": {
+      "type": "string",
+      "format": "date-time",
+      "description": "PIN entry is refused until this timestamp after repeated failures"
+    },
+    "updatedBy": {
+      "type": "string"
+    },
+    "updatedByName": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

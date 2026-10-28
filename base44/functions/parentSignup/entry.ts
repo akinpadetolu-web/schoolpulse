@@ -16,7 +16,7 @@ function generateUsername(fullName, existingUsernames = []) {
   let base = `${first}.${lastInitial}`;
   let username = base;
   let counter = 1;
-  while (existingUsernames.includes(username)) {
+  while (existingUsernames.some((u) => (u || '').toLowerCase() === username)) {
     username = `${base}${counter}`;
     counter++;
   }
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       role: "parent",
     });
 
-    if ((existingParents || []).some((p) => p.email === email.trim())) {
+    if ((existingParents || []).some((p) => (p.email || '').trim().toLowerCase() === email.trim().toLowerCase())) {
       return Response.json({ error: "An account with this email already exists. Please sign in." }, { status: 400 });
     }
 

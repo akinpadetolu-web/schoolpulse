@@ -57,11 +57,33 @@ Deno.serve(async (req) => {
     const trimmed = String(identifier).trim();
     if (!trimmed) return fail('Invalid credentials');
 
-    const query = superAdmin
-      ? { role: 'superAdmin', email: trimmed }
-      : { schoolId, $or: [{ username: trimmed }, { email: trimmed }] };
+    // Usernames and email addresses sign in regardless of letter casing.
+    const normalized = trimmed.toLowerCase();
 
-    const users = await base44.asServiceRole.entities.SchoolUser.filter(query);
+    let users: any[] = [];
+
+    if (superAdmin) {
+      users = await base44.asServiceRole.entities.SchoolUser.filter({ role: 'superAdmin', email: normalized });
+      if (!(users || []).length) {
+        const all = await base44.asServiceRole.entities.SchoolUser.filter({ role: 'superAdmin' });
+        users = (all || []).filter((u: any) => (u.email || '').toLowerCase() === normalized);
+      }
+    } else {
+      users = await base44.asServiceRole.entities.SchoolUser.filter({
+        schoolId,
+        $or: [{ username: normalized }, { email: normalized }],
+      });
+      // Records saved with mixed casing still match.
+      if (!(users || []).length) {
+        const all = await base44.asServiceRole.entities.SchoolUser.filter({ schoolId });
+        users = (all || []).filter(
+          (u: any) =>
+            (u.username || '').toLowerCase() === normalized ||
+            (u.email || '').toLowerCase() === normalized,
+        );
+      }
+    }
+
     const user = (users || []).find((u: any) => !u.isArchived);
 
     // Uniform message — never reveal whether an account exists.

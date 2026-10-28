@@ -33,7 +33,7 @@ export function generateUsername(fullName, existingUsernames = []) {
   let base = `${first}.${lastInitial}`;
   let username = base;
   let counter = 1;
-  while (existingUsernames.includes(username)) {
+  while (existingUsernames.some(u => (u || "").toLowerCase() === username)) {
     username = `${base}${counter}`;
     counter++;
   }

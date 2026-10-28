@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Shield, Mail, RefreshCw, Loader2 } from 'lucide-react';
 import { getCurrentSuperAdmin } from '@/lib/auth';
+import SecurityPinSettings from '@/components/backend/SecurityPinSettings';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -104,6 +105,8 @@ export default function BackendSettings() {
           </CardContent>
         </Card>
       </div>
+
+      <SecurityPinSettings />
     </div>
   );
 }
